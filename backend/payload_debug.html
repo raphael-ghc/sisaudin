@@ -1,0 +1,319 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Relatório Preliminar</title>
+          <style>
+             :root { 
+                 --ghc-primary: #00767d; 
+                 --ghc-secondary: #84c9bd; 
+                 --paper-color: #ffffff; 
+                 --text-color: #2d3748; 
+                 --border-color: #cbd5e0; 
+             }
+             body { background: white; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+             .preview-container { color: var(--text-color); font-size: 10pt; line-height: 1.5; display: flex; flex-direction: column; align-items: center; }
+             .preview-container .page { background-color: var(--paper-color); box-sizing: border-box; position: relative; margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; }
+             .preview-container h2 { color: var(--ghc-primary); padding: 6px 12px; margin-top: 25px; margin-bottom: 15px; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-left: 5px solid var(--ghc-primary); background: linear-gradient(90deg, rgba(132, 201, 189, 0.20) 0%, rgba(255, 255, 255, 0) 100%); } 
+             .preview-container h2.center-title { text-align: center; border-left: none; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(132, 201, 189, 0.20) 50%, rgba(255,255,255,0) 100%); }
+             .preview-container h3 { color: var(--ghc-primary); font-size: 10pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+             .texto-comum { text-align: justify; font-size: 14pt; }
+             .texto-comum * { font-family: 'Calibri', sans-serif !important; font-size: 14pt; color: #000; line-height: 1.5; text-align: justify; }
+             .texto-comum p { margin-bottom: 10px; }
+             table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 9pt; }
+             table th, table td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top; }
+             table th { background-color: #f1f5f9; font-weight: bold; text-align: left; }
+             .toc-list { list-style: none; padding: 0; width: 100%; } 
+             .toc-item { margin-bottom: 6px; } 
+             .toc-link { display: flex; align-items: baseline; text-decoration: none; color: var(--text-color); font-size: 10pt; } 
+             .toc-dots { flex: 1; border-bottom: 1px dotted var(--border-color); margin: 0 6px; } 
+             .toc-page-num { font-weight: bold; color: var(--ghc-primary); }
+             .matriz-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 15px; } 
+             .matriz-box { border: 1px solid #cbd5e0; border-radius: 4px; padding: 8px 10px; } 
+             .matriz-header { font-size: 8pt; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; padding-bottom: 2px; } 
+             .matriz-text { font-size: 9pt; text-align: justify; line-height: 1.3; }
+             .box-fato { border-left: 3px solid var(--ghc-primary); } 
+             .box-fato .matriz-header { color: var(--ghc-primary); border-bottom: 1px solid var(--ghc-primary); } 
+             .box-criterio { border-left: 3px solid var(--ghc-primary); } 
+             .box-criterio .matriz-header { color: var(--ghc-primary); border-bottom: 1px solid var(--ghc-primary); } 
+             .box-causa { border-left: 3px solid var(--ghc-primary); } 
+             .box-causa .matriz-header { color: var(--ghc-primary); border-bottom: 1px solid var(--ghc-primary); } 
+             .box-impacto { border-left: 3px solid var(--ghc-primary); } 
+             .box-impacto .matriz-header { color: var(--ghc-primary); border-bottom: 1px solid var(--ghc-primary); }
+             .action-plan-table th { background-color: var(--ghc-primary); color: white; border: 1px solid var(--ghc-primary); }
+             .tabela-capa td { border: none !important; padding: 4px 0 !important; }
+          </style>
+        </head>
+        <body>
+          <div id="document-preview-container" class="preview-container"><div class="page portrait capa-page" id="page-capa" style="justify-content: flex-start; text-align: left; padding: 15mm;"><div style="display: flex; justify-content: center; margin-bottom: 20px;"><img alt="GHC Cabeçalho" src="https://sisaudin.ghc.com.br:8080/src/img/ghc_cabecalho.png" style="max-width: 100%; height: auto; max-height: 70px;"></div><h1 style="font-size: 42pt; font-weight: bold; font-family: &quot;Times New Roman&quot;, Times, serif; color: rgb(0, 0, 0); margin: 0px; text-transform: none; line-height: 1.1;">Relatório de Auditoria<br>Interna</h1><p style="font-size: 12pt; font-weight: bold; color: rgb(113, 128, 150); margin-top: 15px; margin-bottom: 20px;">Versão Preliminar</p><div style="font-size: 44pt; font-weight: bold; color: rgb(0, 0, 0); font-family: &quot;Times New Roman&quot;, Times, serif; margin: 0px; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; background: none; padding: 0px;">RAI 06/2025</div><hr style="border-width: 3px 0px 0px; border-style: solid none none; border-color: rgb(0, 0, 0) currentcolor currentcolor; border-image: none; margin: 10px 0px; width: 380px;"><p style="font-size: 16pt; font-family: &quot;Times New Roman&quot;, Times, serif; color: rgb(0, 0, 0); margin-top: 10px;">Gerência de Auditoria Interna</p><div style="background-color: var(--ghc-primary); color: rgb(255, 255, 255); padding: 15px 20px; text-align: center; margin-top: 20px; margin-bottom: 20px; border-left: 10px solid rgb(0, 77, 82);"><div style="color: rgb(255, 255, 255); font-size: 16pt; margin: 0px; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 0px; text-transform: none;">Governança em Tecnologia da Informação</div></div><div style="padding-bottom: 10px;"><div style="background-color: rgb(248, 250, 252); border-left: 4px solid var(--ghc-primary); color: var(--ghc-primary); padding: 6px 10px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 9pt; width: 100%;">Dados Gerais</div><div style="display: flex; justify-content: space-between; font-size: 9pt; line-height: 1.6;"><div style="flex: 1 1 0%; padding-right: 20px;"><table class="tabela-capa" style="width: 100%; border-collapse: collapse;"><tbody><tr><td style="font-weight: bold; width: 45%; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Item de Trabalho Vinculado/Ano:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">PAINT - 06/2025</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Tipo de Serviço:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">Avaliação</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Macroprocesso:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">Planejamento e Gestão</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Origem da Demanda:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">Avaliação de Riscos</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Nível de Risco:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">Médio</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Data Inicial:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">01/05/2026</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Data Final:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">05/08/2026</td></tr></tbody></table></div><div style="flex: 1 1 0%; padding-left: 20px;"><table class="tabela-capa" style="width: 100%; border-collapse: collapse;"><tbody><tr><td style="font-weight: bold; width: 35%; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Supervisor:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">-</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Supervisor Técnico:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">-</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Responsável:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">-</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249);">Equipe:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">-</td></tr><tr><td style="font-weight: bold; padding: 5px 0px; color: rgb(71, 85, 105); border-bottom: 1px solid rgb(241, 245, 249); vertical-align: top;">Gerências Destinatárias:</td><td style="padding: 5px 0px; color: rgb(15, 23, 42); border-bottom: 1px solid rgb(241, 245, 249);">Gerência de Tecnologia da Informação, Diretoria-Executiva</td></tr></tbody></table></div></div></div></div><div class="page portrait" id="page-nota" style="break-before: page;"><div style="padding: 30px; box-sizing: border-box; display: flex; flex-direction: column;"><h2 class="center-title" style="margin-bottom: 30px;">Nota Introdutória</h2><div style="text-align: justify; font-size: 11pt; line-height: 1.8; font-family: &quot;Times New Roman&quot;, Times, serif;"><p style="text-indent: 40px; margin-bottom: 15px;">Considerando as alterações introduzidas em nossos instrumentos de comunicação, no sentido de torná-los mais acessíveis e interativos, destacamos aqui os principais tópicos que você poderá encontrar ao ler este documento, bem como suas definições e finalidades:</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Informações Preliminares</strong> são dados e informações que o leitor deve conhecer para contextualizar-se no trabalho e melhor compreender os tópicos seguintes;</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Constatações</strong> são fatos diagnosticados pela Equipe de Auditoria acerca dos quais estão associados riscos de desconformidades;</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Recomendações</strong> são proposições de ações realizadas pela Equipe de Auditoria, a fim de que os gestores possam mitigar ou eliminar os riscos identificados;</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Benefícios Esperados</strong> são aprimoramentos e vantagens de gestão que a Equipe de Auditoria acredita que podem ser alcançados caso a Recomendação seja implementada;</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Benefícios Realizados</strong> são aprimoramentos e vantagens de gestão que foram alcançados por meio da implementação da Recomendação; e</p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>Riscos</strong> são eventos que, caso ocorram, poderão prejudicar o atingimento dos objetivos traçados pela instituição;</p><p style="text-indent: 40px; margin-bottom: 15px;">Agradecemos pela sua atenção e colocamo-nos à disposição, caso entenda necessário, para debater aspectos deste relatório.</p></div></div></div><div class="page portrait" id="page-sumario" style="break-before: page;"><h2 class="center-title">Sumário</h2><div><ul class="toc-list"><li class="toc-item"><a href="#preview-intro" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">1. INTRODUÇÃO</span><span class="toc-dots"></span><span class="toc-page-num">7</span></a></li><li class="toc-item"><a href="#preview-plan" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2. PLANEJAMENTO DA AUDITORIA</span><span class="toc-dots"></span><span class="toc-page-num">8</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-objetivo" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.1. OBJETIVO DA AUDITORIA</span><span class="toc-dots"></span><span class="toc-page-num">8</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-riscos" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.2. RISCOS ENVOLVIDOS</span><span class="toc-dots"></span><span class="toc-page-num">8</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-escopo" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.3. ESCOPO DE AUDITORIA</span><span class="toc-dots"></span><span class="toc-page-num">8</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-limitacoes" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.4. LIMITAÇÕES DE ESCOPO</span><span class="toc-dots"></span><span class="toc-page-num">8</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-criterios" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.5. CRITÉRIOS LEGAIS DE REFERÊNCIA</span><span class="toc-dots"></span><span class="toc-page-num">9</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-procedimentos" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.6. PRINCIPAIS PROCEDIMENTOS</span><span class="toc-dots"></span><span class="toc-page-num">10</span></a></li><li class="toc-item" style="margin-left: 20px; font-size: 9pt;"><a href="#preview-plan-amostra" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">2.7. SELEÇÃO DA AMOSTRA</span><span class="toc-dots"></span><span class="toc-page-num">10</span></a></li><li class="toc-item"><a href="#preview-preliminares" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">3. INFORMAÇÕES PRELIMINARES</span><span class="toc-dots"></span><span class="toc-page-num">11</span></a></li><li class="toc-item"><a href="#preview-constatacoes" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">4. CONSTATAÇÕES E RECOMENDAÇÕES</span><span class="toc-dots"></span><span class="toc-page-num">11</span></a></li><li class="toc-item"><a href="#preview-consideracoes" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">5. CONSIDERAÇÕES FINAIS</span><span class="toc-dots"></span><span class="toc-page-num">11</span></a></li><li class="toc-item"><a href="#preview-anexoa" class="toc-link" style="text-decoration: none; color: inherit;"><span class="toc-title">6. ANEXO A - PLANO DE AÇÃO</span><span class="toc-dots"></span><span class="toc-page-num">13</span></a></li></ul></div></div><div class="page portrait relative" id="page-intro-plan" style="break-before: page;"><h2 id="preview-intro">1. INTRODUÇÃO</h2><div class="texto-comum"><!--StartFragment-->
+
+<p>Este trabalho visa atender o AQUI<sup class="footnote-ref" title="Teste de Rodapé">[1]</sup><b>item PAINT 2025/06, do Grupo Hospitalar
+Conceição S.A. </b>(GHC) <b>e suas filiais a</b><sup class="footnote-ref" title="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">[2]</sup>,
+e versa sobre o macroprocesso e tema "Planejamento e Gestão: Governança em
+Tecnologia da Informação".</p>
+
+<p>O objetivo desta Auditoria é agregar valor à governança e à gestão de <b>Tecnologia da Informação e Comunicação (TIC)</b>
+ao buscar oportunidades de melhoria e cumprimento
+dos requisitos da <b>COMISSÃO
+INTERMINISTERIAL DE GOVERNANÇA CORPORATIVA E DE ADMINISTRAÇÃO DE PARTICIPAÇÕES
+SOCIETÁRIAS DA UNIÃO (CGPAR) 41/2022</b> não apenas por questão burocrática,
+mas por visar evitar riscos capazes de comprometer as operações, a
+sustentabilidade e a própria missão do GHC como uma instituição pública de
+saúde.</p>
+
+<p>Durante a execução dos trabalhos foram verificadas fragilidades no
+contexto de Governança de TIC do GHC. Com base nesses achados, foram
+estabelecidas recomendações que visam aprimorar a utilização da TIC de forma
+estratégica e eficaz para otimizar recursos, aprimorar a qualidade e quantidade
+dos serviços de saúde e assegurar a
+segurança das informações da entidade.</p>
+
+<p>Importante ressaltar que a Auditoria tem como foco principal os riscos
+organizacionais que possam vir a causar algum prejuízo aos objetivos do GHC,
+inclusive riscos significativos que vão desde problemas operacionais até
+sanções legais e danos à imagem, o que vem a dialogar com a área de conformidade.</p>
+
+<p><b>No Capítulo 2 </b>apresentamos o planejamento da
+auditoria, a partir dos principais riscos identificados.</p>
+
+<p><b>No Capítulo 3 </b>apresentamos algumas
+informações preliminares, que são essenciais para compreensão do objeto
+auditado.</p>
+
+<p><b>No Capítulo 4 </b>detalhamos as constatações de
+auditoria e suas respectivas recomendações, visando o cumprimento da
+legislação, o aprimoramento dos processos operacionais e dos controles
+internos, atenuando, dessa forma, os riscos envolvidos.</p>
+
+<p><b>No
+Capítulo 5 </b>apresentamos as considerações finais desta Auditoria Interna.</p>
+
+<p><b>O Anexo A </b><span>traz o “Plano de Ação”, contendo as
+respectivas recomendações para mitigar e/ou eliminar as falhas e ou
+fragilidades apontadas, bem como os prazos de implementação sugeridos à(s)
+área(s).</span></p>
+
+<p><b>O Anexo B </b>traz os “Reportes”, contendo as recomendações
+com as respectivas manifestações das áreas e posicionamentos da auditoria
+interna.</p>
+
+<p><b>O Anexo C </b>traz “Passos
+Complementares Recomendados”, contendo recomendações para auxiliar
+nas melhorias da atual governança focando na TI; </p>
+
+<p><b>O Anexo D </b>traz “Referências”, contendo todas
+as fontes utilizadas para realizar este trabalho. </p>
+
+<p><b>O Anexo E </b>traz “Glossário”, listando os
+termos estrangeiros com breve explicação.</p>
+
+<!--EndFragment--><div class="editor-footnotes"><div style="margin-bottom: 4px;"><strong>[1]</strong> Teste de Rodapé</div><div style="margin-bottom: 4px;"><strong>[2]</strong> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div></div></div><h2 id="preview-plan">2. PLANEJAMENTO DA AUDITORIA</h2><div id="preview-plan-texto-inicial" class="texto-comum" style="margin-bottom: 20px;"><!--StartFragment-->
+
+<p>Neste capítulo detalhamos o planejamento, especificando os objetivos, os
+riscos envolvidos, o escopo, os critérios legais e de referência, os principais
+procedimentos e a seleção da amostra nesta Auditoria.<b>&nbsp;</b></p>
+
+Ressalta-se que, devido ao ecossistema do Sistema
+de Administração dos Recursos de Tecnologia da Informação (SISP) contemplar a
+maior parte das demandas formais do GHC, este relatório adota os materiais e as
+diretrizes do referido sistema como balizadores principais. Informações
+detalhadas sobre o Sistema de Administração dos Recursos de Tecnologia da
+Informação (SISP) estão disponíveis na Constatação 04.</div><h3 id="preview-plan-objetivo">2.1. OBJETIVO DA AUDITORIA</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>O objetivo da auditoria no presente trabalho foi verificar se o Grupo
+Hospitalar Conceição (GHC) encontra-se em conformidade com a Resolução CGPAR
+41/2022.</p>
+
+<!--EndFragment--></div><h3 id="preview-plan-riscos">2.2. RISCOS ENVOLVIDOS</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>A partir do estudo dos principais objetivos e fluxos, identificamos os
+seguintes riscos, que serão objeto de atuação desta Auditoria:</p>
+
+<p></p><ol type="a" class="list-lower-alpha" style="list-style-type: lower-alpha;"><li>Conformidade;<span>&nbsp;</span></li><li>Estratégico;<span>&nbsp;</span></li><li>Governança;<span>&nbsp;</span></li><li>Segurança da Informação;<span>&nbsp;</span></li><li>Tecnologia da Informação;<span>&nbsp;</span></li><li>Operacional;<span>&nbsp;</span></li><li>Imagem.</li></ol><!--[if !supportLists]--><p></p>
+
+
+
+
+
+
+
+
+
+<!--EndFragment--></div><h3 id="preview-plan-escopo">2.3. ESCOPO DE AUDITORIA</h3><div class="texto-comum"><!--StartFragment-->Analisar a governança de
+TI implantada no GHC por meio da verificação de documentos e ritos referentes a
+processos imprescindíveis à governança administrativa no Grupo Hospitalar
+Conceição.<!--EndFragment--></div><h3 id="preview-plan-limitacoes">2.4. LIMITAÇÕES DE ESCOPO</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>O objetivo da presente Auditoria foi plenamente alcançado, dentro do
+escopo previamente definido.</p>
+
+<!--EndFragment--></div><h3 id="preview-plan-criterios">2.5. CRITÉRIOS LEGAIS E DE REFERÊNCIA</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>Seguem os principais normativos, critérios legais
+e de referência de auditoria utilizados (confira a listagem na íntegra no ANEXO C: REFERÊNCIAS):</p><!--StartFragment--><b>Leis, Constituição e Decretos 
+
+</b><p>BRASIL, Lei nº 13.303, de 30 de junho de 2016
+(Lei das Estatais); </p>
+
+<p>BRASIL, Lei nº 13.709, de 14 de agosto de 2018
+(Lei Geral de Proteção de Dados Pessoais – LGPD);</p><b>
+
+Resoluções, Instruções Normativas e Acórdãos
+
+</b><p>BRASIL, Resolução CGPAR nº 41, de 4 de agosto de
+2022; </p>
+
+<p>BRASIL, Instrução Normativa Conjunta MP/CGU Nº
+01, de 10 de maio de 2016; </p>
+
+<p>BRASIL, Instrução Normativa SGD/ME nº 94, de 23
+de dezembro de 2022;</p><b>
+
+Portarias Internas e Externas
+
+</b><p>PORTO ALEGRE, Portaria GHC nº 483, de 2012
+(Comitê Gestor da PSI);</p>
+
+<p>PORTO ALEGRE, Portaria GHC nº 680, de 2019
+(Institui o Comitê de Governança de TI);</p>
+
+<p>PORTO ALEGRE, Portaria GHC nº 603, de 2021
+(Designação do DPO);</p>
+
+<p>PORTO ALEGRE, Portaria GHC nº 31, de 2024
+(NSD-GHC);</p>
+
+<p>BRASIL, Portaria-SEI nº 34 (EBSERH/HU BRASIL); </p>
+
+<p>BRASIL, Portaria SGD/ME nº 18.152, de 4 de agosto
+de 2020 (Portaria de implantação da Governança de TIC;</p><b>
+
+Normas ISO e Frameworks de Mercado 
+
+</b><p>ISACA, COBIT 2019 Framework: Governance and
+Management Objectives, Edição 2018;</p>
+
+<p>INTERNACIONAL (ISACA), Capability Maturity Model
+Integration (CMMI); </p>
+
+<p>INTERNACIONAL (AXELOS), ITIL Foundation: ITIL 4
+Edition;</p>
+
+<p>INTERNACIONAL (CIS), CIS Controls Version 8;</p><b>
+
+Guias, Levantamentos e Relatórios de Referência 
+
+</b><p>BRASIL, Plano Diretor de Tecnologia da Informação
+e Comunicação PDTIC 2018–2019 (ENAP);</p>
+
+<p>BRASIL, Governança de TIC no contexto da transformação
+digital, Módulo 1: Base de Governança de TIC (ENAP); </p>
+
+<p>BRASIL, Guia de Governança de TI do Sistema de
+Administração dos Recursos de Tecnologia da Informação (SISP), Versão 2.0; </p>
+
+<p>BRASIL, Guia de PDTIC do SISP, Versão 2.1;</p>
+
+<p>BRASIL, Plano Diretor de Tecnologia da Informação
+e Comunicação (PDTIC) 2025-2028 - HC-UFMG/EBSERH;</p>
+
+<p>PORTO ALEGRE, PETI-PDTI GHC 2021-2023, Edição
+2021;</p>
+
+<p>PORTO ALEGRE, Planejamento Estratégico GHC
+2024–2030;</p>
+
+<!--EndFragment-->
+
+<!--EndFragment--></div><h3 id="preview-plan-procedimentos">2.6. PRINCIPAIS PROCEDIMENTOS</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>As principais técnicas e procedimentos de auditoria
+utilizados foram os seguintes:<span>&nbsp;</span></p>
+
+<p></p><ol type="a" class="list-lower-alpha" style="list-style-type: lower-alpha;"><li>Indagação;<span>&nbsp;</span></li><li>Análise Documental;</li><li>Benchmarking.</li></ol><!--[if !supportLists]--><p></p>
+
+
+
+
+
+<!--EndFragment--></div><h3 id="preview-plan-amostra">2.7. SELEÇÃO DA AMOSTRA</h3><div class="texto-comum"><!--StartFragment-->
+
+<p>Os trabalhos da auditoria foram realizados considerando documentos
+solicitados e boas práticas de mercado.<span>&nbsp;</span></p>
+
+<p>Informamos que os dados e procedimentos da seleção da amostra se encontram
+no documento de planejamento e nas pastas de papéis de trabalho do presente
+relatório.</p>
+
+<!--EndFragment--></div></div><div class="page portrait relative" id="page-preliminares-constatacoes"><h2 id="preview-preliminares">3. INFORMAÇÕES PRELIMINARES</h2><div class="texto-comum" style="margin-bottom: 20px;"><!--StartFragment-->
+
+<p>A fim de melhor elucidar, abordaremos informações gerais consideradas
+relevantes e que deram suporte à
+execução deste trabalho de auditoria.</p>
+
+<!--EndFragment--></div><p class="italic text-gray-500 mb-6">Nenhuma informação preliminar registrada.</p><h2 id="preview-constatacoes">4. CONSTATAÇÕES E RECOMENDAÇÕES</h2><div class="texto-comum" style="margin-bottom: 20px;"><!--StartFragment-->
+
+
+
+<p>Considerando os fatos identificados, através das
+técnicas e procedimentos aplicados às questões de auditoria elencadas no
+Programa de Trabalho, contidas no escopo deste relatório, apresentamos as
+constatações e as respectivas recomendações, que visam aprimorar os processos
+operacionais e os controles internos, procurando mitigar, dessa forma, os
+riscos envolvidos.</p>
+
+
+
+<!--EndFragment--></div><p class="italic text-gray-500 mb-6">Nenhuma constatação registrada.</p><h2 id="preview-consideracoes">5. CONSIDERAÇÕES FINAIS</h2><div class="texto-comum"><!--StartFragment-->
+
+<p>A presente auditoria, realizada em conformidade com as diretrizes da
+Instrução Normativa Conjunta MP/CGU nº 01/2016, teve como escopo avaliar o
+macroprocesso de Governança em Tecnologia da Informação do Grupo Hospitalar
+Conceição (GHC), sob a ótica da conformidade normativa, mitigação de riscos e
+alinhamento estratégico. O objetivo deste trabalho foi plenamente alcançado,
+conforme o escopo previamente definido.</p>
+
+<p>A atuação da equipe de auditoria não sofreu qualquer restrição. Contou-se
+com a colaboração das unidades auditadas, e todas as informações, processos e documentos
+necessários foram disponibilizados de forma tempestiva, permitindo a
+identificação tanto de boas práticas quanto de oportunidades de aprimoramento.</p>
+
+<p>Durante a execução do trabalho, foram identificadas ótimas iniciativas,
+tanto estratégicas quanto operacionais. Observou-se que, embora o GHC possua
+uma infraestrutura tecnológica robusta e equipes técnicas com elevada
+capacidade de entrega — evidenciada pela maturidade operacional do ambiente —,
+existe uma necessidade premente de fortalecer a camada de Governança
+Estratégica. A transição de um modelo de gestão puramente operacional para um
+modelo de governança pública de TIC, pautado na segregação de funções, na
+mensuração de resultados por indicadores de desempenho e na atualização
+sistemática do arcabouço normativo, é fundamental para garantir a
+sustentabilidade das operações e a conformidade com as Resoluções da CGPAR e
+demais normativos de controle externo (TCU/CGU).</p>
+
+<p>À luz da referida Instrução Normativa, compete às auditorias internas
+oferecer avaliações e assessoramento destinados ao aprimoramento dos controles,
+de forma que mecanismos mais eficientes e eficazes mitiguem os principais
+riscos de que os órgãos não alcancem seus objetivos. Nesse sentido, para as
+constatações apontadas, apresentaram-se recomendações que visam à correção das
+inconsistências verificadas e ao aprimoramento das rotinas e fluxos.</p>
+
+<p>O conjunto dessas recomendações visa elevar o patamar de maturidade de
+governança da instituição, blindando o GHC contra riscos operacionais e garantindo
+a continuidade e a qualidade dos serviços de saúde prestados à sociedade. Além
+disso, buscam dotar a Alta Administração de instrumentos de controle interno
+eficazes, aptos a garantir que os investimentos em tecnologia sejam verdadeiros
+vetores de transformação digital, eficiência assistencial e segurança jurídica
+para o Grupo.</p>
+
+<p>Assim, propõe-se o encaminhamento do presente relatório para a apreciação
+e adoção do Plano de Ação proposto (Anexo A). Conclui-se este documento com o
+intuito primordial de agregar valor ao GHC e a toda sociedade.</p>
+
+<p>Colocamo-nos à disposição para o acompanhamento da implementação das
+medidas corretivas e para o diálogo técnico necessário à sua efetivação.</p>
+
+<!--EndFragment--></div><div style="margin-top: 50px; break-inside: avoid; font-family: &quot;Times New Roman&quot;, Times, serif;"><p style="font-weight: bold; font-size: 11pt; margin-bottom: 60px; color: rgb(0, 0, 0);">Responsáveis por este trabalho de Auditoria:</p><div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 50px 30px;"></div></div><div style="margin-top: 50px; break-inside: avoid; font-family: &quot;Times New Roman&quot;, Times, serif;"><p style="font-size: 11pt; margin-bottom: 60px; text-align: justify; color: rgb(0, 0, 0);">Tendo acompanhado a execução e supervisionado a elaboração deste Relatório, aprovo a documentação de auditoria que consubstancia o presente documento.</p><div style="display: flex; justify-content: center;"></div></div></div><div class="page landscape relative" id="page-anexo-a"><h2 id="preview-anexoa">6. ANEXO A - PLANO DE AÇÃO</h2><p class="italic text-gray-500">O Plano de Ação será gerado automaticamente quando houverem Constatações cadastradas.</p></div></div>
+        </body>
+        </html>
+      

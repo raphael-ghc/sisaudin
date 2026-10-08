@@ -1,0 +1,442 @@
+@import "tailwindcss";
+
+@keyframes bounceAndPulse {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-25%);
+    opacity: 0.5;
+  }
+}
+
+.animate-bounce-pulse {
+  animation: bounceAndPulse 1.5s infinite;
+}
+
+.botao-verde-escuro {
+  background-color: #00695C;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+h1{
+  color: #00695C;
+}
+
+h2{
+  color: #00695C;
+}
+
+.topo{
+   background-color: #00695C;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Controle Global de Cursores (Editor de Texto vs. Arrastar/Mover Item)
+   ========================================================================== */
+
+/* 1. Sempre exibir o cursor em modo editor de texto (I-beam) ao passar o mouse 
+      em campos ou áreas de digitação de texto, não herdando o 'hand' (cursor-grab/move)
+      dos itens ou cartões arrastáveis */
+input:not([type]),
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"],
+textarea,
+[contenteditable="true"],
+[contenteditable="true"] *,
+.editor-content,
+.editor-content *,
+.editor-content p,
+.editor-content div,
+.editor-content td,
+.editor-content th,
+.editor-content span,
+.editor-content li,
+.editor-content blockquote,
+.editor-content h1,
+.editor-content h2,
+.editor-content h3,
+.editor-content h4,
+.editor-content h5,
+.editor-content h6,
+.editor-content b,
+.editor-content strong,
+.editor-content i,
+.editor-content em,
+.editor-content u {
+  cursor: text !important;
+}
+
+/* 2. Exceções que devem manter o cursor hand/pointer ou default dentro/fora das áreas editáveis */
+.editor-content a,
+.editor-content a *,
+.editor-content .footnote-ref,
+button,
+button *,
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+[role="button"] {
+  cursor: pointer !important;
+}
+
+.editor-content img {
+  cursor: default !important;
+}
+
+.print-only-page-numbers {
+  display: none;
+}
+
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 20mm 15mm;
+  }
+  @page landscape {
+    size: A4 landscape;
+    margin: 20mm 15mm;
+  }
+  .print-landscape-page {
+    page: landscape !important;
+    page-break-before: always;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-only-page-numbers {
+    display: block !important;
+  }
+
+  .preview-container .portrait,
+  .preview-container .landscape,
+  .page {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .preview-container .capa-page {
+    min-height: 257mm !important; /* 297mm (A4) - 40mm (top+bottom margins) */
+    max-height: 257mm !important;
+    height: 257mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Margens laterais do relatório: 1,5 cm (15 mm) */
+.preview-container .portrait {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 15mm !important;
+  box-sizing: border-box !important;
+}
+.preview-container .landscape {
+  width: 297mm;
+  min-height: 210mm;
+  padding: 20mm 15mm !important;
+  box-sizing: border-box !important;
+}
+
+/* Capa: Sem bordas nas tabelas da capa (Dados Gerais) */
+.preview-container table.tabela-capa,
+.preview-container .capa-page table,
+.pdf-page table.tabela-capa,
+.pdf-cloned-content table.tabela-capa {
+  border: none !important;
+  margin: 0 !important;
+  table-layout: auto !important;
+}
+.preview-container table.tabela-capa td,
+.preview-container table.tabela-capa th,
+.preview-container .capa-page table td,
+.preview-container .capa-page table th,
+.pdf-page table.tabela-capa td,
+.pdf-page table.tabela-capa th,
+.pdf-cloned-content table.tabela-capa td,
+.pdf-cloned-content table.tabela-capa th {
+  border: none !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background-color: transparent !important;
+  padding: 5px 0 !important;
+  font-weight: normal !important;
+}
+
+/* ==========================================================================
+   Estilos Padronizados para Visualização de Documentos e PDF (Citação e Tabela)
+   ========================================================================== */
+
+/* Citações (Blockquote) na Visualização e PDF */
+.preview-container blockquote,
+.preview-container .texto-comum blockquote,
+.pdf-page blockquote,
+.pdf-page .texto-comum blockquote,
+.pdf-cloned-content blockquote,
+.pdf-cloned-content .texto-comum blockquote,
+.ca-preview-page blockquote,
+.sa-preview-page blockquote {
+  border-left: 4px solid #cbd5e1 !important;
+  padding: 12px 16px !important;
+  color: #475569 !important;
+  font-style: italic !important;
+  margin: 16px 0 !important;
+  background-color: #f8fafc !important;
+  border-radius: 4px !important;
+  text-align: justify !important;
+  display: block !important;
+}
+
+.preview-container blockquote *,
+.preview-container .texto-comum blockquote *,
+.pdf-page blockquote *,
+.pdf-page .texto-comum blockquote *,
+.pdf-cloned-content blockquote *,
+.pdf-cloned-content .texto-comum blockquote *,
+.ca-preview-page blockquote *,
+.sa-preview-page blockquote * {
+  color: #475569 !important;
+  font-style: italic !important;
+  font-family: 'Calibri', sans-serif !important;
+}
+
+/* Tabelas na Visualização e PDF - Sempre alinhadas com o texto e dentro da página */
+.preview-container table,
+.preview-container .texto-comum table,
+.pdf-page table,
+.pdf-page .texto-comum table,
+.pdf-cloned-content table,
+.pdf-cloned-content .texto-comum table,
+.ca-preview-page table,
+.sa-preview-page table {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 15px 0 20px 0 !important;
+  table-layout: fixed !important;
+  font-size: 9pt !important;
+  border: 1px solid #cbd5e1 !important;
+  box-sizing: border-box !important;
+}
+
+.preview-container table th,
+.preview-container .texto-comum table th,
+.pdf-page table th,
+.pdf-page .texto-comum table th,
+.pdf-cloned-content table th,
+.pdf-cloned-content .texto-comum table th,
+.ca-preview-page table th,
+.sa-preview-page table th {
+  border: 1px solid #cbd5e1 !important;
+  padding: 6px 8px !important;
+  background-color: #f1f5f9 !important;
+  font-weight: bold !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+  color: #1e293b !important;
+  font-size: 9pt !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.preview-container table th *,
+.preview-container .texto-comum table th *,
+.pdf-page table th *,
+.pdf-page .texto-comum table th *,
+.pdf-cloned-content table th *,
+.pdf-cloned-content .texto-comum table th *,
+.ca-preview-page table th *,
+.sa-preview-page table th * {
+  font-weight: bold !important;
+  color: #1e293b !important;
+  text-align: left !important;
+  font-size: 9pt !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.preview-container table td,
+.preview-container .texto-comum table td,
+.pdf-page table td,
+.pdf-page .texto-comum table td,
+.pdf-cloned-content table td,
+.pdf-cloned-content .texto-comum table td,
+.ca-preview-page table td,
+.sa-preview-page table td {
+  border: 1px solid #cbd5e1 !important;
+  padding: 6px 8px !important;
+  vertical-align: top !important;
+  text-align: left !important;
+  line-height: 1.35 !important;
+  color: #0f172a !important;
+  font-size: 9pt !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.preview-container table td *,
+.preview-container .texto-comum table td *,
+.pdf-page table td *,
+.pdf-page .texto-comum table td *,
+.pdf-cloned-content table td *,
+.pdf-cloned-content .texto-comum table td *,
+.ca-preview-page table td *,
+.sa-preview-page table td * {
+  text-align: left !important;
+  line-height: 1.35 !important;
+  color: #0f172a !important;
+  font-size: 9pt !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.preview-container table thead td,
+.preview-container table thead th,
+.preview-container table tr:first-child th,
+.preview-container .texto-comum table thead td,
+.preview-container .texto-comum table thead th,
+.preview-container .texto-comum table tr:first-child th,
+.pdf-page table thead td,
+.pdf-page table thead th,
+.pdf-page table tr:first-child th,
+.pdf-cloned-content table thead td,
+.pdf-cloned-content table thead th,
+.pdf-cloned-content table tr:first-child th,
+.ca-preview-page table thead td,
+.ca-preview-page table thead th,
+.sa-preview-page table thead td,
+.sa-preview-page table thead th {
+  background-color: #f1f5f9 !important;
+  font-weight: bold !important;
+  color: #1e293b !important;
+}
+
+
+
+
+
+
+
+/* Editor image styles for visualization */
+.preview-container .custom-image-figure,
+.texto-comum .custom-image-figure,
+.pdf-page .custom-image-figure,
+.pdf-cloned-content .custom-image-figure,
+.ca-preview-page .custom-image-figure,
+.sa-preview-page .custom-image-figure {
+  max-width: max-content;
+  margin: 16px auto;
+  display: block;
+  text-align: center !important;
+}
+
+.preview-container .img-caption, .preview-container .img-caption *,
+.texto-comum .img-caption, .texto-comum .img-caption *,
+.pdf-page .img-caption, .pdf-page .img-caption *,
+.pdf-cloned-content .img-caption, .pdf-cloned-content .img-caption *,
+.ca-preview-page .img-caption, .ca-preview-page .img-caption *,
+.sa-preview-page .img-caption, .sa-preview-page .img-caption * { 
+  font-size: 10pt !important; 
+  color: #64748b !important; 
+  text-align: center !important;
+}
+
+.preview-container .img-title, .preview-container .img-title *,
+.texto-comum .img-title, .texto-comum .img-title *,
+.pdf-page .img-title, .pdf-page .img-title *,
+.pdf-cloned-content .img-title, .pdf-cloned-content .img-title *,
+.ca-preview-page .img-title, .ca-preview-page .img-title *,
+.sa-preview-page .img-title, .sa-preview-page .img-title * { 
+  font-size: 12pt !important; 
+  font-weight: bold !important; 
+  margin-bottom: 8px; 
+  text-align: center !important;
+}
+
+.preview-container .editor-footnotes, .preview-container .editor-footnotes *,
+.texto-comum .editor-footnotes, .texto-comum .editor-footnotes *,
+.pdf-page .editor-footnotes, .pdf-page .editor-footnotes *,
+.pdf-cloned-content .editor-footnotes, .pdf-cloned-content .editor-footnotes *,
+.ca-preview-page .editor-footnotes, .ca-preview-page .editor-footnotes *,
+.sa-preview-page .editor-footnotes, .sa-preview-page .editor-footnotes * {
+  font-size: 10pt !important;
+  color: #64748b !important;
+  text-align: justify !important;
+}
+
+/* Forced Font Sizes and Family for Document Previews */
+.texto-comum, .texto-comum p, .texto-comum div:not([class]), .texto-comum span, .texto-comum li, .texto-comum table, .texto-comum th, .texto-comum td,
+.preview-container, .preview-container p, .preview-container div:not([class]), .preview-container span, .preview-container li, .preview-container table, .preview-container th, .preview-container td,
+.pdf-page, .pdf-page p, .pdf-page div:not([class]), .pdf-page span, .pdf-page li, .pdf-page table, .pdf-page th, .pdf-page td,
+.pdf-cloned-content, .pdf-cloned-content p, .pdf-cloned-content div:not([class]), .pdf-cloned-content span, .pdf-cloned-content li, .pdf-cloned-content table, .pdf-cloned-content th, .pdf-cloned-content td,
+.ca-preview-page, .ca-preview-page p, .ca-preview-page div:not([class]), .ca-preview-page span, .ca-preview-page li, .ca-preview-page table, .ca-preview-page th, .ca-preview-page td,
+.sa-preview-page, .sa-preview-page p, .sa-preview-page div:not([class]), .sa-preview-page span, .sa-preview-page li, .sa-preview-page table, .sa-preview-page th, .sa-preview-page td {
+  font-family: "Calibri", sans-serif !important;
+  font-size: 12pt !important;
+}
+
+
+/* Override font size for cover table */
+.preview-container table.tabela-capa td,
+.preview-container table.tabela-capa th,
+.preview-container .capa-page table td,
+.preview-container .capa-page table th,
+.pdf-page table.tabela-capa td,
+.pdf-page table.tabela-capa th,
+.pdf-cloned-content table.tabela-capa td,
+.pdf-cloned-content table.tabela-capa th {
+    font-size: 12pt !important;
+}

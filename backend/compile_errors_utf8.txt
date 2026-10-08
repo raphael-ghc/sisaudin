@@ -1,0 +1,42 @@
+﻿cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+No linha:1 caractere:93
++ ... $env:HTTP_PROXY); cmd /c mvnw clean compile > compile_errors.txt 2>&1
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/C
+:/Users/usuario/.m2/wrapper/dists/apache-maven-3.9.10/a38810a491b03367137adfdfbe7d14c4/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+WARNING: Final field _cipher in class org.sonatype.plexus.components.sec.dispatcher.DefaultSecDispatcher has been 
+mutated reflectively by class org.eclipse.sisu.bean.BeanPropertyField in unnamed module @5e4c8041 (file:/C:/Users/usuar
+io/.m2/wrapper/dists/apache-maven-3.9.10/a38810a491b03367137adfdfbe7d14c4/lib/org.eclipse.sisu.inject-0.9.0.M4.jar)
+WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning
+WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------------< sisaudin:sisaudin >--------------------------
+[INFO] Building sisaudin 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] The artifact org.hibernate:hibernate-envers:pom:7.4.0.Final has been relocated to org.hibernate.orm:hibernate-envers:pom:7.4.0.Final
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ sisaudin ---
+[INFO] Deleting C:\Users\usuario\amanda\ghc\_Sisaudin2026\sisaudin\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sisaudin ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ sisaudin ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 249 source files with javac [debug parameters release 17] to target\classes
+[INFO] /C:/Users/usuario/amanda/ghc/_Sisaudin2026/sisaudin/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java: C:\Users\usuario\amanda\ghc\_Sisaudin2026\sisaudin\backend\src\main\java\sisaudin\service\cadastroBasico\FluxoDocumentoService.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/usuario/amanda/ghc/_Sisaudin2026/sisaudin/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java: Recompile with -Xlint:unchecked for details.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  24.605 s
+[INFO] Finished at: 2026-08-18T15:08:41-03:00
+[INFO] ------------------------------------------------------------------------
