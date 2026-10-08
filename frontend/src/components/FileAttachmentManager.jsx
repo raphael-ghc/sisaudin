@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, UploadCloud, X, File as FileIcon, FileText, Image as ImageIcon, Download, Search, AlertCircle, Eye, Calendar, FileArchive, ChevronDown, ChevronUp } from 'lucide-react';
+import { API_URL } from '../api/config';
 
 export default function FileAttachmentManager({ files = [], onUpload, onDelete, globalCollapseAction }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,7 +58,7 @@ export default function FileAttachmentManager({ files = [], onUpload, onDelete, 
     type: f.fileType || f.type || 'application/octet-stream',
     size: f.size || 0,
     date: f.dataHora || f.date || new Date().toISOString(),
-    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}`
+    url: f.url || `${API_URL}/anexos/download/${f.id}`
   }));
 
   const getFileIcon = (type, name) => {

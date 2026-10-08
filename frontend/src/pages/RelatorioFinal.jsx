@@ -13,6 +13,7 @@ import { getAllItensTrabalho, getItemTrabalhoById } from '../api/itemTrabalhoApi
 import { getAllGeneric } from '../api/genericApi';
 import { getAllGerencias } from '../api/gerenciaApi';
 import api from '../api/axiosInstance';
+import { API_URL } from '../api/config';
 import { getRelatorioByItemTrabalho, updateRelatorio, createEmptyRelatorio, createFromRelatorioPreliminar, getRelatorioById, updateRelatorioById } from '../api/relatorioFinalApi';
 import { getRelatorioByItemTrabalho as getRelatorioPreliminar } from '../api/relatorioPreliminarApi';
 import debounce from 'lodash.debounce';
@@ -723,7 +724,7 @@ export default function RelatorioFinal() {
   const fetchAnexos = async (itemTrabalhoId) => {
     if (!itemTrabalhoId) return;
     try {
-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
+      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
       if (res.ok) {
         const data = await res.json();
         setAnexos(data);
@@ -753,7 +754,7 @@ export default function RelatorioFinal() {
     formData.append('responsavel', 'Auditor(a)'); 
 
     try {
-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
+      const res = await fetch(`${API_URL}/anexos/upload`, {
         method: 'POST',
         body: formData
       });
@@ -772,7 +773,7 @@ export default function RelatorioFinal() {
     if (isReadOnly) return;
     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
       try {
-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
         if (res.ok) {
           setAnexos(prev => prev.filter(a => a.id !== id));
         }
@@ -3067,7 +3068,7 @@ export default function RelatorioFinal() {
                     ...f, 
                     name: f.fileName || f.name || 'Arquivo', 
                     type: f.fileType || f.type || '', 
-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
+                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
                   }));
               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';

@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE;
+import { API_BASE } from "./config";
 
 const refreshApi = axios.create({
-  baseURL: `https://sisaudin.ghc.com.br:8080/api`,
+  baseURL: `${API_BASE}/api`,
 });
 
 export default refreshApi;

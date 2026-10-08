@@ -111,7 +111,6 @@ public class AuthService {
             return new AuthResponse(true, accessToken, refreshTokenStr, null);
 
         } catch (Exception e) {
-            e.printStackTrace();
             return new AuthResponse(false, null, null, "User registration failed.");
         }
     }

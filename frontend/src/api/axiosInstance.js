@@ -2,10 +2,10 @@ import axios from "axios";
 import { refreshAccessToken } from "./authApi";
 import Swal from "sweetalert2";
 
-const API_BASE = import.meta.env.VITE_API_BASE;
+import { API_URL } from "./config";
 
 const api = axios.create({
-  baseURL: `https://sisaudin.ghc.com.br/api`,
+  baseURL: API_URL,
 });
 
 //const api = axios.create({

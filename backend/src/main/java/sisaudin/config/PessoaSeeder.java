@@ -46,18 +46,6 @@ public class PessoaSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (pessoaRepository.count() == 0) {
             seedPessoas();
-        } else {
-            // Garante que o Admin exista mesmo se a tabela já tiver outros usuários (ex: via teste manual)
-            if (pessoaRepository.findByEmail("admin@ghc.com.br") == null) {
-                Pessoa admin = new Pessoa();
-                admin.setNome("Admin");
-                admin.setEmail("admin@ghc.com.br");
-                admin.setCartaoPonto("87458");
-                admin.setStatus("ACTIVE");
-                admin.setPassword(passwordEncoder.encode("123456"));
-                admin.setRole(Pessoa.Role.SISTEMA);
-                pessoaRepository.save(admin);
-            }
         }
 
         // Garante que todas as pessoas tenham senha e role
