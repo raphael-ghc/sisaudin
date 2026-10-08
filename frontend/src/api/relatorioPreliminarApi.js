@@ -2,9 +2,10 @@ import api from './axiosInstance';
 
 const API_URL = 'https://sisaudin.ghc.com.br/api/relatorios-preliminar';
 
-export const getRelatorioByItemTrabalho = async (itemTrabalhoId) => {
+// especial = true cria um REAI quando o item ainda não tem relatório; se já tem, o tipo existente prevalece
+export const getRelatorioByItemTrabalho = async (itemTrabalhoId, especial = false) => {
     try {
-        const response = await api.get(`/relatorios-preliminar/item/${itemTrabalhoId}`);
+        const response = await api.get(`/relatorios-preliminar/item/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
         return response.data;
     } catch (error) {
         console.error('Erro ao buscar RelatorioPreliminar', error);
@@ -42,9 +43,9 @@ export const deleteRelatorio = async (id) => {
     }
 };
 
-export const createEmptyRelatorio = async () => {
+export const createEmptyRelatorio = async (especial = false) => {
     try {
-        const response = await api.post(`/relatorios-preliminar`);
+        const response = await api.post(`/relatorios-preliminar${especial ? '?especial=true' : ''}`);
         return response.data;
     } catch (error) {
         console.error('Erro ao criar RelatorioPreliminar vazio', error);

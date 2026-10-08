@@ -21,9 +21,10 @@ public class DocumentoNumeroController {
     public ResponseEntity<Map<String, Integer>> getNextNumber(
             @RequestParam String entityName, 
             @RequestParam Integer ano, 
-            @RequestParam(required = false) Long itemTrabalhoId) {
-        
-        Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId);
+            @RequestParam(required = false) Long itemTrabalhoId,
+            @RequestParam(required = false) Boolean especial) {
+
+        Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId, especial);
         
         Map<String, Integer> response = new HashMap<>();
         response.put("nextNumber", nextNumber);
@@ -37,15 +38,18 @@ public class DocumentoNumeroController {
             @RequestParam Integer ano, 
             @RequestParam Integer numero, 
             @RequestParam(required = false) Long itemTrabalhoId,
-            @RequestParam(required = false) Long currentEntityId) {
-        
-        boolean isAvailable = numeroService.checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId);
-        
+            @RequestParam(required = false) Long currentEntityId,
+            @RequestParam(required = false) Boolean especial) {
+
+        // Sem o parâmetro, o tipo (RAI/REAI) é lido do próprio relatório
+        boolean ehEspecial = numeroService.resolveEspecial(entityName, itemTrabalhoId, currentEntityId, especial);
+        boolean isAvailable = numeroService.checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId, ehEspecial);
+
         Map<String, Object> response = new HashMap<>();
         response.put("available", isAvailable);
-        
+
         if (!isAvailable) {
-            Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId);
+            Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId, ehEspecial);
             response.put("nextAvailable", nextNumber);
         }
         

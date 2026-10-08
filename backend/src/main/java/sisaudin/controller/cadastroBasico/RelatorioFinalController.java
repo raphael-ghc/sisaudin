@@ -17,8 +17,10 @@ public class RelatorioFinalController {
     private RelatorioFinalService service;
 
     @GetMapping("/item/{itemTrabalhoId}")
-    public ResponseEntity<RelatorioFinal> getRelatorio(@PathVariable Long itemTrabalhoId) {
-        RelatorioFinal relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId);
+    public ResponseEntity<RelatorioFinal> getRelatorio(
+            @PathVariable Long itemTrabalhoId,
+            @RequestParam(required = false) Boolean especial) {
+        RelatorioFinal relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId, especial);
         return ResponseEntity.ok(relatorio);
     }
 
@@ -42,13 +44,15 @@ public class RelatorioFinalController {
     }
 
     @PostMapping
-    public ResponseEntity<RelatorioFinal> createEmptyRelatorio() {
-        return ResponseEntity.ok(service.createEmpty());
+    public ResponseEntity<RelatorioFinal> createEmptyRelatorio(@RequestParam(required = false) Boolean especial) {
+        return ResponseEntity.ok(service.createEmpty(especial));
     }
 
     @PostMapping("/create-from-preliminar/{itemTrabalhoId}")
-    public ResponseEntity<RelatorioFinal> createFromRelatorioPreliminar(@PathVariable Long itemTrabalhoId) {
-        return ResponseEntity.ok(service.createFromRelatorioPreliminar(itemTrabalhoId));
+    public ResponseEntity<RelatorioFinal> createFromRelatorioPreliminar(
+            @PathVariable Long itemTrabalhoId,
+            @RequestParam(required = false) Boolean especial) {
+        return ResponseEntity.ok(service.createFromRelatorioPreliminar(itemTrabalhoId, especial));
     }
 
     @GetMapping("/{id}")

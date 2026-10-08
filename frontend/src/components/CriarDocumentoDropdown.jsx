@@ -63,6 +63,8 @@ export default function CriarDocumentoDropdown({ itemTrabalhoId, itemNome }) {
       'REUNIAO': `/reuniao?itemTrabalhoId=${itemTrabalhoId}`,
       'VISITA': `/visita?itemTrabalhoId=${itemTrabalhoId}`,
       'RELATORIO_FINAL': `/relatorio-final?itemTrabalhoId=${itemTrabalhoId}`,
+      'RELATORIO_ESPECIAL_PRELIMINAR': `/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=${itemTrabalhoId}`,
+      'RELATORIO_ESPECIAL_FINAL': `/relatorio-final?especial=true&itemTrabalhoId=${itemTrabalhoId}`,
       'NOTA_AUDITORIA_FINAL': `/nota-final?itemTrabalhoId=${itemTrabalhoId}`,
       'PLANO_ACAO_FINAL': `/plano-acao?tipo=final&itemTrabalhoId=${itemTrabalhoId}`,
       'PLANEJAMENTO': `/planejamento?itemTrabalhoId=${itemTrabalhoId}`,

@@ -5,6 +5,8 @@ import sisaudin.service.cadastroBasico.DocumentoNumeroService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import sisaudin.model.cadastroBasico.*;
 import sisaudin.repository.cadastroBasico.GerenciaRepository;
 import sisaudin.repository.cadastroBasico.ItemTrabalhoRepository;
@@ -34,33 +36,60 @@ public class RelatorioFinalService {
     @Autowired
     private GerenciaRepository gerenciaRepository;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId) {
+        return getOrCreateByItemTrabalhoId(itemTrabalhoId, null);
+    }
+
+    /**
+     * @param especial tipo pedido na criação (true = REAI). Só vale quando o item não tem
+     *                 relatório preliminar; havendo preliminar, o final herda tipo e número dele.
+     */
+    public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
         Optional<RelatorioFinal> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
         if (existing.isPresent()) {
             return existing.get();
         }
-        return createFromRelatorioPreliminar(itemTrabalhoId);
+        return createFromRelatorioPreliminar(itemTrabalhoId, especial);
     }
 
-    @org.springframework.transaction.annotation.Transactional
-    public RelatorioFinal createFromRelatorioPreliminar(Long itemTrabalhoId) {
+    public RelatorioFinal createFromRelatorioPreliminar(Long itemTrabalhoId, Boolean especial) {
+        // A transação fica dentro da reserva, para o número já estar gravado quando ela for liberada
+        return numeroService.executarComNumeroReservado(() ->
+                new TransactionTemplate(transactionManager).execute(status -> criarParaItemTrabalho(itemTrabalhoId, especial)));
+    }
+
+    private RelatorioFinal criarParaItemTrabalho(Long itemTrabalhoId, Boolean especial) {
         ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
                 .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
 
         RelatorioFinal novoRelatorio = RelatorioFinal.builder()
                 .itemTrabalho(itemTrabalho)
                 .build();
-                
+
         // Clonar dados do relatório preliminar
         Optional<RelatorioPreliminar> preliminarOpt = preliminarRepository.findByItemTrabalho_Id(itemTrabalhoId);
+        if (preliminarOpt.isEmpty() || preliminarOpt.get().getNumero() == null) {
+            // Sem preliminar numerado: recebe o próximo número da sequência do tipo escolhido
+            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial())).orElse(Boolean.TRUE.equals(especial));
+            Integer anoAtual = LocalDate.now().getYear();
+            novoRelatorio.setEspecial(ehEspecial);
+            novoRelatorio.setAno(anoAtual);
+            novoRelatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, itemTrabalhoId, ehEspecial));
+        }
         if (preliminarOpt.isPresent()) {
             RelatorioPreliminar preliminar = preliminarOpt.get();
+            novoRelatorio.setEspecial(Boolean.TRUE.equals(preliminar.getEspecial()));
             novoRelatorio.setIntroducao(preliminar.getIntroducao());
             novoRelatorio.setConsideracoes(preliminar.getConsideracoes());
             novoRelatorio.setDataInicial(preliminar.getDataInicial());
             novoRelatorio.setDataFinal(preliminar.getDataFinal());
-            novoRelatorio.setAno(preliminar.getAno());
-            novoRelatorio.setNumero(preliminar.getNumero());
+            if (preliminar.getNumero() != null) {
+                novoRelatorio.setAno(preliminar.getAno());
+                novoRelatorio.setNumero(preliminar.getNumero());
+            }
 
             novoRelatorio.setPlanObjetivo(preliminar.getPlanObjetivo());
             novoRelatorio.setPlanRiscos(preliminar.getPlanRiscos());
@@ -145,7 +174,7 @@ public class RelatorioFinalService {
     }
 
     public RelatorioFinal saveOrUpdate(RelatorioFinal dto, Long itemTrabalhoId) {
-        RelatorioFinal relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId);
+        RelatorioFinal relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId, dto.getEspecial());
         
         if (dto.getIntroducao() != null) relatorio.setIntroducao(dto.getIntroducao());
         if (dto.getConsideracoes() != null) relatorio.setConsideracoes(dto.getConsideracoes());
@@ -216,13 +245,16 @@ public class RelatorioFinalService {
         repository.deleteById(id);
     }
 
-    public RelatorioFinal createEmpty() {
-        RelatorioFinal relatorio = RelatorioFinal.builder().build();
-        
-        Integer anoAtual = LocalDate.now().getYear();
-        relatorio.setAno(anoAtual);
-        relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, null));
-        return repository.save(relatorio);
+    public RelatorioFinal createEmpty(Boolean especial) {
+        boolean ehEspecial = Boolean.TRUE.equals(especial);
+        return numeroService.executarComNumeroReservado(() -> {
+            RelatorioFinal relatorio = RelatorioFinal.builder().especial(ehEspecial).build();
+
+            Integer anoAtual = LocalDate.now().getYear();
+            relatorio.setAno(anoAtual);
+            relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, null, ehEspecial));
+            return repository.save(relatorio);
+        });
     }
 
     public RelatorioFinal findById(Long id) {

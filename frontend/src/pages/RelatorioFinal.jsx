@@ -543,6 +543,10 @@ export default function RelatorioFinal() {
   const [dataFinal, setDataFinal] = useState('');
   const [ano, setAno] = useState('');
   const [numero, setNumero] = useState('');
+  // REAI (Relatório Especial): pedido pela URL na criação; depois vale o que está gravado no relatório
+  const especialParam = searchParams.get('especial') === 'true';
+  const [especial, setEspecial] = useState(especialParam);
+  const siglaRelatorio = especial ? 'REAI' : 'RAI';
   const [gerenciasDestinatarias, setGerenciasDestinatarias] = useState([]);
 
   const selectedItemData = itensTrabalhoList.find(i => i.id === selectedItemTrabalhoId);
@@ -574,14 +578,13 @@ export default function RelatorioFinal() {
   useEffect(() => {
     // Altera a aba do navegador e o cabeçalho de impressão
     const tituloOriginal = document.title;
-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'RAI';
-      document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
+      document.title = `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
 
     return () => {
       // Restaura o título quando o usuário sair da tela
       document.title = tituloOriginal;
     };
-  }, [numero, ano]);
+  }, [numero, ano, siglaRelatorio]);
 
   // Anexos Finais
   const [anexosFinais, setAnexosFinais] = useState([]);
@@ -934,7 +937,7 @@ export default function RelatorioFinal() {
                 relRes = await getRelatorioById(relatorioId);
             } else if (itemTrabalhoIdParam) {
                 try {
-                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam);
+                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam, especialParam);
                 } catch (e) {
                     relRes = null;
                 }
@@ -942,12 +945,12 @@ export default function RelatorioFinal() {
             if (!relRes) {
                 if (itemTrabalhoIdParam) {
                     try {
-                        relRes = await createFromRelatorioPreliminar(itemTrabalhoIdParam);
+                        relRes = await createFromRelatorioPreliminar(itemTrabalhoIdParam, especialParam);
                     } catch (e) {
-                        relRes = await createEmptyRelatorio();
+                        relRes = await createEmptyRelatorio(especialParam);
                     }
                 } else {
-                    relRes = await createEmptyRelatorio();
+                    relRes = await createEmptyRelatorio(especialParam);
                 }
 
                 if (relRes && relRes.id) {
@@ -983,6 +986,7 @@ export default function RelatorioFinal() {
                 setDataFinal(relRes.dataFinal || '');
                 setAno(relRes.ano || '');
                 setNumero(relRes.numero || '');
+                setEspecial(!!relRes.especial);
                 if (relRes.gerenciasDestinatarias) {
                     setGerenciasDestinatarias(relRes.gerenciasDestinatarias);
                 }
@@ -1535,8 +1539,8 @@ export default function RelatorioFinal() {
   };
 
   const codRelatorioStr = numero || ano 
-    ? `RAI ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}` 
-    : (selectedItemData ? `RAI ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : 'RAI 00/0000');
+    ? `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}`
+    : (selectedItemData ? `${siglaRelatorio} ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : `${siglaRelatorio} 00/0000`);
 
   return (
     <div className="flex flex-col flex-1 h-full bg-slate-100 font-sans overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
@@ -1552,7 +1556,7 @@ export default function RelatorioFinal() {
             <FileText className="text-blue-900" size={24} />
             <div>
               <h1 className="text-xl font-bold text-gray-900 leading-tight">Auditoria Interna - GHC</h1>
-              <p className="text-xs text-gray-500 font-semibold text-blue-800 bg-blue-50 inline-block px-1.5 py-0.5 rounded mt-0.5">Relatório de Auditoria Interna - Final</p>
+              <p className="text-xs text-gray-500 font-semibold text-blue-800 bg-blue-50 inline-block px-1.5 py-0.5 rounded mt-0.5">{especial ? 'Relatório Especial' : 'Relatório'} de Auditoria Interna - Final</p>
             </div>
           </div>
           
@@ -2685,7 +2689,7 @@ export default function RelatorioFinal() {
                     <img src={imgCabecalho} alt="GHC Cabeçalho" style={{ width: '100%', height: 'auto', objectFit: 'contain', maxHeight: '180px' }} />
                 </div>
                 
-                <h1 style={{ fontSize: '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>Relatório de Auditoria<br/>Interna</h1>
+                <h1 style={{ fontSize: especial ? '48pt' : '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>{especial ? <>Relatório Especial de<br/>Auditoria Interna</> : <>Relatório de Auditoria<br/>Interna</>}</h1>
                 <p style={{ fontSize: '12pt', fontWeight: 'bold', color: '#718096', marginTop: '15px', marginBottom: '30px' }}>Versão Final</p>
                 <div style={{ fontSize: '36pt', fontWeight: 'bold', color: '#000', fontFamily: '"Times New Roman", Times, serif', margin: 0, border: 'none', background: 'none', padding: 0 }}>{codRelatorioStr}</div>
                 <hr style={{ border: 0, borderTop: '3px solid #000', margin: '10px 0', width: '100%' }} />
@@ -3125,7 +3129,7 @@ export default function RelatorioFinal() {
       <DocumentPdfViewerModal
         isOpen={showPdfModal}
         onClose={() => setShowPdfModal(false)}
-        docTitle={`Relatório de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
+        docTitle={`${especial ? 'Relatório Especial' : 'Relatório'} de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
       />
     </div>
   );

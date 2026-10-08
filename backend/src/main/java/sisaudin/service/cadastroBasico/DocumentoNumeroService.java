@@ -3,11 +3,10 @@ package sisaudin.service.cadastroBasico;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityManager;
-import sisaudin.model.cadastroBasico.ItemTrabalho;
-import sisaudin.repository.cadastroBasico.ItemTrabalhoRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Service
 public class DocumentoNumeroService {
@@ -15,20 +14,24 @@ public class DocumentoNumeroService {
     @Autowired
     private EntityManager entityManager;
 
-    @Autowired
-    private ItemTrabalhoRepository itemTrabalhoRepository;
+    private static boolean isRelatorio(String entityName) {
+        return entityName.equals("RelatorioPreliminar") || entityName.equals("RelatorioFinal");
+    }
 
     /**
-     * Determina o grupo lógico de numeração baseado na entidade e no ItemTrabalho.
+     * Executa o cálculo do próximo número e a gravação do documento sem concorrência,
+     * para que duas criações simultâneas não recebam o mesmo número.
      */
-    public String determineSequenceGroup(String entityName, Long itemTrabalhoId) {
-        if (itemTrabalhoId != null && (entityName.equals("RelatorioPreliminar") || entityName.equals("RelatorioFinal"))) {
-            ItemTrabalho item = itemTrabalhoRepository.findById(itemTrabalhoId).orElse(null);
-            if (item != null && item.getSigla() != null && item.getSigla().toUpperCase().contains("EXTRA")) {
-                return "REAI";
-            }
-            return "RAI";
-        }
+    public synchronized <T> T executarComNumeroReservado(Supplier<T> acao) {
+        return acao.get();
+    }
+
+    /**
+     * Determina o grupo lógico de numeração baseado na entidade.
+     * Relatórios têm duas sequências: RAI (comum) e REAI (especial).
+     */
+    public String determineSequenceGroup(String entityName, boolean especial) {
+        if (isRelatorio(entityName)) return especial ? "REAI" : "RAI";
         if (entityName.equals("NotaPreliminar") || entityName.equals("NotaFinal")) return "NA";
         if (entityName.equals("PlanoAcaoPreliminar") || entityName.equals("PlanoAcaoFinal")) return "PA";
         if (entityName.equals("Planejamento") || entityName.equals("MatrizAchados")) return "PLANEJAMENTO";
@@ -42,11 +45,43 @@ public class DocumentoNumeroService {
     }
 
     /**
+     * Descobre se o relatório é especial (REAI) quando o chamador não informa:
+     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho.
+     */
+    public boolean resolveEspecial(String entityName, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
+        if (!isRelatorio(entityName)) return false;
+        if (especial != null) return especial;
+
+        if (currentEntityId != null) {
+            List<Boolean> r = entityManager.createQuery(
+                            "SELECT d.especial FROM " + entityName + " d WHERE d.id = :id", Boolean.class)
+                    .setParameter("id", currentEntityId)
+                    .getResultList();
+            if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
+        }
+        if (itemTrabalhoId != null) {
+            for (String table : List.of("RelatorioPreliminar", "RelatorioFinal")) {
+                List<Boolean> r = entityManager.createQuery(
+                                "SELECT d.especial FROM " + table + " d WHERE d.itemTrabalho.id = :itemId", Boolean.class)
+                        .setParameter("itemId", itemTrabalhoId)
+                        .setMaxResults(1)
+                        .getResultList();
+                if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
+            }
+        }
+        return false;
+    }
+
+    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId) {
+        return getNextAvailableNumber(entityName, ano, itemTrabalhoId, null);
+    }
+
+    /**
      * Obtém o próximo número disponível para um grupo de sequência.
      * Se o documento fizer parte de um par (ex: NotaPreliminar/NotaFinal) no mesmo ItemTrabalho, herda o número.
      */
-    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId) {
-        String group = determineSequenceGroup(entityName, itemTrabalhoId);
+    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId, Boolean especial) {
+        String group = determineSequenceGroup(entityName, resolveEspecial(entityName, itemTrabalhoId, null, especial));
 
         if (itemTrabalhoId != null) {
             Integer existingNumber = findExistingNumberInSameItemTrabalho(group, itemTrabalhoId);
@@ -58,13 +93,17 @@ public class DocumentoNumeroService {
         return getMaxNumberFromSequenceGroup(group, ano) + 1;
     }
 
+    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId) {
+        return checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId, null);
+    }
+
     /**
      * Verifica se o número desejado já está em uso por OUTRO item no mesmo grupo.
      * (Se for o MESMO itemTrabalho, e o número já é compartilhado, retorna true - ou seja, está disponível para ele).
      */
-    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId) {
-        String group = determineSequenceGroup(entityName, itemTrabalhoId);
-        
+    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
+        String group = determineSequenceGroup(entityName, resolveEspecial(entityName, itemTrabalhoId, currentEntityId, especial));
+
         // Se no mesmo ItemTrabalho já existe ESSE número para o mesmo grupo, então ele tem o direito de usá-lo.
         if (itemTrabalhoId != null) {
             Integer existingNumber = findExistingNumberInSameItemTrabalho(group, itemTrabalhoId);
@@ -77,25 +116,18 @@ public class DocumentoNumeroService {
         List<String> tables = getTablesForGroup(group);
         for (String table : tables) {
             String query = "SELECT COUNT(d) FROM " + table + " d WHERE d.ano = :ano AND d.numero = :numero";
-            
+
             // Se a tabela atual é a que estamos validando, excluímos o ID atual para permitir update sem conflito consigo mesmo
             if (table.equals(entityName) && currentEntityId != null) {
                 query += " AND d.id != " + currentEntityId;
             }
-            // Filtro de RAI / REAI
-            if (table.equals("RelatorioPreliminar") || table.equals("RelatorioFinal")) {
-                if (group.equals("REAI")) {
-                    query += " AND d.itemTrabalho.sigla LIKE '%EXTRA%'";
-                } else if (group.equals("RAI")) {
-                    query += " AND d.itemTrabalho.sigla NOT LIKE '%EXTRA%'";
-                }
-            }
+            query += filtroEspecial(group);
 
             Long count = entityManager.createQuery(query, Long.class)
                     .setParameter("ano", ano)
                     .setParameter("numero", numero)
                     .getSingleResult();
-            
+
             if (count > 0) {
                 return false; // Alguém já está usando
             }
@@ -103,10 +135,17 @@ public class DocumentoNumeroService {
         return true;
     }
 
+    // Separa as sequências RAI e REAI, que dividem as mesmas tabelas
+    private String filtroEspecial(String group) {
+        if (group.equals("REAI")) return " AND d.especial = true";
+        if (group.equals("RAI")) return " AND (d.especial = false OR d.especial IS NULL)";
+        return "";
+    }
+
     private Integer findExistingNumberInSameItemTrabalho(String group, Long itemId) {
         List<String> tables = getTablesForGroup(group);
         for (String table : tables) {
-            String query = "SELECT d.numero FROM " + table + " d WHERE d.itemTrabalho.id = :itemId AND d.numero IS NOT NULL";
+            String query = "SELECT d.numero FROM " + table + " d WHERE d.itemTrabalho.id = :itemId AND d.numero IS NOT NULL" + filtroEspecial(group);
             List<Integer> results = entityManager.createQuery(query, Integer.class)
                     .setParameter("itemId", itemId)
                     .setMaxResults(1)
@@ -121,17 +160,9 @@ public class DocumentoNumeroService {
     private Integer getMaxNumberFromSequenceGroup(String group, Integer ano) {
         List<String> tables = getTablesForGroup(group);
         Integer overallMax = 0;
-        
+
         for (String table : tables) {
-            String query = "SELECT MAX(d.numero) FROM " + table + " d WHERE d.ano = :ano";
-            
-            if (table.equals("RelatorioPreliminar") || table.equals("RelatorioFinal")) {
-                if (group.equals("REAI")) {
-                    query += " AND d.itemTrabalho.sigla LIKE '%EXTRA%'";
-                } else if (group.equals("RAI")) {
-                    query += " AND d.itemTrabalho.sigla NOT LIKE '%EXTRA%'";
-                }
-            }
+            String query = "SELECT MAX(d.numero) FROM " + table + " d WHERE d.ano = :ano" + filtroEspecial(group);
 
             Integer max = entityManager.createQuery(query, Integer.class)
                     .setParameter("ano", ano)

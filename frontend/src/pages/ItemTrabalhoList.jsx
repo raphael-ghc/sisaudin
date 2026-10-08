@@ -30,7 +30,7 @@ const getSiglaDocumento = (str, itemSigla = '') => {
     
     if (isRelatorio) {
       let prefix = 'RAI';
-      if (isExtra || s.includes('especial')) {
+      if (s.includes('especial')) {
         prefix = 'REAI';
       }
       if (isPreliminar) return `${prefix}-P`;
@@ -934,7 +934,7 @@ export default function ItemTrabalhoList() {
     
     if (isRelatorio) {
       let prefix = 'RAI';
-      if (isExtra || s.includes('especial')) {
+      if (s.includes('especial')) {
         prefix = 'REAI';
       }
       if (isPreliminar) return `${prefix}-P`;

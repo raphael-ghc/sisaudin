@@ -436,6 +436,10 @@ export default function RelatorioPreliminar() {
   const [dataFinal, setDataFinal] = useState('');
   const [ano, setAno] = useState('');
   const [numero, setNumero] = useState('');
+  // REAI (Relatório Especial): pedido pela URL na criação; depois vale o que está gravado no relatório
+  const especialParam = searchParams.get('especial') === 'true';
+  const [especial, setEspecial] = useState(especialParam);
+  const siglaRelatorio = especial ? 'REAI' : 'RAI';
   const [gerenciasFullList, setGerenciasFullList] = useState([]);
   const [gerenciasDestinatarias, setGerenciasDestinatarias] = useState([]);
 
@@ -467,10 +471,9 @@ export default function RelatorioPreliminar() {
   // ==========================================
   useEffect(() => {
     const tituloOriginal = document.title;
-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'RAI';
-      document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
+      document.title = `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
     return () => { document.title = tituloOriginal; };
-  }, [numero, ano]);
+  }, [numero, ano, siglaRelatorio]);
 
   // Anexos Finais
   const [anexosFinais, setAnexosFinais] = useState([]);
@@ -807,14 +810,14 @@ export default function RelatorioPreliminar() {
                 relRes = await getRelatorioById(relatorioId);
             } else if (itemTrabalhoIdParam) {
                 try {
-                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam);
+                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam, especialParam);
                 } catch (e) {
                     relRes = null;
                 }
             }
             if (!relRes) {
                 if (isReadOnly && !relatorioId) return;
-                relRes = await createEmptyRelatorio();
+                relRes = await createEmptyRelatorio(especialParam);
                 if (relRes && relRes.id) {
                     setRelatorioId(relRes.id);
                     const basePath = location.pathname.startsWith('/relatorio') ? '/relatorio' : '/RelatorioPreliminar';
@@ -848,6 +851,7 @@ export default function RelatorioPreliminar() {
                 setDataFinal(relRes.dataFinal || '');
                 setAno(relRes.ano || '');
                 setNumero(relRes.numero || '');
+                setEspecial(!!relRes.especial);
                 if (relRes.gerenciasDestinatarias) {
                     setGerenciasDestinatarias(relRes.gerenciasDestinatarias);
                 }
@@ -1522,8 +1526,8 @@ export default function RelatorioPreliminar() {
   };
 
   const codRelatorioStr = numero || ano 
-    ? `RAI ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}` 
-    : (selectedItemData ? `RAI ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : 'RAI 00/0000');
+    ? `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}`
+    : (selectedItemData ? `${siglaRelatorio} ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : `${siglaRelatorio} 00/0000`);
 
   return (
     <div className="flex flex-col flex-1 h-full bg-slate-100 font-sans overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
@@ -2559,7 +2563,7 @@ export default function RelatorioPreliminar() {
                     <img src={imgCabecalho} alt="GHC Cabeçalho" style={{ width: '100%', height: 'auto', objectFit: 'contain', maxHeight: '180px' }} />
                 </div>
                 
-                <h1 style={{ fontSize: '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>Relatório de <br/>Auditoria Interna</h1>
+                <h1 style={{ fontSize: especial ? '48pt' : '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>{especial ? 'Relatório Especial' : 'Relatório'} de <br/>Auditoria Interna</h1>
                 <h1 style={{ fontSize: '20pt', fontWeight: 'bold', color: '#718096', marginTop: '15px', marginBottom: '20px' }}>Versão Preliminar</h1>
                 <h1 style={{ fontSize: '42pt', fontWeight: 'bold', color: '#000', fontFamily: '"Times New Roman", Times, serif', margin: 0, border: 'none', background: 'none', padding: 0 }}>{codRelatorioStr}</h1>
                 <hr style={{ border: 0, borderTop: '3px solid #000', margin: '10px 0', width: '100%' }} />
@@ -2963,7 +2967,7 @@ export default function RelatorioPreliminar() {
       <DocumentPdfViewerModal
         isOpen={showPdfModal}
         onClose={() => setShowPdfModal(false)}
-        docTitle={`Relatório de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
+        docTitle={`${especial ? 'Relatório Especial' : 'Relatório'} de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
       />
     </div>
   );

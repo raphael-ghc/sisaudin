@@ -2,9 +2,10 @@ import api from './axiosInstance';
 
 const API_URL = 'https://sisaudin.ghc.com.br/api/relatorios-final';
 
-export const getRelatorioByItemTrabalho = async (itemTrabalhoId) => {
+// especial = true cria um REAI quando o item não tem relatório preliminar; havendo, o final herda o tipo dele
+export const getRelatorioByItemTrabalho = async (itemTrabalhoId, especial = false) => {
     try {
-        const response = await api.get(`/relatorios-final/item/${itemTrabalhoId}`);
+        const response = await api.get(`/relatorios-final/item/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
         return response.data;
     } catch (error) {
         console.error('Erro ao buscar RelatorioFinal', error);
@@ -42,9 +43,9 @@ export const deleteRelatorio = async (id) => {
     }
 };
 
-export const createEmptyRelatorio = async () => {
+export const createEmptyRelatorio = async (especial = false) => {
     try {
-        const response = await api.post(`/relatorios-final`);
+        const response = await api.post(`/relatorios-final${especial ? '?especial=true' : ''}`);
         return response.data;
     } catch (error) {
         console.error('Erro ao criar RelatorioFinal vazio', error);
@@ -52,9 +53,9 @@ export const createEmptyRelatorio = async () => {
     }
 };
 
-export const createFromRelatorioPreliminar = async (itemTrabalhoId) => {
+export const createFromRelatorioPreliminar = async (itemTrabalhoId, especial = false) => {
     try {
-        const response = await api.post(`/relatorios-final/create-from-preliminar/${itemTrabalhoId}`);
+        const response = await api.post(`/relatorios-final/create-from-preliminar/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
         return response.data;
     } catch (error) {
         console.error('Erro ao criar relatorio final a partir do preliminar', error);

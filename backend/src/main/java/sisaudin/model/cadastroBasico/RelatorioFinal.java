@@ -24,6 +24,10 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class RelatorioFinal extends Documento {
 
+    // false = RAI (Relatório de Auditoria Interna); true = REAI (Relatório Especial de Auditoria Interna)
+    @Builder.Default
+    private Boolean especial = false;
+
     @Column(columnDefinition = "LONGTEXT")
     private String introducao;
 

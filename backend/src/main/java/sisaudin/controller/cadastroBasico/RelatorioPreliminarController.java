@@ -17,8 +17,10 @@ public class RelatorioPreliminarController {
     private RelatorioPreliminarService service;
 
     @GetMapping("/item/{itemTrabalhoId}")
-    public ResponseEntity<RelatorioPreliminar> getRelatorio(@PathVariable Long itemTrabalhoId) {
-        RelatorioPreliminar relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId);
+    public ResponseEntity<RelatorioPreliminar> getRelatorio(
+            @PathVariable Long itemTrabalhoId,
+            @RequestParam(required = false) Boolean especial) {
+        RelatorioPreliminar relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId, especial);
         return ResponseEntity.ok(relatorio);
     }
 
@@ -42,8 +44,8 @@ public class RelatorioPreliminarController {
     }
 
     @PostMapping
-    public ResponseEntity<RelatorioPreliminar> createEmptyRelatorio() {
-        return ResponseEntity.ok(service.createEmpty());
+    public ResponseEntity<RelatorioPreliminar> createEmptyRelatorio(@RequestParam(required = false) Boolean especial) {
+        return ResponseEntity.ok(service.createEmpty(especial));
     }
 
     @GetMapping("/{id}")

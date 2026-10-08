@@ -1,0 +1,359 @@
+diff --git a/frontend/.env.development b/frontend/.env.development
+new file mode 100644
+index 0000000..4ff86a8
+--- /dev/null
++++ b/frontend/.env.development
+@@ -0,0 +1,2 @@
++VITE_API_BASE = "http://localhost:8080"
++VITE_API_URL = "http://localhost:8080/api"
+diff --git a/frontend/src/api/axiosInstance.js b/frontend/src/api/axiosInstance.js
+index 4f53d14..bdbef4d 100644
+--- a/frontend/src/api/axiosInstance.js
++++ b/frontend/src/api/axiosInstance.js
+@@ -2,10 +2,10 @@ import axios from "axios";
+ import { refreshAccessToken } from "./authApi";
+ import Swal from "sweetalert2";
+ 
+-const API_BASE = import.meta.env.VITE_API_BASE;
++import { API_URL } from "./config";
+ 
+ const api = axios.create({
+-  baseURL: `https://sisaudin.ghc.com.br/api`,
++  baseURL: API_URL,
+ });
+ 
+ //const api = axios.create({
+diff --git a/frontend/src/api/config.js b/frontend/src/api/config.js
+new file mode 100644
+index 0000000..52ee6a0
+--- /dev/null
++++ b/frontend/src/api/config.js
+@@ -0,0 +1,4 @@
++// Endereços do backend. Em desenvolvimento vêm do .env.development;
++// sem as variáveis definidas, valem os endereços de produção.
++export const API_BASE = import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080';
++export const API_URL = import.meta.env.VITE_API_URL || 'https://sisaudin.ghc.com.br/api';
+diff --git a/frontend/src/api/refreshAxiosInstance.js b/frontend/src/api/refreshAxiosInstance.js
+index 12a7b37..50a75d4 100644
+--- a/frontend/src/api/refreshAxiosInstance.js
++++ b/frontend/src/api/refreshAxiosInstance.js
+@@ -1,9 +1,9 @@
+ import axios from "axios";
+ 
+-const API_BASE = import.meta.env.VITE_API_BASE;
++import { API_BASE } from "./config";
+ 
+ const refreshApi = axios.create({
+-  baseURL: `https://sisaudin.ghc.com.br:8080/api`,
++  baseURL: `${API_BASE}/api`,
+ });
+ 
+ export default refreshApi;
+diff --git a/frontend/src/components/FileAttachmentManager.jsx b/frontend/src/components/FileAttachmentManager.jsx
+index 9ec03d4..eceaa45 100644
+--- a/frontend/src/components/FileAttachmentManager.jsx
++++ b/frontend/src/components/FileAttachmentManager.jsx
+@@ -1,5 +1,6 @@
+ import React, { useState, useRef, useEffect } from 'react';
+ import { Paperclip, UploadCloud, X, File as FileIcon, FileText, Image as ImageIcon, Download, Search, AlertCircle, Eye, Calendar, FileArchive, ChevronDown, ChevronUp } from 'lucide-react';
++import { API_URL } from '../api/config';
+ 
+ export default function FileAttachmentManager({ files = [], onUpload, onDelete, globalCollapseAction }) {
+   const [isExpanded, setIsExpanded] = useState(false);
+@@ -57,7 +58,7 @@ export default function FileAttachmentManager({ files = [], onUpload, onDelete,
+     type: f.fileType || f.type || 'application/octet-stream',
+     size: f.size || 0,
+     date: f.dataHora || f.date || new Date().toISOString(),
+-    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}`
++    url: f.url || `${API_URL}/anexos/download/${f.id}`
+   }));
+ 
+   const getFileIcon = (type, name) => {
+diff --git a/frontend/src/pages/NotaFinal.jsx b/frontend/src/pages/NotaFinal.jsx
+index 2295033..8378baf 100644
+--- a/frontend/src/pages/NotaFinal.jsx
++++ b/frontend/src/pages/NotaFinal.jsx
+@@ -13,6 +13,7 @@ import { getAllItensTrabalho, getItemTrabalhoById } from '../api/itemTrabalhoApi
+ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import { getRelatorioByItemTrabalho, updateRelatorio, createEmptyRelatorio, createFromRelatorioPreliminar, getRelatorioById, updateRelatorioById } from '../api/notaFinalApi';
+ import { getRelatorioByItemTrabalho as getRelatorioPreliminar } from '../api/notaPreliminarApi';
+ import debounce from 'lodash.debounce';
+@@ -723,7 +724,7 @@ export default function NotaFinal() {
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Nota%20de%20Auditoria`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Nota%20de%20Auditoria`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -753,7 +754,7 @@ export default function NotaFinal() {
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -772,7 +773,7 @@ export default function NotaFinal() {
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -2980,7 +2981,7 @@ export default function NotaFinal() {
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';
+diff --git a/frontend/src/pages/NotaPreliminar.jsx b/frontend/src/pages/NotaPreliminar.jsx
+index 28883a6..6640b4c 100644
+--- a/frontend/src/pages/NotaPreliminar.jsx
++++ b/frontend/src/pages/NotaPreliminar.jsx
+@@ -14,6 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/notaPreliminarApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -571,7 +572,7 @@ export default function NotaPreliminar() {
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Nota%20de%20Auditoria`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Nota%20de%20Auditoria`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -601,7 +602,7 @@ export default function NotaPreliminar() {
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -620,7 +621,7 @@ export default function NotaPreliminar() {
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -2748,7 +2749,7 @@ export default function NotaPreliminar() {
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';
+diff --git a/frontend/src/pages/NotaTecnica.jsx b/frontend/src/pages/NotaTecnica.jsx
+index afa0f3e..e511db1 100644
+--- a/frontend/src/pages/NotaTecnica.jsx
++++ b/frontend/src/pages/NotaTecnica.jsx
+@@ -14,6 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/notaTecnicaApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -548,7 +549,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Nota%20Tecnica`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Nota%20Tecnica`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -578,7 +579,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -597,7 +598,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -2235,7 +2236,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';
+diff --git a/frontend/src/pages/Parecer.jsx b/frontend/src/pages/Parecer.jsx
+index da102b5..8dcdcc6 100644
+--- a/frontend/src/pages/Parecer.jsx
++++ b/frontend/src/pages/Parecer.jsx
+@@ -14,6 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/parecerApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -557,7 +558,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Parecer%20de%20Auditoria`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Parecer%20de%20Auditoria`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -587,7 +588,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -606,7 +607,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -2638,7 +2639,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';
+diff --git a/frontend/src/pages/RelatorioFinal.jsx b/frontend/src/pages/RelatorioFinal.jsx
+index 04b1281..0610782 100644
+--- a/frontend/src/pages/RelatorioFinal.jsx
++++ b/frontend/src/pages/RelatorioFinal.jsx
+@@ -13,6 +13,7 @@ import { getAllItensTrabalho, getItemTrabalhoById } from '../api/itemTrabalhoApi
+ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import { getRelatorioByItemTrabalho, updateRelatorio, createEmptyRelatorio, createFromRelatorioPreliminar, getRelatorioById, updateRelatorioById } from '../api/relatorioFinalApi';
+ import { getRelatorioByItemTrabalho as getRelatorioPreliminar } from '../api/relatorioPreliminarApi';
+ import debounce from 'lodash.debounce';
+@@ -723,7 +724,7 @@ export default function RelatorioFinal() {
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -753,7 +754,7 @@ export default function RelatorioFinal() {
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -772,7 +773,7 @@ export default function RelatorioFinal() {
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -3067,7 +3068,7 @@ export default function RelatorioFinal() {
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';
+diff --git a/frontend/src/pages/RelatorioPreliminar.jsx b/frontend/src/pages/RelatorioPreliminar.jsx
+index 188a68d..60e7861 100644
+--- a/frontend/src/pages/RelatorioPreliminar.jsx
++++ b/frontend/src/pages/RelatorioPreliminar.jsx
+@@ -14,6 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/relatorioPreliminarApi';
+ import api from '../api/axiosInstance';
++import { API_URL } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -596,7 +597,7 @@ export default function RelatorioPreliminar() {
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+     try {
+-      const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
++      const res = await fetch(`${API_URL}/anexos/item/${itemTrabalhoId}?documento=Relatório%20de%20Auditoria`);
+       if (res.ok) {
+         const data = await res.json();
+         setAnexos(data);
+@@ -626,7 +627,7 @@ export default function RelatorioPreliminar() {
+     formData.append('responsavel', 'Auditor(a)'); 
+ 
+     try {
+-      const res = await fetch('https://sisaudin.ghc.com.br/api/anexos/upload', {
++      const res = await fetch(`${API_URL}/anexos/upload`, {
+         method: 'POST',
+         body: formData
+       });
+@@ -645,7 +646,7 @@ export default function RelatorioPreliminar() {
+     if (isReadOnly) return;
+     if (window.confirm('Tem certeza que deseja excluir este anexo?')) {
+       try {
+-        const res = await fetch(`https://sisaudin.ghc.com.br/api/anexos/${id}`, { method: 'DELETE' });
++        const res = await fetch(`${API_URL}/anexos/${id}`, { method: 'DELETE' });
+         if (res.ok) {
+           setAnexos(prev => prev.filter(a => a.id !== id));
+         }
+@@ -2907,7 +2908,7 @@ export default function RelatorioPreliminar() {
+                     ...f, 
+                     name: f.fileName || f.name || 'Arquivo', 
+                     type: f.fileType || f.type || '', 
+-                    url: f.url || `https://sisaudin.ghc.com.br/api/anexos/download/${f.id}` 
++                    url: f.url || `${API_URL}/anexos/download/${f.id}` 
+                   }));
+               const isPdf = anexo.tipo === 'arquivo' && allFiles.some(f => f.type && f.type === 'application/pdf');
+               const orientationClass = (isPdf && anexo.orientacao === 'paisagem') ? 'landscape' : 'portrait';

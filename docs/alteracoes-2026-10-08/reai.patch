@@ -1,0 +1,992 @@
+diff --git a/backend/src/main/java/sisaudin/config/RelatorioEspecialMigration.java b/backend/src/main/java/sisaudin/config/RelatorioEspecialMigration.java
+new file mode 100644
+index 0000000..77d64d1
+--- /dev/null
++++ b/backend/src/main/java/sisaudin/config/RelatorioEspecialMigration.java
+@@ -0,0 +1,37 @@
++package sisaudin.config;
++
++import jakarta.persistence.EntityManager;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.CommandLineRunner;
++import org.springframework.stereotype.Component;
++import org.springframework.transaction.annotation.Transactional;
++
++/**
++ * Preenche o campo "especial" dos relatórios criados antes de ele existir.
++ * Até então o REAI era deduzido da sigla do item de trabalho (contendo "EXTRA"),
++ * então essa mesma regra é usada para classificar os relatórios antigos.
++ * Só toca em registros com o campo nulo; depois da primeira execução não altera nada.
++ */
++@Component
++public class RelatorioEspecialMigration implements CommandLineRunner {
++
++    @Autowired
++    private EntityManager entityManager;
++
++    @Override
++    @Transactional
++    public void run(String... args) {
++        for (String entidade : new String[]{"RelatorioPreliminar", "RelatorioFinal"}) {
++            int especiais = entityManager.createQuery(
++                    "UPDATE " + entidade + " r SET r.especial = true WHERE r.especial IS NULL " +
++                    "AND r.itemTrabalho.id IN (SELECT i.id FROM ItemTrabalho i WHERE UPPER(i.sigla) LIKE '%EXTRA%')")
++                    .executeUpdate();
++            int comuns = entityManager.createQuery(
++                    "UPDATE " + entidade + " r SET r.especial = false WHERE r.especial IS NULL")
++                    .executeUpdate();
++            if (especiais + comuns > 0) {
++                System.out.println("[RelatorioEspecialMigration] " + entidade + ": " + especiais + " marcados como REAI, " + comuns + " como RAI.");
++            }
++        }
++    }
++}
+diff --git a/backend/src/main/java/sisaudin/controller/cadastroBasico/DocumentoNumeroController.java b/backend/src/main/java/sisaudin/controller/cadastroBasico/DocumentoNumeroController.java
+index beb4f1e..83097a3 100644
+--- a/backend/src/main/java/sisaudin/controller/cadastroBasico/DocumentoNumeroController.java
++++ b/backend/src/main/java/sisaudin/controller/cadastroBasico/DocumentoNumeroController.java
+@@ -21,9 +21,10 @@ public class DocumentoNumeroController {
+     public ResponseEntity<Map<String, Integer>> getNextNumber(
+             @RequestParam String entityName, 
+             @RequestParam Integer ano, 
+-            @RequestParam(required = false) Long itemTrabalhoId) {
+-        
+-        Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId);
++            @RequestParam(required = false) Long itemTrabalhoId,
++            @RequestParam(required = false) Boolean especial) {
++
++        Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId, especial);
+         
+         Map<String, Integer> response = new HashMap<>();
+         response.put("nextNumber", nextNumber);
+@@ -37,15 +38,18 @@ public class DocumentoNumeroController {
+             @RequestParam Integer ano, 
+             @RequestParam Integer numero, 
+             @RequestParam(required = false) Long itemTrabalhoId,
+-            @RequestParam(required = false) Long currentEntityId) {
+-        
+-        boolean isAvailable = numeroService.checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId);
+-        
++            @RequestParam(required = false) Long currentEntityId,
++            @RequestParam(required = false) Boolean especial) {
++
++        // Sem o parâmetro, o tipo (RAI/REAI) é lido do próprio relatório
++        boolean ehEspecial = numeroService.resolveEspecial(entityName, itemTrabalhoId, currentEntityId, especial);
++        boolean isAvailable = numeroService.checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId, ehEspecial);
++
+         Map<String, Object> response = new HashMap<>();
+         response.put("available", isAvailable);
+-        
++
+         if (!isAvailable) {
+-            Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId);
++            Integer nextNumber = numeroService.getNextAvailableNumber(entityName, ano, itemTrabalhoId, ehEspecial);
+             response.put("nextAvailable", nextNumber);
+         }
+         
+diff --git a/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioFinalController.java b/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioFinalController.java
+index d3dd1dc..9ed1ea0 100644
+--- a/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioFinalController.java
++++ b/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioFinalController.java
+@@ -17,8 +17,10 @@ public class RelatorioFinalController {
+     private RelatorioFinalService service;
+ 
+     @GetMapping("/item/{itemTrabalhoId}")
+-    public ResponseEntity<RelatorioFinal> getRelatorio(@PathVariable Long itemTrabalhoId) {
+-        RelatorioFinal relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId);
++    public ResponseEntity<RelatorioFinal> getRelatorio(
++            @PathVariable Long itemTrabalhoId,
++            @RequestParam(required = false) Boolean especial) {
++        RelatorioFinal relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId, especial);
+         return ResponseEntity.ok(relatorio);
+     }
+ 
+@@ -42,13 +44,15 @@ public class RelatorioFinalController {
+     }
+ 
+     @PostMapping
+-    public ResponseEntity<RelatorioFinal> createEmptyRelatorio() {
+-        return ResponseEntity.ok(service.createEmpty());
++    public ResponseEntity<RelatorioFinal> createEmptyRelatorio(@RequestParam(required = false) Boolean especial) {
++        return ResponseEntity.ok(service.createEmpty(especial));
+     }
+ 
+     @PostMapping("/create-from-preliminar/{itemTrabalhoId}")
+-    public ResponseEntity<RelatorioFinal> createFromRelatorioPreliminar(@PathVariable Long itemTrabalhoId) {
+-        return ResponseEntity.ok(service.createFromRelatorioPreliminar(itemTrabalhoId));
++    public ResponseEntity<RelatorioFinal> createFromRelatorioPreliminar(
++            @PathVariable Long itemTrabalhoId,
++            @RequestParam(required = false) Boolean especial) {
++        return ResponseEntity.ok(service.createFromRelatorioPreliminar(itemTrabalhoId, especial));
+     }
+ 
+     @GetMapping("/{id}")
+diff --git a/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioPreliminarController.java b/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioPreliminarController.java
+index cff2224..c8e0917 100644
+--- a/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioPreliminarController.java
++++ b/backend/src/main/java/sisaudin/controller/cadastroBasico/RelatorioPreliminarController.java
+@@ -17,8 +17,10 @@ public class RelatorioPreliminarController {
+     private RelatorioPreliminarService service;
+ 
+     @GetMapping("/item/{itemTrabalhoId}")
+-    public ResponseEntity<RelatorioPreliminar> getRelatorio(@PathVariable Long itemTrabalhoId) {
+-        RelatorioPreliminar relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId);
++    public ResponseEntity<RelatorioPreliminar> getRelatorio(
++            @PathVariable Long itemTrabalhoId,
++            @RequestParam(required = false) Boolean especial) {
++        RelatorioPreliminar relatorio = service.getOrCreateByItemTrabalhoId(itemTrabalhoId, especial);
+         return ResponseEntity.ok(relatorio);
+     }
+ 
+@@ -42,8 +44,8 @@ public class RelatorioPreliminarController {
+     }
+ 
+     @PostMapping
+-    public ResponseEntity<RelatorioPreliminar> createEmptyRelatorio() {
+-        return ResponseEntity.ok(service.createEmpty());
++    public ResponseEntity<RelatorioPreliminar> createEmptyRelatorio(@RequestParam(required = false) Boolean especial) {
++        return ResponseEntity.ok(service.createEmpty(especial));
+     }
+ 
+     @GetMapping("/{id}")
+diff --git a/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioFinal.java b/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioFinal.java
+index 52eb574..c89b105 100644
+--- a/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioFinal.java
++++ b/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioFinal.java
+@@ -24,6 +24,10 @@ import lombok.experimental.SuperBuilder;
+ @EqualsAndHashCode(callSuper = true)
+ public class RelatorioFinal extends Documento {
+ 
++    // false = RAI (Relatório de Auditoria Interna); true = REAI (Relatório Especial de Auditoria Interna)
++    @Builder.Default
++    private Boolean especial = false;
++
+     @Column(columnDefinition = "LONGTEXT")
+     private String introducao;
+ 
+diff --git a/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioPreliminar.java b/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioPreliminar.java
+index d526ab8..1adcf69 100644
+--- a/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioPreliminar.java
++++ b/backend/src/main/java/sisaudin/model/cadastroBasico/RelatorioPreliminar.java
+@@ -24,6 +24,10 @@ import lombok.experimental.SuperBuilder;
+ @EqualsAndHashCode(callSuper = true)
+ public class RelatorioPreliminar extends Documento {
+ 
++    // false = RAI (Relatório de Auditoria Interna); true = REAI (Relatório Especial de Auditoria Interna)
++    @Builder.Default
++    private Boolean especial = false;
++
+     @Column(columnDefinition = "LONGTEXT")
+     private String introducao;
+ 
+diff --git a/backend/src/main/java/sisaudin/repository/cadastroBasico/PlanejamentoRepository.java b/backend/src/main/java/sisaudin/repository/cadastroBasico/PlanejamentoRepository.java
+index c3e0654..9f66f49 100644
+--- a/backend/src/main/java/sisaudin/repository/cadastroBasico/PlanejamentoRepository.java
++++ b/backend/src/main/java/sisaudin/repository/cadastroBasico/PlanejamentoRepository.java
+@@ -1,11 +1,16 @@
+ package sisaudin.repository.cadastroBasico;
+ 
+ import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.data.jpa.repository.Query;
++import org.springframework.data.repository.query.Param;
+ import org.springframework.stereotype.Repository;
+ import sisaudin.model.cadastroBasico.Planejamento;
+ import java.util.List;
+ 
+ @Repository
+ public interface PlanejamentoRepository extends JpaRepository<Planejamento, Long> {
+-    List<Planejamento> findByItemTrabalhoId(Long itemTrabalhoId);
++    // Consulta explícita: pelo nome do método o Spring Data resolve o campo transiente
++    // Documento.itemTrabalhoId, que não existe no banco, e a consulta falha.
++    @Query("SELECT p FROM Planejamento p WHERE p.itemTrabalho.id = :itemTrabalhoId")
++    List<Planejamento> findByItemTrabalhoId(@Param("itemTrabalhoId") Long itemTrabalhoId);
+ }
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
+index 6af59ee..45dfbe9 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
+@@ -3,11 +3,10 @@ package sisaudin.service.cadastroBasico;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Service;
+ import jakarta.persistence.EntityManager;
+-import sisaudin.model.cadastroBasico.ItemTrabalho;
+-import sisaudin.repository.cadastroBasico.ItemTrabalhoRepository;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
++import java.util.function.Supplier;
+ 
+ @Service
+ public class DocumentoNumeroService {
+@@ -15,20 +14,24 @@ public class DocumentoNumeroService {
+     @Autowired
+     private EntityManager entityManager;
+ 
+-    @Autowired
+-    private ItemTrabalhoRepository itemTrabalhoRepository;
++    private static boolean isRelatorio(String entityName) {
++        return entityName.equals("RelatorioPreliminar") || entityName.equals("RelatorioFinal");
++    }
+ 
+     /**
+-     * Determina o grupo lógico de numeração baseado na entidade e no ItemTrabalho.
++     * Executa o cálculo do próximo número e a gravação do documento sem concorrência,
++     * para que duas criações simultâneas não recebam o mesmo número.
+      */
+-    public String determineSequenceGroup(String entityName, Long itemTrabalhoId) {
+-        if (itemTrabalhoId != null && (entityName.equals("RelatorioPreliminar") || entityName.equals("RelatorioFinal"))) {
+-            ItemTrabalho item = itemTrabalhoRepository.findById(itemTrabalhoId).orElse(null);
+-            if (item != null && item.getSigla() != null && item.getSigla().toUpperCase().contains("EXTRA")) {
+-                return "REAI";
+-            }
+-            return "RAI";
+-        }
++    public synchronized <T> T executarComNumeroReservado(Supplier<T> acao) {
++        return acao.get();
++    }
++
++    /**
++     * Determina o grupo lógico de numeração baseado na entidade.
++     * Relatórios têm duas sequências: RAI (comum) e REAI (especial).
++     */
++    public String determineSequenceGroup(String entityName, boolean especial) {
++        if (isRelatorio(entityName)) return especial ? "REAI" : "RAI";
+         if (entityName.equals("NotaPreliminar") || entityName.equals("NotaFinal")) return "NA";
+         if (entityName.equals("PlanoAcaoPreliminar") || entityName.equals("PlanoAcaoFinal")) return "PA";
+         if (entityName.equals("Planejamento") || entityName.equals("MatrizAchados")) return "PLANEJAMENTO";
+@@ -41,12 +44,44 @@ public class DocumentoNumeroService {
+         return entityName;
+     }
+ 
++    /**
++     * Descobre se o relatório é especial (REAI) quando o chamador não informa:
++     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho.
++     */
++    public boolean resolveEspecial(String entityName, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
++        if (!isRelatorio(entityName)) return false;
++        if (especial != null) return especial;
++
++        if (currentEntityId != null) {
++            List<Boolean> r = entityManager.createQuery(
++                            "SELECT d.especial FROM " + entityName + " d WHERE d.id = :id", Boolean.class)
++                    .setParameter("id", currentEntityId)
++                    .getResultList();
++            if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
++        }
++        if (itemTrabalhoId != null) {
++            for (String table : List.of("RelatorioPreliminar", "RelatorioFinal")) {
++                List<Boolean> r = entityManager.createQuery(
++                                "SELECT d.especial FROM " + table + " d WHERE d.itemTrabalho.id = :itemId", Boolean.class)
++                        .setParameter("itemId", itemTrabalhoId)
++                        .setMaxResults(1)
++                        .getResultList();
++                if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
++            }
++        }
++        return false;
++    }
++
++    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId) {
++        return getNextAvailableNumber(entityName, ano, itemTrabalhoId, null);
++    }
++
+     /**
+      * Obtém o próximo número disponível para um grupo de sequência.
+      * Se o documento fizer parte de um par (ex: NotaPreliminar/NotaFinal) no mesmo ItemTrabalho, herda o número.
+      */
+-    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId) {
+-        String group = determineSequenceGroup(entityName, itemTrabalhoId);
++    public Integer getNextAvailableNumber(String entityName, Integer ano, Long itemTrabalhoId, Boolean especial) {
++        String group = determineSequenceGroup(entityName, resolveEspecial(entityName, itemTrabalhoId, null, especial));
+ 
+         if (itemTrabalhoId != null) {
+             Integer existingNumber = findExistingNumberInSameItemTrabalho(group, itemTrabalhoId);
+@@ -58,13 +93,17 @@ public class DocumentoNumeroService {
+         return getMaxNumberFromSequenceGroup(group, ano) + 1;
+     }
+ 
++    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId) {
++        return checkNumberAvailability(entityName, ano, numero, itemTrabalhoId, currentEntityId, null);
++    }
++
+     /**
+      * Verifica se o número desejado já está em uso por OUTRO item no mesmo grupo.
+      * (Se for o MESMO itemTrabalho, e o número já é compartilhado, retorna true - ou seja, está disponível para ele).
+      */
+-    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId) {
+-        String group = determineSequenceGroup(entityName, itemTrabalhoId);
+-        
++    public boolean checkNumberAvailability(String entityName, Integer ano, Integer numero, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
++        String group = determineSequenceGroup(entityName, resolveEspecial(entityName, itemTrabalhoId, currentEntityId, especial));
++
+         // Se no mesmo ItemTrabalho já existe ESSE número para o mesmo grupo, então ele tem o direito de usá-lo.
+         if (itemTrabalhoId != null) {
+             Integer existingNumber = findExistingNumberInSameItemTrabalho(group, itemTrabalhoId);
+@@ -77,25 +116,18 @@ public class DocumentoNumeroService {
+         List<String> tables = getTablesForGroup(group);
+         for (String table : tables) {
+             String query = "SELECT COUNT(d) FROM " + table + " d WHERE d.ano = :ano AND d.numero = :numero";
+-            
++
+             // Se a tabela atual é a que estamos validando, excluímos o ID atual para permitir update sem conflito consigo mesmo
+             if (table.equals(entityName) && currentEntityId != null) {
+                 query += " AND d.id != " + currentEntityId;
+             }
+-            // Filtro de RAI / REAI
+-            if (table.equals("RelatorioPreliminar") || table.equals("RelatorioFinal")) {
+-                if (group.equals("REAI")) {
+-                    query += " AND d.itemTrabalho.sigla LIKE '%EXTRA%'";
+-                } else if (group.equals("RAI")) {
+-                    query += " AND d.itemTrabalho.sigla NOT LIKE '%EXTRA%'";
+-                }
+-            }
++            query += filtroEspecial(group);
+ 
+             Long count = entityManager.createQuery(query, Long.class)
+                     .setParameter("ano", ano)
+                     .setParameter("numero", numero)
+                     .getSingleResult();
+-            
++
+             if (count > 0) {
+                 return false; // Alguém já está usando
+             }
+@@ -103,10 +135,17 @@ public class DocumentoNumeroService {
+         return true;
+     }
+ 
++    // Separa as sequências RAI e REAI, que dividem as mesmas tabelas
++    private String filtroEspecial(String group) {
++        if (group.equals("REAI")) return " AND d.especial = true";
++        if (group.equals("RAI")) return " AND (d.especial = false OR d.especial IS NULL)";
++        return "";
++    }
++
+     private Integer findExistingNumberInSameItemTrabalho(String group, Long itemId) {
+         List<String> tables = getTablesForGroup(group);
+         for (String table : tables) {
+-            String query = "SELECT d.numero FROM " + table + " d WHERE d.itemTrabalho.id = :itemId AND d.numero IS NOT NULL";
++            String query = "SELECT d.numero FROM " + table + " d WHERE d.itemTrabalho.id = :itemId AND d.numero IS NOT NULL" + filtroEspecial(group);
+             List<Integer> results = entityManager.createQuery(query, Integer.class)
+                     .setParameter("itemId", itemId)
+                     .setMaxResults(1)
+@@ -121,17 +160,9 @@ public class DocumentoNumeroService {
+     private Integer getMaxNumberFromSequenceGroup(String group, Integer ano) {
+         List<String> tables = getTablesForGroup(group);
+         Integer overallMax = 0;
+-        
++
+         for (String table : tables) {
+-            String query = "SELECT MAX(d.numero) FROM " + table + " d WHERE d.ano = :ano";
+-            
+-            if (table.equals("RelatorioPreliminar") || table.equals("RelatorioFinal")) {
+-                if (group.equals("REAI")) {
+-                    query += " AND d.itemTrabalho.sigla LIKE '%EXTRA%'";
+-                } else if (group.equals("RAI")) {
+-                    query += " AND d.itemTrabalho.sigla NOT LIKE '%EXTRA%'";
+-                }
+-            }
++            String query = "SELECT MAX(d.numero) FROM " + table + " d WHERE d.ano = :ano" + filtroEspecial(group);
+ 
+             Integer max = entityManager.createQuery(query, Integer.class)
+                     .setParameter("ano", ano)
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
+index ff0c2d1..b8184e3 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
+@@ -153,15 +153,29 @@ public class FluxoDocumentoService {
+                 .rotaCriacao("/planejamento?itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+ 
++        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar, de um dos tipos
++        boolean podeRelatorioPreliminar = !existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer;
++        String motivoRelatorioPreliminar = existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null;
++        String modalRelatorioPreliminar = existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3";
++
+         opcoes.put("RELATORIO_PRELIMINAR", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_PRELIMINAR")
+-                .nome("Relatório Preliminar")
+-                .habilitado(!existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer)
+-                .motivoInabilitado(existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null)
+-                .modalVerificacao(existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3")
++                .nome("RAI-P - Relatório de Auditoria Preliminar")
++                .habilitado(podeRelatorioPreliminar)
++                .motivoInabilitado(motivoRelatorioPreliminar)
++                .modalVerificacao(modalRelatorioPreliminar)
+                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+ 
++        opcoes.put("RELATORIO_ESPECIAL_PRELIMINAR", DocumentoOpcaoDTO.builder()
++                .codigo("RELATORIO_ESPECIAL_PRELIMINAR")
++                .nome("REAI-P - Relatório Especial de Auditoria Preliminar")
++                .habilitado(podeRelatorioPreliminar)
++                .motivoInabilitado(motivoRelatorioPreliminar)
++                .modalVerificacao(modalRelatorioPreliminar)
++                .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=" + itemTrabalhoId)
++                .build());
++
+         // Regra C: Matriz Achados (habilitada mesmo sem Planejamento, solicitando justificativa)
+         opcoes.put("MATRIZ_ACHADOS", DocumentoOpcaoDTO.builder()
+                 .codigo("MATRIZ_ACHADOS")
+@@ -191,15 +205,29 @@ public class FluxoDocumentoService {
+         boolean podePlanoAcaoFinal = (existeReuniaoBuscaConjunta && existeRelatorioPreliminar) ||
+                 (existeReuniaoBuscaConjunta && existeNotaPreliminar);
+ 
++        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, qualquer um dos dois
++        boolean preliminarEspecial = existeRelatorioPreliminar && Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial());
++        boolean preliminarComum = existeRelatorioPreliminar && !preliminarEspecial;
++        String motivoRelatorioFinal = existeRelatorioFinal ? "Já existe um Relatório Final criado" : null;
++
+         opcoes.put("RELATORIO_FINAL", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_FINAL")
+-                .nome("Relatório Final")
+-                .habilitado(!existeRelatorioFinal)
+-                .motivoInabilitado(existeRelatorioFinal ? "Já existe um Relatório Final criado" : null)
++                .nome("RAI-F - Relatório de Auditoria Final")
++                .habilitado(!existeRelatorioFinal && !preliminarEspecial)
++                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarEspecial ? "O relatório preliminar deste item é um REAI" : null))
+                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
+                 .rotaCriacao("/RelatorioFinal?tipo=final&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+ 
++        opcoes.put("RELATORIO_ESPECIAL_FINAL", DocumentoOpcaoDTO.builder()
++                .codigo("RELATORIO_ESPECIAL_FINAL")
++                .nome("REAI-F - Relatório Especial de Auditoria Final")
++                .habilitado(!existeRelatorioFinal && !preliminarComum)
++                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarComum ? "O relatório preliminar deste item é um RAI" : null))
++                .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
++                .rotaCriacao("/RelatorioFinal?tipo=final&especial=true&itemTrabalhoId=" + itemTrabalhoId)
++                .build());
++
+         opcoes.put("NOTA_AUDITORIA_FINAL", DocumentoOpcaoDTO.builder()
+                 .codigo("NOTA_AUDITORIA_FINAL")
+                 .nome("Nota de Auditoria Final")
+@@ -244,8 +272,10 @@ public class FluxoDocumentoService {
+         adicionarDocumentos(lista, item.getNotasFinal(), "NOTA_AUDITORIA_FINAL", "Nota de Auditoria Final", "/nota-final", null);
+         adicionarDocumentos(lista, item.getNotasTecnica(), "NOTA_TECNICA", "Nota Técnica", "/nota-tecnica", null);
+         adicionarDocumentos(lista, item.getPareceres(), "PARECER", "Parecer", "/parecer", null);
+-        adicionarDocumentos(lista, item.getRelatoriosPreliminar(), "RELATORIO_PRELIMINAR", "Relatório de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
+-        adicionarDocumentos(lista, item.getRelatoriosFinal(), "RELATORIO_FINAL", "Relatório de Auditoria Final", "/relatorio-final", "tipo=final");
++        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosPreliminar(), false), "RELATORIO_PRELIMINAR", "Relatório de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
++        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosPreliminar(), true), "RELATORIO_PRELIMINAR", "Relatório Especial de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
++        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosFinal(), false), "RELATORIO_FINAL", "Relatório de Auditoria Final", "/relatorio-final", "tipo=final");
++        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosFinal(), true), "RELATORIO_FINAL", "Relatório Especial de Auditoria Final", "/relatorio-final", "tipo=final");
+         //adicionarDocumentos(lista, item.getPlanosAcaoPreliminar(), "PLANO_ACAO_PRELIMINAR", "Plano de Ação Preliminar", "/plano-acao", "tipo=preliminar");
+         //adicionarDocumentos(lista, item.getPlanosAcaoFinal(), "PLANO_ACAO_FINAL", "Plano de Ação Final", "/plano-acao", "tipo=final");
+         adicionarDocumentos(lista, item.getReunioes(), "REUNIAO", "Reunião", "/reuniao", null);
+@@ -258,6 +288,16 @@ public class FluxoDocumentoService {
+         return lista;
+     }
+ 
++    // Separa os relatórios comuns (RAI) dos especiais (REAI), que ficam na mesma lista do item
++    private static <T extends Documento> List<T> filtrarRelatorios(List<T> relatorios, boolean especial) {
++        if (relatorios == null) return null;
++        return relatorios.stream().filter(r -> {
++            Boolean e = r instanceof RelatorioPreliminar ? ((RelatorioPreliminar) r).getEspecial()
++                    : (r instanceof RelatorioFinal ? ((RelatorioFinal) r).getEspecial() : null);
++            return Boolean.TRUE.equals(e) == especial;
++        }).collect(Collectors.toList());
++    }
++
+     private static <T extends Documento> void adicionarDocumentos(
+             List<DocumentoCriadoDTO> lista,
+             List<T> documentos,
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
+index 5677cd9..8bc1adf 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
+@@ -5,6 +5,8 @@ import sisaudin.service.cadastroBasico.DocumentoNumeroService;
+ 
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Service;
++import org.springframework.transaction.PlatformTransactionManager;
++import org.springframework.transaction.support.TransactionTemplate;
+ import sisaudin.model.cadastroBasico.*;
+ import sisaudin.repository.cadastroBasico.GerenciaRepository;
+ import sisaudin.repository.cadastroBasico.ItemTrabalhoRepository;
+@@ -34,33 +36,60 @@ public class RelatorioFinalService {
+     @Autowired
+     private GerenciaRepository gerenciaRepository;
+ 
++    @Autowired
++    private PlatformTransactionManager transactionManager;
++
+     public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId) {
++        return getOrCreateByItemTrabalhoId(itemTrabalhoId, null);
++    }
++
++    /**
++     * @param especial tipo pedido na criação (true = REAI). Só vale quando o item não tem
++     *                 relatório preliminar; havendo preliminar, o final herda tipo e número dele.
++     */
++    public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
+         Optional<RelatorioFinal> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
+         if (existing.isPresent()) {
+             return existing.get();
+         }
+-        return createFromRelatorioPreliminar(itemTrabalhoId);
++        return createFromRelatorioPreliminar(itemTrabalhoId, especial);
++    }
++
++    public RelatorioFinal createFromRelatorioPreliminar(Long itemTrabalhoId, Boolean especial) {
++        // A transação fica dentro da reserva, para o número já estar gravado quando ela for liberada
++        return numeroService.executarComNumeroReservado(() ->
++                new TransactionTemplate(transactionManager).execute(status -> criarParaItemTrabalho(itemTrabalhoId, especial)));
+     }
+ 
+-    @org.springframework.transaction.annotation.Transactional
+-    public RelatorioFinal createFromRelatorioPreliminar(Long itemTrabalhoId) {
++    private RelatorioFinal criarParaItemTrabalho(Long itemTrabalhoId, Boolean especial) {
+         ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
+                 .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
+ 
+         RelatorioFinal novoRelatorio = RelatorioFinal.builder()
+                 .itemTrabalho(itemTrabalho)
+                 .build();
+-                
++
+         // Clonar dados do relatório preliminar
+         Optional<RelatorioPreliminar> preliminarOpt = preliminarRepository.findByItemTrabalho_Id(itemTrabalhoId);
++        if (preliminarOpt.isEmpty() || preliminarOpt.get().getNumero() == null) {
++            // Sem preliminar numerado: recebe o próximo número da sequência do tipo escolhido
++            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial())).orElse(Boolean.TRUE.equals(especial));
++            Integer anoAtual = LocalDate.now().getYear();
++            novoRelatorio.setEspecial(ehEspecial);
++            novoRelatorio.setAno(anoAtual);
++            novoRelatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, itemTrabalhoId, ehEspecial));
++        }
+         if (preliminarOpt.isPresent()) {
+             RelatorioPreliminar preliminar = preliminarOpt.get();
++            novoRelatorio.setEspecial(Boolean.TRUE.equals(preliminar.getEspecial()));
+             novoRelatorio.setIntroducao(preliminar.getIntroducao());
+             novoRelatorio.setConsideracoes(preliminar.getConsideracoes());
+             novoRelatorio.setDataInicial(preliminar.getDataInicial());
+             novoRelatorio.setDataFinal(preliminar.getDataFinal());
+-            novoRelatorio.setAno(preliminar.getAno());
+-            novoRelatorio.setNumero(preliminar.getNumero());
++            if (preliminar.getNumero() != null) {
++                novoRelatorio.setAno(preliminar.getAno());
++                novoRelatorio.setNumero(preliminar.getNumero());
++            }
+ 
+             novoRelatorio.setPlanObjetivo(preliminar.getPlanObjetivo());
+             novoRelatorio.setPlanRiscos(preliminar.getPlanRiscos());
+@@ -145,7 +174,7 @@ public class RelatorioFinalService {
+     }
+ 
+     public RelatorioFinal saveOrUpdate(RelatorioFinal dto, Long itemTrabalhoId) {
+-        RelatorioFinal relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId);
++        RelatorioFinal relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId, dto.getEspecial());
+         
+         if (dto.getIntroducao() != null) relatorio.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) relatorio.setConsideracoes(dto.getConsideracoes());
+@@ -216,13 +245,16 @@ public class RelatorioFinalService {
+         repository.deleteById(id);
+     }
+ 
+-    public RelatorioFinal createEmpty() {
+-        RelatorioFinal relatorio = RelatorioFinal.builder().build();
+-        
+-        Integer anoAtual = LocalDate.now().getYear();
+-        relatorio.setAno(anoAtual);
+-        relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, null));
+-        return repository.save(relatorio);
++    public RelatorioFinal createEmpty(Boolean especial) {
++        boolean ehEspecial = Boolean.TRUE.equals(especial);
++        return numeroService.executarComNumeroReservado(() -> {
++            RelatorioFinal relatorio = RelatorioFinal.builder().especial(ehEspecial).build();
++
++            Integer anoAtual = LocalDate.now().getYear();
++            relatorio.setAno(anoAtual);
++            relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioFinal", anoAtual, null, ehEspecial));
++            return repository.save(relatorio);
++        });
+     }
+ 
+     public RelatorioFinal findById(Long id) {
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
+index 728e18a..ca1b62a 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
+@@ -31,15 +31,30 @@ public class RelatorioPreliminarService {
+ 
+     @Autowired
+     private GerenciaRepository gerenciaRepository;
+-    
++
++    @Autowired
++    private sisaudin.repository.cadastroBasico.RelatorioFinalRepository relatorioFinalRepository;
++
+     @Autowired
+     private sisaudin.repository.cadastroBasico.PlanejamentoRepository planejamentoRepository;
+ 
+     public RelatorioPreliminar getOrCreateByItemTrabalhoId(Long itemTrabalhoId) {
++        return getOrCreateByItemTrabalhoId(itemTrabalhoId, null);
++    }
++
++    /**
++     * @param especial tipo pedido na criação (true = REAI). Ignorado se o relatório já existe:
++     *                 o tipo não muda depois de criado.
++     */
++    public RelatorioPreliminar getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
+         Optional<RelatorioPreliminar> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
+         if (existing.isPresent()) {
+             return existing.get();
+         }
++        return numeroService.executarComNumeroReservado(() -> criarParaItemTrabalho(itemTrabalhoId, especial));
++    }
++
++    private RelatorioPreliminar criarParaItemTrabalho(Long itemTrabalhoId, Boolean especial) {
+ 
+         ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
+                 .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
+@@ -58,14 +73,20 @@ public class RelatorioPreliminarService {
+             novoRelatorio.setPlanAmostra(plan.getAmostra());
+         }
+ 
++        // Se o item já tem relatório final, o preliminar segue o mesmo tipo (e herda o número)
++        boolean ehEspecial = relatorioFinalRepository.findByItemTrabalho_Id(itemTrabalhoId)
++                .map(f -> Boolean.TRUE.equals(f.getEspecial()))
++                .orElse(Boolean.TRUE.equals(especial));
++        novoRelatorio.setEspecial(ehEspecial);
++
+         Integer anoAtual = LocalDate.now().getYear();
+         novoRelatorio.setAno(anoAtual);
+-        novoRelatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioPreliminar", anoAtual, itemTrabalhoId));
++        novoRelatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioPreliminar", anoAtual, itemTrabalhoId, ehEspecial));
+         return repository.save(novoRelatorio);
+     }
+ 
+     public RelatorioPreliminar saveOrUpdate(RelatorioPreliminar dto, Long itemTrabalhoId) {
+-        RelatorioPreliminar relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId);
++        RelatorioPreliminar relatorio = getOrCreateByItemTrabalhoId(itemTrabalhoId, dto.getEspecial());
+         
+         if (dto.getIntroducao() != null) relatorio.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) relatorio.setConsideracoes(dto.getConsideracoes());
+@@ -136,13 +157,16 @@ public class RelatorioPreliminarService {
+         repository.deleteById(id);
+     }
+ 
+-    public RelatorioPreliminar createEmpty() {
+-        RelatorioPreliminar relatorio = RelatorioPreliminar.builder().build();
+-        
+-        Integer anoAtual = LocalDate.now().getYear();
+-        relatorio.setAno(anoAtual);
+-        relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioPreliminar", anoAtual, null));
+-        return repository.save(relatorio);
++    public RelatorioPreliminar createEmpty(Boolean especial) {
++        boolean ehEspecial = Boolean.TRUE.equals(especial);
++        return numeroService.executarComNumeroReservado(() -> {
++            RelatorioPreliminar relatorio = RelatorioPreliminar.builder().especial(ehEspecial).build();
++
++            Integer anoAtual = LocalDate.now().getYear();
++            relatorio.setAno(anoAtual);
++            relatorio.setNumero(numeroService.getNextAvailableNumber("RelatorioPreliminar", anoAtual, null, ehEspecial));
++            return repository.save(relatorio);
++        });
+     }
+ 
+     public RelatorioPreliminar findById(Long id) {
+diff --git a/frontend/src/api/relatorioFinalApi.js b/frontend/src/api/relatorioFinalApi.js
+index c9a6ca9..fbb9b2a 100644
+--- a/frontend/src/api/relatorioFinalApi.js
++++ b/frontend/src/api/relatorioFinalApi.js
+@@ -2,9 +2,10 @@ import api from './axiosInstance';
+ 
+ const API_URL = 'https://sisaudin.ghc.com.br/api/relatorios-final';
+ 
+-export const getRelatorioByItemTrabalho = async (itemTrabalhoId) => {
++// especial = true cria um REAI quando o item não tem relatório preliminar; havendo, o final herda o tipo dele
++export const getRelatorioByItemTrabalho = async (itemTrabalhoId, especial = false) => {
+     try {
+-        const response = await api.get(`/relatorios-final/item/${itemTrabalhoId}`);
++        const response = await api.get(`/relatorios-final/item/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
+         return response.data;
+     } catch (error) {
+         console.error('Erro ao buscar RelatorioFinal', error);
+@@ -42,9 +43,9 @@ export const deleteRelatorio = async (id) => {
+     }
+ };
+ 
+-export const createEmptyRelatorio = async () => {
++export const createEmptyRelatorio = async (especial = false) => {
+     try {
+-        const response = await api.post(`/relatorios-final`);
++        const response = await api.post(`/relatorios-final${especial ? '?especial=true' : ''}`);
+         return response.data;
+     } catch (error) {
+         console.error('Erro ao criar RelatorioFinal vazio', error);
+@@ -52,9 +53,9 @@ export const createEmptyRelatorio = async () => {
+     }
+ };
+ 
+-export const createFromRelatorioPreliminar = async (itemTrabalhoId) => {
++export const createFromRelatorioPreliminar = async (itemTrabalhoId, especial = false) => {
+     try {
+-        const response = await api.post(`/relatorios-final/create-from-preliminar/${itemTrabalhoId}`);
++        const response = await api.post(`/relatorios-final/create-from-preliminar/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
+         return response.data;
+     } catch (error) {
+         console.error('Erro ao criar relatorio final a partir do preliminar', error);
+diff --git a/frontend/src/api/relatorioPreliminarApi.js b/frontend/src/api/relatorioPreliminarApi.js
+index e908f40..e6e558d 100644
+--- a/frontend/src/api/relatorioPreliminarApi.js
++++ b/frontend/src/api/relatorioPreliminarApi.js
+@@ -2,9 +2,10 @@ import api from './axiosInstance';
+ 
+ const API_URL = 'https://sisaudin.ghc.com.br/api/relatorios-preliminar';
+ 
+-export const getRelatorioByItemTrabalho = async (itemTrabalhoId) => {
++// especial = true cria um REAI quando o item ainda não tem relatório; se já tem, o tipo existente prevalece
++export const getRelatorioByItemTrabalho = async (itemTrabalhoId, especial = false) => {
+     try {
+-        const response = await api.get(`/relatorios-preliminar/item/${itemTrabalhoId}`);
++        const response = await api.get(`/relatorios-preliminar/item/${itemTrabalhoId}${especial ? '?especial=true' : ''}`);
+         return response.data;
+     } catch (error) {
+         console.error('Erro ao buscar RelatorioPreliminar', error);
+@@ -42,9 +43,9 @@ export const deleteRelatorio = async (id) => {
+     }
+ };
+ 
+-export const createEmptyRelatorio = async () => {
++export const createEmptyRelatorio = async (especial = false) => {
+     try {
+-        const response = await api.post(`/relatorios-preliminar`);
++        const response = await api.post(`/relatorios-preliminar${especial ? '?especial=true' : ''}`);
+         return response.data;
+     } catch (error) {
+         console.error('Erro ao criar RelatorioPreliminar vazio', error);
+diff --git a/frontend/src/components/CriarDocumentoDropdown.jsx b/frontend/src/components/CriarDocumentoDropdown.jsx
+index 1c40a7c..b2b5987 100644
+--- a/frontend/src/components/CriarDocumentoDropdown.jsx
++++ b/frontend/src/components/CriarDocumentoDropdown.jsx
+@@ -63,6 +63,8 @@ export default function CriarDocumentoDropdown({ itemTrabalhoId, itemNome }) {
+       'REUNIAO': `/reuniao?itemTrabalhoId=${itemTrabalhoId}`,
+       'VISITA': `/visita?itemTrabalhoId=${itemTrabalhoId}`,
+       'RELATORIO_FINAL': `/relatorio-final?itemTrabalhoId=${itemTrabalhoId}`,
++      'RELATORIO_ESPECIAL_PRELIMINAR': `/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=${itemTrabalhoId}`,
++      'RELATORIO_ESPECIAL_FINAL': `/relatorio-final?especial=true&itemTrabalhoId=${itemTrabalhoId}`,
+       'NOTA_AUDITORIA_FINAL': `/nota-final?itemTrabalhoId=${itemTrabalhoId}`,
+       'PLANO_ACAO_FINAL': `/plano-acao?tipo=final&itemTrabalhoId=${itemTrabalhoId}`,
+       'PLANEJAMENTO': `/planejamento?itemTrabalhoId=${itemTrabalhoId}`,
+diff --git a/frontend/src/pages/ItemTrabalhoList.jsx b/frontend/src/pages/ItemTrabalhoList.jsx
+index dec59b7..85dca7f 100644
+--- a/frontend/src/pages/ItemTrabalhoList.jsx
++++ b/frontend/src/pages/ItemTrabalhoList.jsx
+@@ -30,7 +30,7 @@ const getSiglaDocumento = (str, itemSigla = '') => {
+     
+     if (isRelatorio) {
+       let prefix = 'RAI';
+-      if (isExtra || s.includes('especial')) {
++      if (s.includes('especial')) {
+         prefix = 'REAI';
+       }
+       if (isPreliminar) return `${prefix}-P`;
+@@ -934,7 +934,7 @@ export default function ItemTrabalhoList() {
+     
+     if (isRelatorio) {
+       let prefix = 'RAI';
+-      if (isExtra || s.includes('especial')) {
++      if (s.includes('especial')) {
+         prefix = 'REAI';
+       }
+       if (isPreliminar) return `${prefix}-P`;
+diff --git a/frontend/src/pages/NotaPreliminar.jsx b/frontend/src/pages/NotaPreliminar.jsx
+index 6640b4c..a107c2f 100644
+--- a/frontend/src/pages/NotaPreliminar.jsx
++++ b/frontend/src/pages/NotaPreliminar.jsx
+@@ -459,7 +459,7 @@ export default function NotaPreliminar() {
+   // ==========================================
+   useEffect(() => {
+     const tituloOriginal = document.title;
+-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'NA';
++    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'NA' : 'NA';
+       document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
+     return () => { document.title = tituloOriginal; };
+   }, [numero, ano]);
+diff --git a/frontend/src/pages/RelatorioFinal.jsx b/frontend/src/pages/RelatorioFinal.jsx
+index 0610782..fb9f603 100644
+--- a/frontend/src/pages/RelatorioFinal.jsx
++++ b/frontend/src/pages/RelatorioFinal.jsx
+@@ -543,6 +543,10 @@ export default function RelatorioFinal() {
+   const [dataFinal, setDataFinal] = useState('');
+   const [ano, setAno] = useState('');
+   const [numero, setNumero] = useState('');
++  // REAI (Relatório Especial): pedido pela URL na criação; depois vale o que está gravado no relatório
++  const especialParam = searchParams.get('especial') === 'true';
++  const [especial, setEspecial] = useState(especialParam);
++  const siglaRelatorio = especial ? 'REAI' : 'RAI';
+   const [gerenciasDestinatarias, setGerenciasDestinatarias] = useState([]);
+ 
+   const selectedItemData = itensTrabalhoList.find(i => i.id === selectedItemTrabalhoId);
+@@ -574,14 +578,13 @@ export default function RelatorioFinal() {
+   useEffect(() => {
+     // Altera a aba do navegador e o cabeçalho de impressão
+     const tituloOriginal = document.title;
+-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'RAI';
+-      document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
++      document.title = `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
+ 
+     return () => {
+       // Restaura o título quando o usuário sair da tela
+       document.title = tituloOriginal;
+     };
+-  }, [numero, ano]);
++  }, [numero, ano, siglaRelatorio]);
+ 
+   // Anexos Finais
+   const [anexosFinais, setAnexosFinais] = useState([]);
+@@ -934,7 +937,7 @@ export default function RelatorioFinal() {
+                 relRes = await getRelatorioById(relatorioId);
+             } else if (itemTrabalhoIdParam) {
+                 try {
+-                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam);
++                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam, especialParam);
+                 } catch (e) {
+                     relRes = null;
+                 }
+@@ -942,12 +945,12 @@ export default function RelatorioFinal() {
+             if (!relRes) {
+                 if (itemTrabalhoIdParam) {
+                     try {
+-                        relRes = await createFromRelatorioPreliminar(itemTrabalhoIdParam);
++                        relRes = await createFromRelatorioPreliminar(itemTrabalhoIdParam, especialParam);
+                     } catch (e) {
+-                        relRes = await createEmptyRelatorio();
++                        relRes = await createEmptyRelatorio(especialParam);
+                     }
+                 } else {
+-                    relRes = await createEmptyRelatorio();
++                    relRes = await createEmptyRelatorio(especialParam);
+                 }
+ 
+                 if (relRes && relRes.id) {
+@@ -983,6 +986,7 @@ export default function RelatorioFinal() {
+                 setDataFinal(relRes.dataFinal || '');
+                 setAno(relRes.ano || '');
+                 setNumero(relRes.numero || '');
++                setEspecial(!!relRes.especial);
+                 if (relRes.gerenciasDestinatarias) {
+                     setGerenciasDestinatarias(relRes.gerenciasDestinatarias);
+                 }
+@@ -1535,8 +1539,8 @@ export default function RelatorioFinal() {
+   };
+ 
+   const codRelatorioStr = numero || ano 
+-    ? `RAI ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}` 
+-    : (selectedItemData ? `RAI ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : 'RAI 00/0000');
++    ? `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}`
++    : (selectedItemData ? `${siglaRelatorio} ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : `${siglaRelatorio} 00/0000`);
+ 
+   return (
+     <div className="flex flex-col flex-1 h-full bg-slate-100 font-sans overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
+@@ -1552,7 +1556,7 @@ export default function RelatorioFinal() {
+             <FileText className="text-blue-900" size={24} />
+             <div>
+               <h1 className="text-xl font-bold text-gray-900 leading-tight">Auditoria Interna - GHC</h1>
+-              <p className="text-xs text-gray-500 font-semibold text-blue-800 bg-blue-50 inline-block px-1.5 py-0.5 rounded mt-0.5">Relatório de Auditoria Interna - Final</p>
++              <p className="text-xs text-gray-500 font-semibold text-blue-800 bg-blue-50 inline-block px-1.5 py-0.5 rounded mt-0.5">{especial ? 'Relatório Especial' : 'Relatório'} de Auditoria Interna - Final</p>
+             </div>
+           </div>
+           
+@@ -2685,7 +2689,7 @@ export default function RelatorioFinal() {
+                     <img src={imgCabecalho} alt="GHC Cabeçalho" style={{ width: '100%', height: 'auto', objectFit: 'contain', maxHeight: '180px' }} />
+                 </div>
+                 
+-                <h1 style={{ fontSize: '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>Relatório de Auditoria<br/>Interna</h1>
++                <h1 style={{ fontSize: especial ? '48pt' : '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>{especial ? <>Relatório Especial de<br/>Auditoria Interna</> : <>Relatório de Auditoria<br/>Interna</>}</h1>
+                 <p style={{ fontSize: '12pt', fontWeight: 'bold', color: '#718096', marginTop: '15px', marginBottom: '30px' }}>Versão Final</p>
+                 <div style={{ fontSize: '36pt', fontWeight: 'bold', color: '#000', fontFamily: '"Times New Roman", Times, serif', margin: 0, border: 'none', background: 'none', padding: 0 }}>{codRelatorioStr}</div>
+                 <hr style={{ border: 0, borderTop: '3px solid #000', margin: '10px 0', width: '100%' }} />
+@@ -3125,7 +3129,7 @@ export default function RelatorioFinal() {
+       <DocumentPdfViewerModal
+         isOpen={showPdfModal}
+         onClose={() => setShowPdfModal(false)}
+-        docTitle={`Relatório de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
++        docTitle={`${especial ? 'Relatório Especial' : 'Relatório'} de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
+       />
+     </div>
+   );
+diff --git a/frontend/src/pages/RelatorioPreliminar.jsx b/frontend/src/pages/RelatorioPreliminar.jsx
+index 60e7861..2de8de0 100644
+--- a/frontend/src/pages/RelatorioPreliminar.jsx
++++ b/frontend/src/pages/RelatorioPreliminar.jsx
+@@ -436,6 +436,10 @@ export default function RelatorioPreliminar() {
+   const [dataFinal, setDataFinal] = useState('');
+   const [ano, setAno] = useState('');
+   const [numero, setNumero] = useState('');
++  // REAI (Relatório Especial): pedido pela URL na criação; depois vale o que está gravado no relatório
++  const especialParam = searchParams.get('especial') === 'true';
++  const [especial, setEspecial] = useState(especialParam);
++  const siglaRelatorio = especial ? 'REAI' : 'RAI';
+   const [gerenciasFullList, setGerenciasFullList] = useState([]);
+   const [gerenciasDestinatarias, setGerenciasDestinatarias] = useState([]);
+ 
+@@ -467,10 +471,9 @@ export default function RelatorioPreliminar() {
+   // ==========================================
+   useEffect(() => {
+     const tituloOriginal = document.title;
+-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'RAI';
+-      document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
++      document.title = `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
+     return () => { document.title = tituloOriginal; };
+-  }, [numero, ano]);
++  }, [numero, ano, siglaRelatorio]);
+ 
+   // Anexos Finais
+   const [anexosFinais, setAnexosFinais] = useState([]);
+@@ -807,14 +810,14 @@ export default function RelatorioPreliminar() {
+                 relRes = await getRelatorioById(relatorioId);
+             } else if (itemTrabalhoIdParam) {
+                 try {
+-                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam);
++                    relRes = await getRelatorioByItemTrabalho(itemTrabalhoIdParam, especialParam);
+                 } catch (e) {
+                     relRes = null;
+                 }
+             }
+             if (!relRes) {
+                 if (isReadOnly && !relatorioId) return;
+-                relRes = await createEmptyRelatorio();
++                relRes = await createEmptyRelatorio(especialParam);
+                 if (relRes && relRes.id) {
+                     setRelatorioId(relRes.id);
+                     const basePath = location.pathname.startsWith('/relatorio') ? '/relatorio' : '/RelatorioPreliminar';
+@@ -848,6 +851,7 @@ export default function RelatorioPreliminar() {
+                 setDataFinal(relRes.dataFinal || '');
+                 setAno(relRes.ano || '');
+                 setNumero(relRes.numero || '');
++                setEspecial(!!relRes.especial);
+                 if (relRes.gerenciasDestinatarias) {
+                     setGerenciasDestinatarias(relRes.gerenciasDestinatarias);
+                 }
+@@ -1522,8 +1526,8 @@ export default function RelatorioPreliminar() {
+   };
+ 
+   const codRelatorioStr = numero || ano 
+-    ? `RAI ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}` 
+-    : (selectedItemData ? `RAI ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : 'RAI 00/0000');
++    ? `${siglaRelatorio} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano || '0000'}`
++    : (selectedItemData ? `${siglaRelatorio} ${selectedItemData.numeroReferencia ? String(selectedItemData.numeroReferencia).padStart(2, '0') : '00'}/${selectedItemData.anoReferencia || '0000'}` : `${siglaRelatorio} 00/0000`);
+ 
+   return (
+     <div className="flex flex-col flex-1 h-full bg-slate-100 font-sans overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
+@@ -2559,7 +2563,7 @@ export default function RelatorioPreliminar() {
+                     <img src={imgCabecalho} alt="GHC Cabeçalho" style={{ width: '100%', height: 'auto', objectFit: 'contain', maxHeight: '180px' }} />
+                 </div>
+                 
+-                <h1 style={{ fontSize: '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>Relatório de <br/>Auditoria Interna</h1>
++                <h1 style={{ fontSize: especial ? '48pt' : '56pt', fontWeight: 'bold', fontFamily: '"Times New Roman", Times, serif', color: '#000', margin: 0, textTransform: 'none', lineHeight: 1.1 }}>{especial ? 'Relatório Especial' : 'Relatório'} de <br/>Auditoria Interna</h1>
+                 <h1 style={{ fontSize: '20pt', fontWeight: 'bold', color: '#718096', marginTop: '15px', marginBottom: '20px' }}>Versão Preliminar</h1>
+                 <h1 style={{ fontSize: '42pt', fontWeight: 'bold', color: '#000', fontFamily: '"Times New Roman", Times, serif', margin: 0, border: 'none', background: 'none', padding: 0 }}>{codRelatorioStr}</h1>
+                 <hr style={{ border: 0, borderTop: '3px solid #000', margin: '10px 0', width: '100%' }} />
+@@ -2963,7 +2967,7 @@ export default function RelatorioPreliminar() {
+       <DocumentPdfViewerModal
+         isOpen={showPdfModal}
+         onClose={() => setShowPdfModal(false)}
+-        docTitle={`Relatório de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
++        docTitle={`${especial ? 'Relatório Especial' : 'Relatório'} de Auditoria nº ${numero ? String(numero).padStart(2, '0') : '00'}/${ano}`}
+       />
+     </div>
+   );

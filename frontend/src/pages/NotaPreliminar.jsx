@@ -459,7 +459,7 @@ export default function NotaPreliminar() {
   // ==========================================
   useEffect(() => {
     const tituloOriginal = document.title;
-    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'REAI' : 'NA';
+    const titleSigla = (selectedItemData?.sigla || '').toUpperCase().includes('EXTRA') ? 'NA' : 'NA';
       document.title = `${titleSigla} ${numero ? String(numero).padStart(2, '0') : '00'}/${ano} - Auditoria Interna`;
     return () => { document.title = tituloOriginal; };
   }, [numero, ano]);

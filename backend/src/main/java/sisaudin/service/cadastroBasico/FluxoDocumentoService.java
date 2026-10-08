@@ -153,13 +153,27 @@ public class FluxoDocumentoService {
                 .rotaCriacao("/planejamento?itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
+        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar, de um dos tipos
+        boolean podeRelatorioPreliminar = !existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer;
+        String motivoRelatorioPreliminar = existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null;
+        String modalRelatorioPreliminar = existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3";
+
         opcoes.put("RELATORIO_PRELIMINAR", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_PRELIMINAR")
-                .nome("Relatório Preliminar")
-                .habilitado(!existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer)
-                .motivoInabilitado(existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null)
-                .modalVerificacao(existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3")
+                .nome("RAI-P - Relatório de Auditoria Preliminar")
+                .habilitado(podeRelatorioPreliminar)
+                .motivoInabilitado(motivoRelatorioPreliminar)
+                .modalVerificacao(modalRelatorioPreliminar)
                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&itemTrabalhoId=" + itemTrabalhoId)
+                .build());
+
+        opcoes.put("RELATORIO_ESPECIAL_PRELIMINAR", DocumentoOpcaoDTO.builder()
+                .codigo("RELATORIO_ESPECIAL_PRELIMINAR")
+                .nome("REAI-P - Relatório Especial de Auditoria Preliminar")
+                .habilitado(podeRelatorioPreliminar)
+                .motivoInabilitado(motivoRelatorioPreliminar)
+                .modalVerificacao(modalRelatorioPreliminar)
+                .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
         // Regra C: Matriz Achados (habilitada mesmo sem Planejamento, solicitando justificativa)
@@ -191,13 +205,27 @@ public class FluxoDocumentoService {
         boolean podePlanoAcaoFinal = (existeReuniaoBuscaConjunta && existeRelatorioPreliminar) ||
                 (existeReuniaoBuscaConjunta && existeNotaPreliminar);
 
+        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, qualquer um dos dois
+        boolean preliminarEspecial = existeRelatorioPreliminar && Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial());
+        boolean preliminarComum = existeRelatorioPreliminar && !preliminarEspecial;
+        String motivoRelatorioFinal = existeRelatorioFinal ? "Já existe um Relatório Final criado" : null;
+
         opcoes.put("RELATORIO_FINAL", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_FINAL")
-                .nome("Relatório Final")
-                .habilitado(!existeRelatorioFinal)
-                .motivoInabilitado(existeRelatorioFinal ? "Já existe um Relatório Final criado" : null)
+                .nome("RAI-F - Relatório de Auditoria Final")
+                .habilitado(!existeRelatorioFinal && !preliminarEspecial)
+                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarEspecial ? "O relatório preliminar deste item é um REAI" : null))
                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
                 .rotaCriacao("/RelatorioFinal?tipo=final&itemTrabalhoId=" + itemTrabalhoId)
+                .build());
+
+        opcoes.put("RELATORIO_ESPECIAL_FINAL", DocumentoOpcaoDTO.builder()
+                .codigo("RELATORIO_ESPECIAL_FINAL")
+                .nome("REAI-F - Relatório Especial de Auditoria Final")
+                .habilitado(!existeRelatorioFinal && !preliminarComum)
+                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarComum ? "O relatório preliminar deste item é um RAI" : null))
+                .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
+                .rotaCriacao("/RelatorioFinal?tipo=final&especial=true&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
         opcoes.put("NOTA_AUDITORIA_FINAL", DocumentoOpcaoDTO.builder()
@@ -244,8 +272,10 @@ public class FluxoDocumentoService {
         adicionarDocumentos(lista, item.getNotasFinal(), "NOTA_AUDITORIA_FINAL", "Nota de Auditoria Final", "/nota-final", null);
         adicionarDocumentos(lista, item.getNotasTecnica(), "NOTA_TECNICA", "Nota Técnica", "/nota-tecnica", null);
         adicionarDocumentos(lista, item.getPareceres(), "PARECER", "Parecer", "/parecer", null);
-        adicionarDocumentos(lista, item.getRelatoriosPreliminar(), "RELATORIO_PRELIMINAR", "Relatório de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
-        adicionarDocumentos(lista, item.getRelatoriosFinal(), "RELATORIO_FINAL", "Relatório de Auditoria Final", "/relatorio-final", "tipo=final");
+        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosPreliminar(), false), "RELATORIO_PRELIMINAR", "Relatório de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
+        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosPreliminar(), true), "RELATORIO_PRELIMINAR", "Relatório Especial de Auditoria Preliminar", "/RelatorioPreliminar", "tipo=preliminar");
+        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosFinal(), false), "RELATORIO_FINAL", "Relatório de Auditoria Final", "/relatorio-final", "tipo=final");
+        adicionarDocumentos(lista, filtrarRelatorios(item.getRelatoriosFinal(), true), "RELATORIO_FINAL", "Relatório Especial de Auditoria Final", "/relatorio-final", "tipo=final");
         //adicionarDocumentos(lista, item.getPlanosAcaoPreliminar(), "PLANO_ACAO_PRELIMINAR", "Plano de Ação Preliminar", "/plano-acao", "tipo=preliminar");
         //adicionarDocumentos(lista, item.getPlanosAcaoFinal(), "PLANO_ACAO_FINAL", "Plano de Ação Final", "/plano-acao", "tipo=final");
         adicionarDocumentos(lista, item.getReunioes(), "REUNIAO", "Reunião", "/reuniao", null);
@@ -256,6 +286,16 @@ public class FluxoDocumentoService {
        
         lista.sort(Comparator.comparing(DocumentoCriadoDTO::getDataCriacao, Comparator.nullsLast(Comparator.naturalOrder())));
         return lista;
+    }
+
+    // Separa os relatórios comuns (RAI) dos especiais (REAI), que ficam na mesma lista do item
+    private static <T extends Documento> List<T> filtrarRelatorios(List<T> relatorios, boolean especial) {
+        if (relatorios == null) return null;
+        return relatorios.stream().filter(r -> {
+            Boolean e = r instanceof RelatorioPreliminar ? ((RelatorioPreliminar) r).getEspecial()
+                    : (r instanceof RelatorioFinal ? ((RelatorioFinal) r).getEspecial() : null);
+            return Boolean.TRUE.equals(e) == especial;
+        }).collect(Collectors.toList());
     }
 
     private static <T extends Documento> void adicionarDocumentos(
