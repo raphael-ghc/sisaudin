@@ -44,8 +44,8 @@ public class RelatorioFinalService {
     }
 
     /**
-     * @param especial tipo pedido na criação (true = REAI). Só vale quando o item não tem
-     *                 relatório preliminar; havendo preliminar, o final herda tipo e número dele.
+     * @param especial tipo pedido na criação (true = REAI). Não decide o tipo: havendo preliminar,
+     *                 o final herda tipo e número dele; senão, o tipo vem do item (PAINT = RAI, EXTRA = REAI).
      */
     public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
         Optional<RelatorioFinal> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
@@ -72,8 +72,10 @@ public class RelatorioFinalService {
         // Clonar dados do relatório preliminar
         Optional<RelatorioPreliminar> preliminarOpt = preliminarRepository.findByItemTrabalho_Id(itemTrabalhoId);
         if (preliminarOpt.isEmpty() || preliminarOpt.get().getNumero() == null) {
-            // Sem preliminar numerado: recebe o próximo número da sequência do tipo escolhido
-            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial())).orElse(Boolean.TRUE.equals(especial));
+            // Sem preliminar numerado: recebe o próximo número da sequência do tipo.
+            // Sem preliminar, o tipo vem do item: PAINT gera RAI, EXTRA gera REAI (o parâmetro "especial" não decide).
+            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial()))
+                    .orElseGet(() -> DocumentoNumeroService.exigirTipoRelatorioDoItem(itemTrabalho));
             Integer anoAtual = LocalDate.now().getYear();
             novoRelatorio.setEspecial(ehEspecial);
             novoRelatorio.setAno(anoAtual);
@@ -268,6 +270,10 @@ public class RelatorioFinalService {
         if (itemTrabalhoId != null) {
             ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
                     .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
+            // Só valida quando o vínculo muda, para não travar a edição de relatórios antigos
+            if (relatorio.getItemTrabalho() == null || !itemTrabalhoId.equals(relatorio.getItemTrabalho().getId())) {
+                DocumentoNumeroService.validarVinculoRelatorio(itemTrabalho, relatorio.getEspecial());
+            }
             relatorio.setItemTrabalho(itemTrabalho);
         }
 

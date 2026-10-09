@@ -81,8 +81,7 @@ public class FluxoDocumentoService {
                 .rotaCriacao("/visita?itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
-        boolean existeRelatorioFinal = item.getRelatoriosFinal() != null && !item.getRelatoriosFinal().isEmpty();
-        boolean existeNotaFinal = item.getNotasFinal() != null && !item.getNotasFinal().isEmpty();
+        boolean existeNotaFinal =item.getNotasFinal() != null && !item.getNotasFinal().isEmpty();
         boolean existePlanoAcaoPreliminar = item.getPlanosAcaoPreliminar() != null && !item.getPlanosAcaoPreliminar().isEmpty();
         boolean existePlanoAcaoFinal = item.getPlanosAcaoFinal() != null && !item.getPlanosAcaoFinal().isEmpty();
 
@@ -153,7 +152,14 @@ public class FluxoDocumentoService {
                 .rotaCriacao("/planejamento?itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
-        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar, de um dos tipos
+        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar.
+        // O tipo vem do item: PAINT gera RAI, EXTRA gera REAI. Se já há relatório no item, o par segue o tipo dele.
+        boolean existeRelatorioFinal = item.getRelatoriosFinal() != null && !item.getRelatoriosFinal().isEmpty();
+        Boolean tipoDoItem = DocumentoNumeroService.tipoRelatorioDoItem(item);
+        String motivoTipoRai = tipoDoItem == null ? "Defina o tipo do item de trabalho (PAINT ou EXTRA)" : "RAI só pode ser gerado em item de trabalho PAINT";
+        String motivoTipoReai = tipoDoItem == null ? "Defina o tipo do item de trabalho (PAINT ou EXTRA)" : "REAI só pode ser gerado em item de trabalho EXTRA";
+
+        Boolean tipoPreliminar = existeRelatorioFinal ? (Boolean) Boolean.TRUE.equals(item.getRelatoriosFinal().get(0).getEspecial()) : tipoDoItem;
         boolean podeRelatorioPreliminar = !existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer;
         String motivoRelatorioPreliminar = existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null;
         String modalRelatorioPreliminar = existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3";
@@ -161,8 +167,9 @@ public class FluxoDocumentoService {
         opcoes.put("RELATORIO_PRELIMINAR", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_PRELIMINAR")
                 .nome("RAI-P - Relatório de Auditoria Preliminar")
-                .habilitado(podeRelatorioPreliminar)
-                .motivoInabilitado(motivoRelatorioPreliminar)
+                .habilitado(podeRelatorioPreliminar && Boolean.FALSE.equals(tipoPreliminar))
+                .motivoInabilitado(motivoRelatorioPreliminar != null ? motivoRelatorioPreliminar
+                        : (Boolean.FALSE.equals(tipoPreliminar) ? null : (existeRelatorioFinal ? "O relatório final deste item é um REAI" : motivoTipoRai)))
                 .modalVerificacao(modalRelatorioPreliminar)
                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
@@ -170,8 +177,9 @@ public class FluxoDocumentoService {
         opcoes.put("RELATORIO_ESPECIAL_PRELIMINAR", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_ESPECIAL_PRELIMINAR")
                 .nome("REAI-P - Relatório Especial de Auditoria Preliminar")
-                .habilitado(podeRelatorioPreliminar)
-                .motivoInabilitado(motivoRelatorioPreliminar)
+                .habilitado(podeRelatorioPreliminar && Boolean.TRUE.equals(tipoPreliminar))
+                .motivoInabilitado(motivoRelatorioPreliminar != null ? motivoRelatorioPreliminar
+                        : (Boolean.TRUE.equals(tipoPreliminar) ? null : (existeRelatorioFinal ? "O relatório final deste item é um RAI" : motivoTipoReai)))
                 .modalVerificacao(modalRelatorioPreliminar)
                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
@@ -205,16 +213,16 @@ public class FluxoDocumentoService {
         boolean podePlanoAcaoFinal = (existeReuniaoBuscaConjunta && existeRelatorioPreliminar) ||
                 (existeReuniaoBuscaConjunta && existeNotaPreliminar);
 
-        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, qualquer um dos dois
-        boolean preliminarEspecial = existeRelatorioPreliminar && Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial());
-        boolean preliminarComum = existeRelatorioPreliminar && !preliminarEspecial;
+        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, o tipo do item (PAINT/EXTRA)
+        Boolean tipoFinal = existeRelatorioPreliminar ? (Boolean) Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial()) : tipoDoItem;
         String motivoRelatorioFinal = existeRelatorioFinal ? "Já existe um Relatório Final criado" : null;
 
         opcoes.put("RELATORIO_FINAL", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_FINAL")
                 .nome("RAI-F - Relatório de Auditoria Final")
-                .habilitado(!existeRelatorioFinal && !preliminarEspecial)
-                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarEspecial ? "O relatório preliminar deste item é um REAI" : null))
+                .habilitado(!existeRelatorioFinal && Boolean.FALSE.equals(tipoFinal))
+                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal
+                        : (Boolean.FALSE.equals(tipoFinal) ? null : (existeRelatorioPreliminar ? "O relatório preliminar deste item é um REAI" : motivoTipoRai)))
                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
                 .rotaCriacao("/RelatorioFinal?tipo=final&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
@@ -222,8 +230,9 @@ public class FluxoDocumentoService {
         opcoes.put("RELATORIO_ESPECIAL_FINAL", DocumentoOpcaoDTO.builder()
                 .codigo("RELATORIO_ESPECIAL_FINAL")
                 .nome("REAI-F - Relatório Especial de Auditoria Final")
-                .habilitado(!existeRelatorioFinal && !preliminarComum)
-                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarComum ? "O relatório preliminar deste item é um RAI" : null))
+                .habilitado(!existeRelatorioFinal && Boolean.TRUE.equals(tipoFinal))
+                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal
+                        : (Boolean.TRUE.equals(tipoFinal) ? null : (existeRelatorioPreliminar ? "O relatório preliminar deste item é um RAI" : motivoTipoReai)))
                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
                 .rotaCriacao("/RelatorioFinal?tipo=final&especial=true&itemTrabalhoId=" + itemTrabalhoId)
                 .build());

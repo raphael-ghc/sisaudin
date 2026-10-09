@@ -3,6 +3,7 @@ package sisaudin.service.cadastroBasico;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityManager;
+import sisaudin.model.cadastroBasico.ItemTrabalho;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +46,43 @@ public class DocumentoNumeroService {
     }
 
     /**
+     * Tipo de relatório que o item de trabalho admite, pelo cadastro "Tipo de Item":
+     * EXTRA gera REAI (true), PAINT gera RAI (false). Sem tipo reconhecido, devolve null (nenhum dos dois).
+     */
+    public static Boolean tipoRelatorioDoItem(ItemTrabalho item) {
+        String tipo = item != null && item.getTipoItem() != null && item.getTipoItem().getNome() != null
+                ? item.getTipoItem().getNome().toUpperCase() : "";
+        if (tipo.contains("EXTRA")) return true;
+        if (tipo.contains("PAINT")) return false;
+        return null;
+    }
+
+    /**
+     * Igual a tipoRelatorioDoItem, mas recusa a criação quando o item não tem tipo PAINT ou EXTRA.
+     */
+    public static boolean exigirTipoRelatorioDoItem(ItemTrabalho item) {
+        Boolean tipo = tipoRelatorioDoItem(item);
+        if (tipo == null) {
+            throw new IllegalStateException("O item de trabalho não tem tipo PAINT ou EXTRA; não é possível definir se o relatório é RAI ou REAI.");
+        }
+        return tipo;
+    }
+
+    /**
+     * Um relatório só pode ser vinculado a um item do tipo correspondente (RAI em PAINT, REAI em EXTRA).
+     */
+    public static void validarVinculoRelatorio(ItemTrabalho item, Boolean especial) {
+        if (exigirTipoRelatorioDoItem(item) != Boolean.TRUE.equals(especial)) {
+            throw new IllegalStateException(Boolean.TRUE.equals(especial)
+                    ? "REAI só pode ser vinculado a item de trabalho EXTRA."
+                    : "RAI só pode ser vinculado a item de trabalho PAINT.");
+        }
+    }
+
+    /**
      * Descobre se o relatório é especial (REAI) quando o chamador não informa:
-     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho.
+     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho
+     * e, por fim, pelo tipo do item.
      */
     public boolean resolveEspecial(String entityName, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
         if (!isRelatorio(entityName)) return false;
@@ -68,6 +104,7 @@ public class DocumentoNumeroService {
                         .getResultList();
                 if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
             }
+            return Boolean.TRUE.equals(tipoRelatorioDoItem(entityManager.find(ItemTrabalho.class, itemTrabalhoId)));
         }
         return false;
     }

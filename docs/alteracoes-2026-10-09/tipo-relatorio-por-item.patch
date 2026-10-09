@@ -1,0 +1,269 @@
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
+index 45dfbe9..f1d7ac1 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/DocumentoNumeroService.java
+@@ -3,6 +3,7 @@ package sisaudin.service.cadastroBasico;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Service;
+ import jakarta.persistence.EntityManager;
++import sisaudin.model.cadastroBasico.ItemTrabalho;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -44,9 +45,44 @@ public class DocumentoNumeroService {
+         return entityName;
+     }
+ 
++    /**
++     * Tipo de relatório que o item de trabalho admite, pelo cadastro "Tipo de Item":
++     * EXTRA gera REAI (true), PAINT gera RAI (false). Sem tipo reconhecido, devolve null (nenhum dos dois).
++     */
++    public static Boolean tipoRelatorioDoItem(ItemTrabalho item) {
++        String tipo = item != null && item.getTipoItem() != null && item.getTipoItem().getNome() != null
++                ? item.getTipoItem().getNome().toUpperCase() : "";
++        if (tipo.contains("EXTRA")) return true;
++        if (tipo.contains("PAINT")) return false;
++        return null;
++    }
++
++    /**
++     * Igual a tipoRelatorioDoItem, mas recusa a criação quando o item não tem tipo PAINT ou EXTRA.
++     */
++    public static boolean exigirTipoRelatorioDoItem(ItemTrabalho item) {
++        Boolean tipo = tipoRelatorioDoItem(item);
++        if (tipo == null) {
++            throw new IllegalStateException("O item de trabalho não tem tipo PAINT ou EXTRA; não é possível definir se o relatório é RAI ou REAI.");
++        }
++        return tipo;
++    }
++
++    /**
++     * Um relatório só pode ser vinculado a um item do tipo correspondente (RAI em PAINT, REAI em EXTRA).
++     */
++    public static void validarVinculoRelatorio(ItemTrabalho item, Boolean especial) {
++        if (exigirTipoRelatorioDoItem(item) != Boolean.TRUE.equals(especial)) {
++            throw new IllegalStateException(Boolean.TRUE.equals(especial)
++                    ? "REAI só pode ser vinculado a item de trabalho EXTRA."
++                    : "RAI só pode ser vinculado a item de trabalho PAINT.");
++        }
++    }
++
+     /**
+      * Descobre se o relatório é especial (REAI) quando o chamador não informa:
+-     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho.
++     * primeiro pelo próprio relatório, depois por um relatório já existente no item de trabalho
++     * e, por fim, pelo tipo do item.
+      */
+     public boolean resolveEspecial(String entityName, Long itemTrabalhoId, Long currentEntityId, Boolean especial) {
+         if (!isRelatorio(entityName)) return false;
+@@ -68,6 +104,7 @@ public class DocumentoNumeroService {
+                         .getResultList();
+                 if (!r.isEmpty()) return Boolean.TRUE.equals(r.get(0));
+             }
++            return Boolean.TRUE.equals(tipoRelatorioDoItem(entityManager.find(ItemTrabalho.class, itemTrabalhoId)));
+         }
+         return false;
+     }
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
+index b8184e3..f25bb88 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/FluxoDocumentoService.java
+@@ -81,8 +81,7 @@ public class FluxoDocumentoService {
+                 .rotaCriacao("/visita?itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+ 
+-        boolean existeRelatorioFinal = item.getRelatoriosFinal() != null && !item.getRelatoriosFinal().isEmpty();
+-        boolean existeNotaFinal = item.getNotasFinal() != null && !item.getNotasFinal().isEmpty();
++        boolean existeNotaFinal =item.getNotasFinal() != null && !item.getNotasFinal().isEmpty();
+         boolean existePlanoAcaoPreliminar = item.getPlanosAcaoPreliminar() != null && !item.getPlanosAcaoPreliminar().isEmpty();
+         boolean existePlanoAcaoFinal = item.getPlanosAcaoFinal() != null && !item.getPlanosAcaoFinal().isEmpty();
+ 
+@@ -153,7 +152,14 @@ public class FluxoDocumentoService {
+                 .rotaCriacao("/planejamento?itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+ 
+-        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar, de um dos tipos
++        // RAI e REAI têm a mesma estrutura e as mesmas regras; o item admite um só relatório preliminar.
++        // O tipo vem do item: PAINT gera RAI, EXTRA gera REAI. Se já há relatório no item, o par segue o tipo dele.
++        boolean existeRelatorioFinal = item.getRelatoriosFinal() != null && !item.getRelatoriosFinal().isEmpty();
++        Boolean tipoDoItem = DocumentoNumeroService.tipoRelatorioDoItem(item);
++        String motivoTipoRai = tipoDoItem == null ? "Defina o tipo do item de trabalho (PAINT ou EXTRA)" : "RAI só pode ser gerado em item de trabalho PAINT";
++        String motivoTipoReai = tipoDoItem == null ? "Defina o tipo do item de trabalho (PAINT ou EXTRA)" : "REAI só pode ser gerado em item de trabalho EXTRA";
++
++        Boolean tipoPreliminar = existeRelatorioFinal ? (Boolean) Boolean.TRUE.equals(item.getRelatoriosFinal().get(0).getEspecial()) : tipoDoItem;
+         boolean podeRelatorioPreliminar = !existeRelatorioPreliminar && !existeNotaPreliminar && !existeNotaTecnica && !existeParecer;
+         String motivoRelatorioPreliminar = existeRelatorioPreliminar ? "Já existe um Relatório Preliminar criado" : null;
+         String modalRelatorioPreliminar = existeOS ? (existeMatrizAchados ? "B1_COMUNICACAO" : "B1_E_B3") : "B1_E_B3";
+@@ -161,8 +167,9 @@ public class FluxoDocumentoService {
+         opcoes.put("RELATORIO_PRELIMINAR", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_PRELIMINAR")
+                 .nome("RAI-P - Relatório de Auditoria Preliminar")
+-                .habilitado(podeRelatorioPreliminar)
+-                .motivoInabilitado(motivoRelatorioPreliminar)
++                .habilitado(podeRelatorioPreliminar && Boolean.FALSE.equals(tipoPreliminar))
++                .motivoInabilitado(motivoRelatorioPreliminar != null ? motivoRelatorioPreliminar
++                        : (Boolean.FALSE.equals(tipoPreliminar) ? null : (existeRelatorioFinal ? "O relatório final deste item é um REAI" : motivoTipoRai)))
+                 .modalVerificacao(modalRelatorioPreliminar)
+                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+@@ -170,8 +177,9 @@ public class FluxoDocumentoService {
+         opcoes.put("RELATORIO_ESPECIAL_PRELIMINAR", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_ESPECIAL_PRELIMINAR")
+                 .nome("REAI-P - Relatório Especial de Auditoria Preliminar")
+-                .habilitado(podeRelatorioPreliminar)
+-                .motivoInabilitado(motivoRelatorioPreliminar)
++                .habilitado(podeRelatorioPreliminar && Boolean.TRUE.equals(tipoPreliminar))
++                .motivoInabilitado(motivoRelatorioPreliminar != null ? motivoRelatorioPreliminar
++                        : (Boolean.TRUE.equals(tipoPreliminar) ? null : (existeRelatorioFinal ? "O relatório final deste item é um RAI" : motivoTipoReai)))
+                 .modalVerificacao(modalRelatorioPreliminar)
+                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+@@ -205,16 +213,16 @@ public class FluxoDocumentoService {
+         boolean podePlanoAcaoFinal = (existeReuniaoBuscaConjunta && existeRelatorioPreliminar) ||
+                 (existeReuniaoBuscaConjunta && existeNotaPreliminar);
+ 
+-        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, qualquer um dos dois
+-        boolean preliminarEspecial = existeRelatorioPreliminar && Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial());
+-        boolean preliminarComum = existeRelatorioPreliminar && !preliminarEspecial;
++        // O relatório final segue o tipo (RAI/REAI) do preliminar do item; sem preliminar, o tipo do item (PAINT/EXTRA)
++        Boolean tipoFinal = existeRelatorioPreliminar ? (Boolean) Boolean.TRUE.equals(item.getRelatoriosPreliminar().get(0).getEspecial()) : tipoDoItem;
+         String motivoRelatorioFinal = existeRelatorioFinal ? "Já existe um Relatório Final criado" : null;
+ 
+         opcoes.put("RELATORIO_FINAL", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_FINAL")
+                 .nome("RAI-F - Relatório de Auditoria Final")
+-                .habilitado(!existeRelatorioFinal && !preliminarEspecial)
+-                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarEspecial ? "O relatório preliminar deste item é um REAI" : null))
++                .habilitado(!existeRelatorioFinal && Boolean.FALSE.equals(tipoFinal))
++                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal
++                        : (Boolean.FALSE.equals(tipoFinal) ? null : (existeRelatorioPreliminar ? "O relatório preliminar deste item é um REAI" : motivoTipoRai)))
+                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
+                 .rotaCriacao("/RelatorioFinal?tipo=final&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+@@ -222,8 +230,9 @@ public class FluxoDocumentoService {
+         opcoes.put("RELATORIO_ESPECIAL_FINAL", DocumentoOpcaoDTO.builder()
+                 .codigo("RELATORIO_ESPECIAL_FINAL")
+                 .nome("REAI-F - Relatório Especial de Auditoria Final")
+-                .habilitado(!existeRelatorioFinal && !preliminarComum)
+-                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal : (preliminarComum ? "O relatório preliminar deste item é um RAI" : null))
++                .habilitado(!existeRelatorioFinal && Boolean.TRUE.equals(tipoFinal))
++                .motivoInabilitado(motivoRelatorioFinal != null ? motivoRelatorioFinal
++                        : (Boolean.TRUE.equals(tipoFinal) ? null : (existeRelatorioPreliminar ? "O relatório preliminar deste item é um RAI" : motivoTipoReai)))
+                 .modalVerificacao(!podeRelatorioFinal ? "B3_PLANEJAMENTO_OBRIGATORIO" : null)
+                 .rotaCriacao("/RelatorioFinal?tipo=final&especial=true&itemTrabalhoId=" + itemTrabalhoId)
+                 .build());
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
+index 8bc1adf..cd6fc4e 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioFinalService.java
+@@ -44,8 +44,8 @@ public class RelatorioFinalService {
+     }
+ 
+     /**
+-     * @param especial tipo pedido na criação (true = REAI). Só vale quando o item não tem
+-     *                 relatório preliminar; havendo preliminar, o final herda tipo e número dele.
++     * @param especial tipo pedido na criação (true = REAI). Não decide o tipo: havendo preliminar,
++     *                 o final herda tipo e número dele; senão, o tipo vem do item (PAINT = RAI, EXTRA = REAI).
+      */
+     public RelatorioFinal getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
+         Optional<RelatorioFinal> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
+@@ -72,8 +72,10 @@ public class RelatorioFinalService {
+         // Clonar dados do relatório preliminar
+         Optional<RelatorioPreliminar> preliminarOpt = preliminarRepository.findByItemTrabalho_Id(itemTrabalhoId);
+         if (preliminarOpt.isEmpty() || preliminarOpt.get().getNumero() == null) {
+-            // Sem preliminar numerado: recebe o próximo número da sequência do tipo escolhido
+-            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial())).orElse(Boolean.TRUE.equals(especial));
++            // Sem preliminar numerado: recebe o próximo número da sequência do tipo.
++            // Sem preliminar, o tipo vem do item: PAINT gera RAI, EXTRA gera REAI (o parâmetro "especial" não decide).
++            boolean ehEspecial = preliminarOpt.map(p -> Boolean.TRUE.equals(p.getEspecial()))
++                    .orElseGet(() -> DocumentoNumeroService.exigirTipoRelatorioDoItem(itemTrabalho));
+             Integer anoAtual = LocalDate.now().getYear();
+             novoRelatorio.setEspecial(ehEspecial);
+             novoRelatorio.setAno(anoAtual);
+@@ -268,6 +270,10 @@ public class RelatorioFinalService {
+         if (itemTrabalhoId != null) {
+             ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
+                     .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
++            // Só valida quando o vínculo muda, para não travar a edição de relatórios antigos
++            if (relatorio.getItemTrabalho() == null || !itemTrabalhoId.equals(relatorio.getItemTrabalho().getId())) {
++                DocumentoNumeroService.validarVinculoRelatorio(itemTrabalho, relatorio.getEspecial());
++            }
+             relatorio.setItemTrabalho(itemTrabalho);
+         }
+ 
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
+index ca1b62a..ed289cc 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/RelatorioPreliminarService.java
+@@ -43,8 +43,8 @@ public class RelatorioPreliminarService {
+     }
+ 
+     /**
+-     * @param especial tipo pedido na criação (true = REAI). Ignorado se o relatório já existe:
+-     *                 o tipo não muda depois de criado.
++     * @param especial tipo pedido na criação (true = REAI). Não decide o tipo: na criação ele vem
++     *                 do item de trabalho (PAINT = RAI, EXTRA = REAI) e não muda depois.
+      */
+     public RelatorioPreliminar getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
+         Optional<RelatorioPreliminar> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
+@@ -73,10 +73,11 @@ public class RelatorioPreliminarService {
+             novoRelatorio.setPlanAmostra(plan.getAmostra());
+         }
+ 
+-        // Se o item já tem relatório final, o preliminar segue o mesmo tipo (e herda o número)
++        // Se o item já tem relatório final, o preliminar segue o mesmo tipo (e herda o número).
++        // Senão, o tipo vem do item: PAINT gera RAI, EXTRA gera REAI (o parâmetro "especial" não decide).
+         boolean ehEspecial = relatorioFinalRepository.findByItemTrabalho_Id(itemTrabalhoId)
+                 .map(f -> Boolean.TRUE.equals(f.getEspecial()))
+-                .orElse(Boolean.TRUE.equals(especial));
++                .orElseGet(() -> DocumentoNumeroService.exigirTipoRelatorioDoItem(itemTrabalho));
+         novoRelatorio.setEspecial(ehEspecial);
+ 
+         Integer anoAtual = LocalDate.now().getYear();
+@@ -180,6 +181,10 @@ public class RelatorioPreliminarService {
+         if (itemTrabalhoId != null) {
+             ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
+                     .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
++            // Só valida quando o vínculo muda, para não travar a edição de relatórios antigos
++            if (relatorio.getItemTrabalho() == null || !itemTrabalhoId.equals(relatorio.getItemTrabalho().getId())) {
++                DocumentoNumeroService.validarVinculoRelatorio(itemTrabalho, relatorio.getEspecial());
++            }
+             relatorio.setItemTrabalho(itemTrabalho);
+         }
+ 
+diff --git a/frontend/src/pages/RelatorioFinal.jsx b/frontend/src/pages/RelatorioFinal.jsx
+index fb9f603..ba6fc7e 100644
+--- a/frontend/src/pages/RelatorioFinal.jsx
++++ b/frontend/src/pages/RelatorioFinal.jsx
+@@ -1679,7 +1679,12 @@ export default function RelatorioFinal() {
+                     <div className="mb-6">
+                       <label className="block text-sm font-semibold text-gray-700 mb-2">Selecione o Item de Trabalho Base (Total: {itensTrabalhoList.length})</label>
+                         <SearchableSelect 
+-                          options={itensTrabalhoList.map(item => ({ 
++                          options={itensTrabalhoList.filter(item => {
++                            // RAI só em item PAINT e REAI só em item EXTRA; o item já vinculado continua na lista
++                            const tipoItem = (item.tipoItem?.nome || '').toUpperCase();
++                            const aceita = tipoItem.includes('EXTRA') ? especial : (tipoItem.includes('PAINT') && !especial);
++                            return aceita || item.id === selectedItemTrabalhoId;
++                          }).map(item => ({
+                             value: item.id, 
+                             label: `${item.tipoItem?.nome || 'S/ TIPO'} - ${String(item.numeroReferencia || '').padStart(2, '0')}/${item.anoReferencia || ''} - ${item.objetoAuditado || 'Sem objeto auditado'}` 
+                           }))}
+diff --git a/frontend/src/pages/RelatorioPreliminar.jsx b/frontend/src/pages/RelatorioPreliminar.jsx
+index 2de8de0..38cf5bc 100644
+--- a/frontend/src/pages/RelatorioPreliminar.jsx
++++ b/frontend/src/pages/RelatorioPreliminar.jsx
+@@ -1677,7 +1677,12 @@ export default function RelatorioPreliminar() {
+                     <div className="mb-6">
+                       <label className="block text-sm font-semibold text-gray-700 mb-2">Selecione o Item de Trabalho Base (Total: {itensTrabalhoList.length})</label>
+                         <SearchableSelect 
+-                          options={itensTrabalhoList.map(item => ({ 
++                          options={itensTrabalhoList.filter(item => {
++                            // RAI só em item PAINT e REAI só em item EXTRA; o item já vinculado continua na lista
++                            const tipoItem = (item.tipoItem?.nome || '').toUpperCase();
++                            const aceita = tipoItem.includes('EXTRA') ? especial : (tipoItem.includes('PAINT') && !especial);
++                            return aceita || item.id === selectedItemTrabalhoId;
++                          }).map(item => ({
+                             value: item.id, 
+                             label: `${item.tipoItem?.nome || 'S/ TIPO'} - ${String(item.numeroReferencia || '').padStart(2, '0')}/${item.anoReferencia || ''} - ${item.objetoAuditado || 'Sem objeto auditado'}` 
+                           }))}

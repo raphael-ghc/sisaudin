@@ -1679,7 +1679,12 @@ export default function RelatorioFinal() {
                     <div className="mb-6">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Selecione o Item de Trabalho Base (Total: {itensTrabalhoList.length})</label>
                         <SearchableSelect 
-                          options={itensTrabalhoList.map(item => ({ 
+                          options={itensTrabalhoList.filter(item => {
+                            // RAI só em item PAINT e REAI só em item EXTRA; o item já vinculado continua na lista
+                            const tipoItem = (item.tipoItem?.nome || '').toUpperCase();
+                            const aceita = tipoItem.includes('EXTRA') ? especial : (tipoItem.includes('PAINT') && !especial);
+                            return aceita || item.id === selectedItemTrabalhoId;
+                          }).map(item => ({
                             value: item.id, 
                             label: `${item.tipoItem?.nome || 'S/ TIPO'} - ${String(item.numeroReferencia || '').padStart(2, '0')}/${item.anoReferencia || ''} - ${item.objetoAuditado || 'Sem objeto auditado'}` 
                           }))}

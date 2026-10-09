@@ -43,8 +43,8 @@ public class RelatorioPreliminarService {
     }
 
     /**
-     * @param especial tipo pedido na criação (true = REAI). Ignorado se o relatório já existe:
-     *                 o tipo não muda depois de criado.
+     * @param especial tipo pedido na criação (true = REAI). Não decide o tipo: na criação ele vem
+     *                 do item de trabalho (PAINT = RAI, EXTRA = REAI) e não muda depois.
      */
     public RelatorioPreliminar getOrCreateByItemTrabalhoId(Long itemTrabalhoId, Boolean especial) {
         Optional<RelatorioPreliminar> existing = repository.findByItemTrabalho_Id(itemTrabalhoId);
@@ -73,10 +73,11 @@ public class RelatorioPreliminarService {
             novoRelatorio.setPlanAmostra(plan.getAmostra());
         }
 
-        // Se o item já tem relatório final, o preliminar segue o mesmo tipo (e herda o número)
+        // Se o item já tem relatório final, o preliminar segue o mesmo tipo (e herda o número).
+        // Senão, o tipo vem do item: PAINT gera RAI, EXTRA gera REAI (o parâmetro "especial" não decide).
         boolean ehEspecial = relatorioFinalRepository.findByItemTrabalho_Id(itemTrabalhoId)
                 .map(f -> Boolean.TRUE.equals(f.getEspecial()))
-                .orElse(Boolean.TRUE.equals(especial));
+                .orElseGet(() -> DocumentoNumeroService.exigirTipoRelatorioDoItem(itemTrabalho));
         novoRelatorio.setEspecial(ehEspecial);
 
         Integer anoAtual = LocalDate.now().getYear();
@@ -180,6 +181,10 @@ public class RelatorioPreliminarService {
         if (itemTrabalhoId != null) {
             ItemTrabalho itemTrabalho = itemTrabalhoRepository.findById(itemTrabalhoId)
                     .orElseThrow(() -> new RuntimeException("ItemTrabalho não encontrado: " + itemTrabalhoId));
+            // Só valida quando o vínculo muda, para não travar a edição de relatórios antigos
+            if (relatorio.getItemTrabalho() == null || !itemTrabalhoId.equals(relatorio.getItemTrabalho().getId())) {
+                DocumentoNumeroService.validarVinculoRelatorio(itemTrabalho, relatorio.getEspecial());
+            }
             relatorio.setItemTrabalho(itemTrabalho);
         }
 
