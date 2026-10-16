@@ -5,6 +5,9 @@
 
 server.port=8081
 
+# Log em arquivo, relativo a pasta de execucao (sem esta linha, o log vai so para o console)
+logging.file.name=logs/sisaudin.log
+
 # Link enviado nos e-mails: endereco da homologacao, nunca o de producao
 sisaudin.link=https://TROCAR_ENDERECO_HOMOLOGACAO/login
 

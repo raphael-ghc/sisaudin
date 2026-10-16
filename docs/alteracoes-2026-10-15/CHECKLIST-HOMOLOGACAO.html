@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist Homologação Sisaudin</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1d2330; --muted: #5d6677;
+    --border: #dde1e8; --accent: #1f5fae; --accent-soft: #e6eefa;
+    --ok: #217a45; --ok-soft: #e4f3ea; --warn: #8a5a00; --warn-soft: #fdf3dc;
+    --danger: #a52a2a; --danger-soft: #fbe7e7; --code-bg: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+      --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+      --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+      --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+    --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+    --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+    --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 0; color: var(--muted); }
+  .bar {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 12px 0; margin: 16px 0 8px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .progress { flex: 1 1 220px; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+  #progressText { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 120px; }
+  button {
+    font: inherit; font-size: .85rem; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); border-radius: 6px; padding: 5px 10px;
+  }
+  button:hover { border-color: var(--accent); }
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  }
+  .meta label { display: block; font-size: .8rem; color: var(--muted); }
+  .meta input {
+    width: 100%; font: inherit; padding: 6px 8px; margin-top: 2px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  section {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 4px 18px 14px; margin-top: 18px;
+  }
+  section h2 { font-size: 1.15rem; margin: 14px 0 4px; display: flex; justify-content: space-between; gap: 8px; }
+  section h2 .count { font-size: .8rem; font-weight: normal; color: var(--muted); white-space: nowrap; }
+  section > p.intro { margin: 0 0 8px; color: var(--muted); }
+  section.done h2 .count { color: var(--ok); }
+  .item { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
+  .item:first-of-type { border-top: 0; }
+  .item input[type=checkbox] { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--ok); }
+  .item .body { flex: 1; min-width: 0; }
+  .item.checked .title { text-decoration: line-through; color: var(--muted); }
+  .title { font-weight: 600; }
+  .item .body p { margin: 4px 0 0; }
+  .tag { font-size: .72rem; font-weight: 600; padding: 1px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
+  .tag.opt { background: var(--accent-soft); color: var(--accent); }
+  .tag.crit { background: var(--danger-soft); color: var(--danger); }
+  .note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; margin: 6px 0 0; border-radius: 0 6px 6px 0; font-size: .9rem; }
+  .note.danger { border-color: var(--danger); background: var(--danger-soft); }
+  .codebox { position: relative; margin: 6px 0 0; }
+  pre {
+    margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; padding-right: 64px; overflow-x: auto; font: 13px/1.45 Consolas, "Cascadia Mono", monospace;
+  }
+  .codebox button { position: absolute; top: 5px; right: 5px; font-size: .75rem; padding: 2px 8px; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .9em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin-top: 6px; }
+  th, td { text-align: left; border: 1px solid var(--border); padding: 4px 8px; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .tablewrap { overflow-x: auto; }
+  footer { margin-top: 24px; color: var(--muted); font-size: .85rem; }
+  @media print {
+    .bar button, .codebox button { display: none; }
+    .bar { position: static; }
+    body { background: #fff; color: #000; }
+    section { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Checklist — Homologação do Sisaudin (JAR unificado)</h1>
+  <p>Levantar o ambiente de homologação com o front e a API servidos pelo mesmo JAR. Referência: <code>docs/alteracoes-2026-10-15/RELATORIO-ALTERACOES.md</code>.</p>
+</header>
+
+<div class="bar">
+  <div class="progress" aria-hidden="true"><div id="progressFill"></div></div>
+  <span id="progressText">0 de 0</span>
+  <button type="button" onclick="window.print()">Imprimir</button>
+  <button type="button" id="resetBtn">Limpar marcações</button>
+</div>
+
+<div class="meta">
+  <div><label for="m-resp">Responsável</label><input id="m-resp" data-field="resp"></div>
+  <div><label for="m-data">Data</label><input id="m-data" data-field="data" type="date"></div>
+  <div><label for="m-serv">Servidor de homologação</label><input id="m-serv" data-field="serv" placeholder="nome ou IP"></div>
+  <div><label for="m-url">Endereço de acesso</label><input id="m-url" data-field="url" placeholder="http://servidor:8081"></div>
+  <div><label for="m-backup">Arquivo de backup usado</label><input id="m-backup" data-field="backup" placeholder="sisaudin_AAAA-MM-DD.sql"></div>
+</div>
+
+<!-- 1 -->
+<section>
+  <h2>1. Servidor de homologação <span class="count"></span></h2>
+  <p class="intro">Máquina separada da produção, ou a mesma com porta e banco próprios.</p>
+
+  <div class="item"><input type="checkbox" id="s1-java"><div class="body">
+    <div class="title">Java 17 ou mais novo instalado</div>
+    <div class="codebox"><pre><code>java -version</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-mysql"><div class="body">
+    <div class="title">MySQL acessível a partir do servidor</div>
+    <p>Pode ser o mesmo MySQL da produção, desde que com banco e usuário próprios (seção 3).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-porta"><div class="body">
+    <div class="title">Porta 8081 livre e liberada no firewall para a rede interna</div>
+    <div class="codebox"><pre><code>netstat -ano | findstr :8081</code></pre></div>
+    <p>Sem resultado = porta livre.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-smtp"><div class="body">
+    <div class="title">SMTP falso instalado e rodando na porta 1025 <span class="tag crit">obrigatório</span></div>
+    <p>MailHog ou smtp4dev. Captura os e-mails sem enviá-los.</p>
+    <p class="note danger">O banco de homologação é uma cópia da produção, com os e-mails reais dos usuários. Sem o SMTP falso, a homologação envia e-mail de verdade.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-pasta"><div class="body">
+    <div class="title">Pasta de execução criada</div>
+    <div class="codebox"><pre><code>New-Item -ItemType Directory C:\sisaudin-homolog</code></pre></div>
+  </div></div>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2>2. Backup da produção <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s2-export"><div class="body">
+    <div class="title">Exportar o banco de produção no MySQL Workbench</div>
+    <p><b>Server &gt; Data Export</b> → selecionar o schema → <b>Dump Structure and Data</b> → <b>Export to Self-Contained File</b>.</p>
+    <p>Marcar: <b>Create Dump in a Single Transaction</b>, <b>Dump Stored Procedures</b>, <b>Events</b>, <b>Triggers</b>.</p>
+    <p class="note">Deixar <b>Include Create Schema</b> <u>desmarcado</u>. Com ele, a importação recria o schema com o nome de produção e pode sobrescrevê-lo.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s2-uploads"><div class="body">
+    <div class="title">Copiar a pasta <code>uploads\</code> da produção <span class="tag opt">opcional</span></div>
+    <p>Necessária para abrir os anexos já existentes. Fica na pasta de onde o backend de produção é executado.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s2-guardar"><div class="body">
+    <div class="title">Guardar o arquivo <code>.sql</code> em local de acesso restrito</div>
+    <p>O dump contém dados reais. Anotar o nome do arquivo no topo deste checklist.</p>
+  </div></div>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2>3. Banco de homologação <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s3-criar"><div class="body">
+    <div class="title">Criar o banco e o usuário próprio</div>
+    <p>No Workbench, conectado como administrador. Trocar a senha.</p>
+    <div class="codebox"><pre><code>CREATE DATABASE sisaudin_homolog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'sisaudin_hml'@'localhost' IDENTIFIED BY 'TROCAR_SENHA_BANCO';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES, DROP
+  ON sisaudin_homolog.* TO 'sisaudin_hml'@'localhost';</code></pre></div>
+    <p>MySQL em outra máquina: trocar <code>'localhost'</code> pelo IP do servidor de homologação.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-import"><div class="body">
+    <div class="title">Restaurar o backup no banco novo</div>
+    <p><b>Server &gt; Data Import</b> → <b>Import from Self-Contained File</b> → <b>Default Target Schema</b> = <code>sisaudin_homolog</code> → <b>Start Import</b>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-conferir"><div class="body">
+    <div class="title">Conferir que a restauração foi para o banco certo</div>
+    <div class="codebox"><pre><code>SELECT table_schema, COUNT(*) AS tabelas
+FROM information_schema.tables
+WHERE table_schema IN ('sisaudin_homolog')
+GROUP BY table_schema;
+
+SELECT COUNT(*) FROM sisaudin_homolog.item_trabalho;</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-origem"><div class="body">
+    <div class="title">Conferir que o banco restaurado é mesmo a produção e tem a estrutura do sistema atual <span class="tag crit">crítico</span></div>
+    <div class="codebox"><pre><code>SELECT table_name, engine, table_rows, create_time
+FROM information_schema.tables
+WHERE table_schema = 'sisaudin_homolog'
+  AND table_name IN ('item_trabalho', 'relatorio_preliminar', 'pessoa', 'doc_relatorio')
+ORDER BY table_name;</code></pre></div>
+    <p>Esperado: <code>item_trabalho</code> e <code>relatorio_preliminar</code> existem, com linhas, e <code>create_time</code> de hoje (hora da importação).</p>
+    <p class="note danger">Sem <code>item_trabalho</code> (só <code>doc_relatorio</code>, <code>doc_os</code>, <code>item</code>): é a estrutura antiga do sistema. O JAR criaria tabelas novas e vazias e o sistema abriria sem dados. <b>Não subir</b>; a implantação exige migração de dados.<br>
+    <code>create_time</code> antigo: o banco não é o que acabou de ser restaurado (importação foi para outro nome).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-engine"><div class="body">
+    <div class="title">Conferir o mecanismo das tabelas (MyISAM × InnoDB)</div>
+    <div class="codebox"><pre><code>SELECT engine, COUNT(*) AS tabelas
+FROM information_schema.tables
+WHERE table_schema = 'sisaudin_homolog' AND table_type = 'BASE TABLE'
+GROUP BY engine;</code></pre></div>
+    <p>Esperado: só <code>InnoDB</code>. Tabelas <code>MyISAM</code> não têm transação nem chave estrangeira, e o <code>ddl-auto=update</code> falha nelas com <code>Specified key was too long; max key length is 1000 bytes</code>. Se houver MyISAM, converter na homologação (gerar os comandos com a consulta abaixo, rodar com a aplicação parada) e registrar para fazer o mesmo na produção:</p>
+    <div class="codebox"><pre><code>SELECT CONCAT('ALTER TABLE `', table_name, '` ENGINE=InnoDB;')
+FROM information_schema.tables
+WHERE table_schema = 'sisaudin_homolog' AND engine = 'MyISAM';</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-sem-especial"><div class="body">
+    <div class="title">Verificar se o banco já tem a coluna <code>especial</code></div>
+    <div class="codebox"><pre><code>SELECT table_name, column_name
+FROM information_schema.columns
+WHERE table_schema = 'sisaudin_homolog' AND column_name = 'especial';</code></pre></div>
+    <p><b>Sem resultado</b> = produção ainda sem a entrega de 08/10 (RAI/REAI). É o esperado: a coluna será criada e preenchida na subida do JAR (seção 7). Siga as consultas abaixo.</p>
+    <p><b>Com resultado</b> = a coluna já existe; a prévia abaixo continua útil, mas a migração só vai preencher os registros com <code>especial</code> nulo.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s3-consultas"><div class="body">
+    <div class="title">Rodar as consultas de antes da subida e guardar o resultado</div>
+    <p>Não usam a coluna <code>especial</code>, então funcionam no banco recém-restaurado. Servem de base para a conferência da seção 9. Salvar o resultado (no Workbench: botão <b>Export</b> da grade de resultado).</p>
+    <div class="codebox"><pre><code>USE sisaudin_homolog;
+
+-- A. Prévia de como a migração vai classificar os relatórios existentes
+--    (mesma regra da RelatorioEspecialMigration: "EXTRA" na sigla do item = REAI)
+SELECT 'preliminar' AS tabela,
+       IF(UPPER(COALESCE(i.sigla,'')) LIKE '%EXTRA%', 'REAI', 'RAI') AS tipo, COUNT(*) AS qtd
+FROM relatorio_preliminar r LEFT JOIN item_trabalho i ON i.id = r.item_trabalho_id GROUP BY 2
+UNION ALL
+SELECT 'final', IF(UPPER(COALESCE(i.sigla,'')) LIKE '%EXTRA%', 'REAI', 'RAI'), COUNT(*)
+FROM relatorio_final r LEFT JOIN item_trabalho i ON i.id = r.item_trabalho_id GROUP BY 2;
+
+-- B. Número repetido no mesmo tipo e ano, pela classificação acima
+SELECT IF(UPPER(COALESCE(i.sigla,'')) LIKE '%EXTRA%', 'REAI', 'RAI') AS tipo, r.ano, r.numero,
+       COUNT(*) AS qtd, GROUP_CONCAT(r.id) AS ids
+FROM relatorio_preliminar r LEFT JOIN item_trabalho i ON i.id = r.item_trabalho_id
+WHERE r.numero IS NOT NULL GROUP BY 1, 2, 3 HAVING COUNT(*) &gt; 1;
+
+-- C. Item com mais de um relatório preliminar
+SELECT item_trabalho_id, COUNT(*) AS qtd, GROUP_CONCAT(id) AS ids
+FROM relatorio_preliminar WHERE item_trabalho_id IS NOT NULL
+GROUP BY item_trabalho_id HAVING COUNT(*) &gt; 1;
+
+-- D. Relatórios sem item de trabalho
+SELECT 'preliminar' AS tabela, id, ano, numero FROM relatorio_preliminar WHERE item_trabalho_id IS NULL
+UNION ALL
+SELECT 'final', id, ano, numero FROM relatorio_final WHERE item_trabalho_id IS NULL;
+
+-- E. Itens que não podem gerar relatório novo (sem tipo PAINT/EXTRA)
+SELECT i.id, i.sigla, t.nome AS tipo
+FROM item_trabalho i LEFT JOIN tipo_item t ON t.id = i.tipo_item_id
+WHERE t.nome IS NULL
+   OR (UPPER(t.nome) NOT LIKE '%EXTRA%' AND UPPER(t.nome) NOT LIKE '%PAINT%');
+
+-- F. Relatórios de item EXTRA (pelo cadastro) que a migração vai marcar como RAI,
+--    porque a sigla do item não contém "EXTRA"
+SELECT 'preliminar' AS tabela, r.id, i.sigla, t.nome AS tipo_item, r.ano, r.numero
+FROM relatorio_preliminar r
+JOIN item_trabalho i ON i.id = r.item_trabalho_id
+JOIN tipo_item t ON t.id = i.tipo_item_id
+WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%'
+UNION ALL
+SELECT 'final', r.id, i.sigla, t.nome, r.ano, r.numero
+FROM relatorio_final r
+JOIN item_trabalho i ON i.id = r.item_trabalho_id
+JOIN tipo_item t ON t.id = i.tipo_item_id
+WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%';</code></pre></div>
+    <p class="note">A consulta <b>F</b> mostra os relatórios antigos que ficarão como RAI em item EXTRA. Eles continuam funcionando; reclassificar é decisão caso a caso (pode gerar número repetido na sequência REAI). Anotar a quantidade nas observações.</p>
+  </div></div>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2>4. Gerar o JAR (máquina de desenvolvimento) <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s4-parar"><div class="body">
+    <div class="title">Parar o backend local</div>
+    <p>O build escreve em <code>backend/target</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s4-front"><div class="body">
+    <div class="title">Gerar o front no modo <code>unificado</code></div>
+    <div class="codebox"><pre><code>cd frontend
+npx.cmd vite build --mode unificado</code></pre></div>
+    <p class="note">Não usar <code>npm run build</code>: ele aponta para a produção.</p>
+    <p>Usar <code>npx.cmd</code>, e não <code>npx</code>: no PowerShell, <code>npx</code> chama o <code>npx.ps1</code>, que a política de execução do Windows costuma bloquear ("a execução de scripts foi desabilitada neste sistema"). O mesmo vale para <code>npm.cmd</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s4-semprod"><div class="body">
+    <div class="title">Conferir que o build não aponta para a produção</div>
+    <div class="codebox"><pre><code>(Select-String -Path dist\assets\*.js -Pattern 'sisaudin.ghc.com.br' -SimpleMatch).Count</code></pre></div>
+    <p>O resultado tem de ser <b>0</b>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s4-jar"><div class="body">
+    <div class="title">Gerar o JAR</div>
+    <div class="codebox"><pre><code>cd ..\backend
+.\mvnw.cmd clean package -DskipTests</code></pre></div>
+    <p>Sai <code>backend\target\sisaudin-0.0.1-SNAPSHOT.jar</code> (cerca de 250 MB).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s4-static"><div class="body">
+    <div class="title">Conferir que o front entrou no JAR</div>
+    <div class="codebox"><pre><code>Add-Type -A System.IO.Compression.FileSystem
+$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path target\sisaudin-0.0.1-SNAPSHOT.jar))
+$z.Entries | Where-Object FullName -like 'BOOT-INF/classes/static/index.html' | Select-Object FullName
+$z.Dispose()</code></pre></div>
+    <p>Tem de listar <code>BOOT-INF/classes/static/index.html</code>. Sem ele, o JAR sobe sem telas.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s4-dist"><div class="body">
+    <div class="title">Se o <code>frontend/dist</code> também alimenta o nginx de produção, refazer o build de produção antes de publicar lá</div>
+  </div></div>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2>5. Pasta de execução e configuração <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s5-copiar"><div class="body">
+    <div class="title">Copiar o JAR para <code>C:\sisaudin-homolog\</code></div>
+    <p>Se houver anexos copiados da produção, colocar também <code>uploads\</code> nessa pasta.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-props"><div class="body">
+    <div class="title">Criar o <code>application.properties</code> ao lado do JAR</div>
+    <p>Copiar de <code>docs/alteracoes-2026-10-15/application.properties.homologacao.exemplo</code>, renomear para <code>application.properties</code> e preencher todos os <code>TROCAR_*</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-jwt"><div class="body">
+    <div class="title">Gerar dois segredos JWT próprios da homologação</div>
+    <p>Rodar duas vezes e colar em <code>jwt.access.secret</code> e <code>jwt.refresh.secret</code>:</p>
+    <div class="codebox"><pre><code>$b = New-Object byte[] 64; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)</code></pre></div>
+    <p class="note">Valores diferentes dos de produção e diferentes entre si.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-chaves"><div class="body">
+    <div class="title">Conferir as chaves que não podem ficar com valor de produção</div>
+    <div class="tablewrap"><table>
+      <tr><th>Chave</th><th>Valor esperado na homologação</th></tr>
+      <tr><td><code>server.port</code></td><td><code>8081</code></td></tr>
+      <tr><td><code>sisaudin.link</code></td><td>endereço da homologação + <code>/login</code></td></tr>
+      <tr><td><code>spring.datasource.url</code></td><td>exatamente o nome do banco restaurado na seção 3 (conferir no Workbench; um nome parecido aponta para outro banco)</td></tr>
+      <tr><td><code>spring.datasource.username</code></td><td><code>sisaudin_hml</code></td></tr>
+      <tr><td><code>spring.mail.host</code> / <code>port</code></td><td><code>localhost</code> / <code>1025</code> (SMTP falso)</td></tr>
+      <tr><td><code>app.seeder.enabled</code></td><td><code>false</code></td></tr>
+    </table></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-encoding"><div class="body">
+    <div class="title">Arquivo salvo em UTF-8 sem BOM, sem acentos e sem espaço no fim dos valores</div>
+    <p>Salvar pelo Bloco de Notas. Não gerar com <code>Set-Content</code> ou <code>Out-File</code> do PowerShell 5.1.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-acl"><div class="body">
+    <div class="title">Restringir a leitura do arquivo <span class="tag opt">recomendado</span></div>
+    <div class="codebox"><pre><code>icacls C:\sisaudin-homolog\application.properties /inheritance:r /grant:r "Administradores:F" "CONTA_DO_SERVICO:R"</code></pre></div>
+  </div></div>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2>6. Chromium do Playwright (geração de PDF) <span class="count"></span></h2>
+  <p class="intro">Executar com o mesmo usuário Windows que vai rodar o Sisaudin.</p>
+
+  <div class="item"><input type="checkbox" id="s6-install"><div class="body">
+    <div class="title">Instalar o Chromium a partir do próprio JAR</div>
+    <div class="codebox"><pre><code>cd C:\sisaudin-homolog
+java "-Dloader.main=com.microsoft.playwright.CLI" -cp sisaudin-0.0.1-SNAPSHOT.jar org.springframework.boot.loader.launch.PropertiesLauncher install chromium</code></pre></div>
+    <p>Conferir antes que o comando responde (deve mostrar <code>Version 1.41.0</code>): trocar <code>install chromium</code> por <code>--version</code>.</p>
+    <p class="note">Precisa de internet. Sem acesso, rodar em outra máquina Windows e copiar a pasta <code>%LOCALAPPDATA%\ms-playwright</code> para o mesmo caminho do usuário do serviço.</p>
+  </div></div>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2>7. Subir a aplicação <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s7-subir"><div class="body">
+    <div class="title">Iniciar o JAR de dentro da pasta de execução</div>
+    <div class="codebox"><pre><code>cd C:\sisaudin-homolog
+java -jar sisaudin-0.0.1-SNAPSHOT.jar</code></pre></div>
+    <p class="note">Executar <b>de dentro</b> da pasta: é dali que o Spring lê o <code>application.properties</code> externo e onde fica <code>uploads\</code>.</p>
+    <p><b>Primeira subida</b> (banco sem a coluna <code>especial</code>): gravar a saída inteira do console, porque a mensagem da migração (próximo item) não vai para o arquivo de log:</p>
+    <div class="codebox"><pre><code>cd C:\sisaudin-homolog
+cmd /c "java -jar sisaudin-0.0.1-SNAPSHOT.jar &gt; primeira-subida.txt 2&gt;&amp;1"</code></pre></div>
+    <p>Acompanhar em outra janela:</p>
+    <div class="codebox"><pre><code>Get-Content C:\sisaudin-homolog\primeira-subida.txt -Wait -Tail 50</code></pre></div>
+    <p>Nas subidas seguintes, o log fica em <code>logs\sisaudin.log</code> (chave <code>logging.file.name</code>; sem ela, só no console):</p>
+    <div class="codebox"><pre><code>Get-Content C:\sisaudin-homolog\logs\sisaudin.log -Wait -Tail 50</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7-started"><div class="body">
+    <div class="title">Log mostra <code>Started SisaudinApplication</code> e nenhum <code>ERROR</code></div>
+    <div class="tablewrap"><table>
+      <tr><th>Mensagem no log</th><th>Causa provável</th></tr>
+      <tr><td><code>Access denied for user</code></td><td>usuário, senha ou <code>GRANT</code> do MySQL (seção 3)</td></tr>
+      <tr><td><code>Unknown database</code></td><td>nome do banco na <code>spring.datasource.url</code></td></tr>
+      <tr><td><code>WeakKeyException</code> / <code>Illegal base64</code></td><td>segredo JWT colado incompleto</td></tr>
+      <tr><td><code>Port 8081 was already in use</code></td><td>outro processo na porta (seção 1)</td></tr>
+    </table></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7-migracao"><div class="body">
+    <div class="title">Log mostra a classificação dos relatórios antigos (coluna <code>especial</code>)</div>
+    <p>Na primeira subida sobre um banco sem a coluna, o Hibernate cria <code>especial</code> e a <code>RelatorioEspecialMigration</code> a preenche. Devem aparecer, uma vez cada:</p>
+    <div class="codebox"><pre><code>[RelatorioEspecialMigration] RelatorioPreliminar: N marcados como REAI, M como RAI.
+[RelatorioEspecialMigration] RelatorioFinal: N marcados como REAI, M como RAI.</code></pre></div>
+    <p>N e M devem bater com a consulta <b>A</b> da seção 3. Nas subidas seguintes a mensagem não aparece mais (não há registro nulo para preencher).</p>
+    <p>A mensagem sai por <code>System.out</code>: aparece no console ou no <code>primeira-subida.txt</code>, nunca no <code>logs\sisaudin.log</code>. Se ela se perdeu, a conferência da seção 9 mostra o mesmo resultado no banco.</p>
+    <p class="note">Sem a mensagem e com erro de <code>ALTER</code> no log: falta permissão <code>ALTER</code> ao usuário do banco (seção 3). Para criar a coluna à mão, como administrador, e subir de novo:<br>
+    <code>ALTER TABLE relatorio_preliminar ADD COLUMN especial BIT(1) NULL;</code><br>
+    <code>ALTER TABLE relatorio_final ADD COLUMN especial BIT(1) NULL;</code></p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7-ddl"><div class="body">
+    <div class="title">Anotar as alterações de estrutura que o Hibernate fez na subida</div>
+    <p>Com <code>ddl-auto=update</code>, colunas e tabelas novas aparecem no log como <code>alter table</code> / <code>create table</code> (se <code>show-sql</code> estiver ligado) ou podem ser vistas comparando o schema com o da produção.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7-servico"><div class="body">
+    <div class="title">Registrar como serviço do Windows <span class="tag opt">opcional</span></div>
+    <p>WinSW ou NSSM, com o diretório de trabalho em <code>C:\sisaudin-homolog</code> e o mesmo usuário da seção 6.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7-nginx"><div class="body">
+    <div class="title">Nginx com HTTPS na frente <span class="tag opt">opcional</span></div>
+    <p>Só como proxy de tudo para a porta 8081. Se usar, ajustar <code>sisaudin.link</code> para o endereço HTTPS.</p>
+    <div class="codebox"><pre><code>client_max_body_size 50m;
+location / {
+    proxy_pass         http://127.0.0.1:8081;
+    proxy_set_header   Host              $http_host;
+    proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+}</code></pre></div>
+  </div></div>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2>8. Testes no navegador <span class="count"></span></h2>
+  <p class="intro">Abrir o endereço da homologação, com a ferramenta do desenvolvedor (F12) na aba <b>Rede</b>.</p>
+
+  <div class="item"><input type="checkbox" id="s8-login"><div class="body">
+    <div class="title">Tela de login abre e o login funciona</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-rede"><div class="body">
+    <div class="title">Nenhuma chamada sai para <code>sisaudin.ghc.com.br</code> <span class="tag crit">crítico</span></div>
+    <p>Filtrar a aba Rede por <code>ghc.com.br</code>. Todas as chamadas devem ir para o endereço da homologação.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-f5"><div class="body">
+    <div class="title">F5 numa tela interna (ex.: um item de trabalho) recarrega a mesma tela</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-rai"><div class="body">
+    <div class="title">Item PAINT sem relatório: menu "Criar Documento" libera RAI e bloqueia REAI</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-reai"><div class="body">
+    <div class="title">Item EXTRA sem relatório: libera REAI e bloqueia RAI</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-criar"><div class="body">
+    <div class="title">Criar um relatório de teste, conferir sigla e número, e excluí-lo</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-anexo"><div class="body">
+    <div class="title">Anexar um arquivo de alguns MB, baixar e excluir</div>
+    <p>Erro 413 = limite de upload no nginx (<code>client_max_body_size</code>).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-pdf"><div class="body">
+    <div class="title">Gerar o PDF de um documento</div>
+    <p>Falha aqui costuma ser o Chromium da seção 6, ou o serviço rodando com outro usuário.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-email"><div class="body">
+    <div class="title">Ação que envia e-mail chega no SMTP falso, com link da homologação</div>
+    <p>Conferir na interface do MailHog/smtp4dev. O link não pode apontar para a produção.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-foto"><div class="body">
+    <div class="title">Foto de perfil aparece</div>
+    <p class="note">Pendência conhecida: <code>/uploads</code> exige token e a imagem pode não carregar. Já acontecia antes; registrar o resultado.</p>
+  </div></div>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2>9. Conferência final <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s9-especial"><div class="body">
+    <div class="title">Coluna <code>especial</code> criada e preenchida em todos os relatórios</div>
+    <div class="codebox"><pre><code>SELECT 'preliminar' AS tabela,
+       CASE WHEN especial IS NULL THEN 'NULO' WHEN especial = 1 THEN 'REAI' ELSE 'RAI' END AS tipo,
+       COUNT(*) AS qtd
+FROM relatorio_preliminar GROUP BY 2
+UNION ALL
+SELECT 'final',
+       CASE WHEN especial IS NULL THEN 'NULO' WHEN especial = 1 THEN 'REAI' ELSE 'RAI' END,
+       COUNT(*)
+FROM relatorio_final GROUP BY 2;</code></pre></div>
+    <p>Os totais devem bater com a consulta <b>A</b> da seção 3 e <b>não pode haver linha NULO</b>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s9-duplicados"><div class="body">
+    <div class="title">Números repetidos agora pela coluna <code>especial</code></div>
+    <div class="codebox"><pre><code>SELECT 'preliminar' AS tabela, ano, especial + 0 AS reai, numero, COUNT(*) AS qtd, GROUP_CONCAT(id) AS ids
+FROM relatorio_preliminar WHERE numero IS NOT NULL
+GROUP BY ano, especial, numero HAVING COUNT(*) &gt; 1
+UNION ALL
+SELECT 'final', ano, especial + 0, numero, COUNT(*), GROUP_CONCAT(id)
+FROM relatorio_final WHERE numero IS NOT NULL
+GROUP BY ano, especial, numero HAVING COUNT(*) &gt; 1;</code></pre></div>
+    <p>O resultado do preliminar deve ser igual ao da consulta <b>B</b> da seção 3. Os repetidos já existiam; os novos números saem do maior + 1 e não são afetados.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s9-consultas"><div class="body">
+    <div class="title">Rodar de novo as consultas C, D e E da seção 3 e comparar</div>
+    <p>Não pode aparecer inconsistência nova além dos relatórios de teste (já excluídos).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s9-fora"><div class="body">
+    <div class="title">Relatórios fora da regra (tipo do relatório × tipo do item)</div>
+    <div class="codebox"><pre><code>SELECT 'preliminar' AS tabela, r.id, r.item_trabalho_id, t.nome AS tipo_item,
+       IF(COALESCE(r.especial,0) = 1, 'REAI', 'RAI') AS tipo_relatorio, r.ano, r.numero
+FROM relatorio_preliminar r
+JOIN item_trabalho i ON i.id = r.item_trabalho_id
+LEFT JOIN tipo_item t ON t.id = i.tipo_item_id
+WHERE COALESCE(r.especial,0) &lt;&gt; (UPPER(COALESCE(t.nome,'')) LIKE '%EXTRA%');</code></pre></div>
+    <p>O resultado deve conter só relatórios antigos.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s9-registro"><div class="body">
+    <div class="title">Registrar resultado, problemas e pendências</div>
+    <p>Usar o campo abaixo; ele fica salvo neste navegador.</p>
+  </div></div>
+
+  <div class="meta" style="margin-top:8px">
+    <div style="grid-column:1/-1"><label for="m-obs">Observações</label>
+      <textarea id="m-obs" data-field="obs" rows="5" style="width:100%;font:inherit;padding:6px 8px;margin-top:2px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px"></textarea>
+    </div>
+  </div>
+</section>
+
+<footer>
+  As marcações e os campos ficam salvos apenas neste navegador. Para registrar oficialmente, use <b>Imprimir</b> (pode salvar como PDF).
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'sisaudin-checklist-homologacao-v1';
+  var state = { checks: {}, fields: {} };
+  try { var raw = localStorage.getItem(KEY); if (raw) state = JSON.parse(raw) || state; } catch (e) {}
+  state.checks = state.checks || {}; state.fields = state.fields || {};
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.item input[type=checkbox]'));
+
+  function refresh() {
+    var done = 0;
+    boxes.forEach(function (b) {
+      b.closest('.item').classList.toggle('checked', b.checked);
+      if (b.checked) done++;
+    });
+    document.getElementById('progressFill').style.width = (boxes.length ? done / boxes.length * 100 : 0) + '%';
+    document.getElementById('progressText').textContent = done + ' de ' + boxes.length + ' concluídos';
+    document.querySelectorAll('section').forEach(function (s) {
+      var bs = s.querySelectorAll('.item input[type=checkbox]');
+      var n = 0; bs.forEach(function (b) { if (b.checked) n++; });
+      var c = s.querySelector('h2 .count');
+      if (c) c.textContent = n + '/' + bs.length;
+      s.classList.toggle('done', bs.length > 0 && n === bs.length);
+    });
+  }
+
+  boxes.forEach(function (b) {
+    b.checked = !!state.checks[b.id];
+    b.addEventListener('change', function () { state.checks[b.id] = b.checked; save(); refresh(); });
+  });
+
+  document.querySelectorAll('[data-field]').forEach(function (el) {
+    var k = el.getAttribute('data-field');
+    if (state.fields[k] != null) el.value = state.fields[k];
+    el.addEventListener('input', function () { state.fields[k] = el.value; save(); });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('Desmarcar todos os itens? Os campos de texto são mantidos.')) return;
+    state.checks = {}; save();
+    boxes.forEach(function (b) { b.checked = false; });
+    refresh();
+  });
+
+  document.querySelectorAll('.codebox').forEach(function (box) {
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.textContent = 'Copiar';
+    btn.addEventListener('click', function () {
+      var text = box.querySelector('pre').innerText;
+      var ok = function () { btn.textContent = 'Copiado'; setTimeout(function () { btn.textContent = 'Copiar'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, function () { fallback(text); ok(); });
+      } else { fallback(text); ok(); }
+    });
+    box.appendChild(btn);
+  });
+
+  function fallback(text) {
+    var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
+    t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t);
+  }
+
+  refresh();
+})();
+</script>
+</body>
+</html>

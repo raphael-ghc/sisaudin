@@ -9,6 +9,7 @@ Documentos desta pasta:
 - `RELATORIO-ALTERACOES.md` — este relatório.
 - `jar-unificado.patch` — as diferenças exatas, no formato do git (inclui o arquivo novo `frontend/.env.unificado`).
 - `application.properties.homologacao.exemplo` — modelo da configuração externa da homologação.
+- `CHECKLIST-HOMOLOGACAO.html` — checklist interativo para levantar a homologação (abrir no navegador; as marcações ficam salvas nele).
 
 ---
 
@@ -51,7 +52,7 @@ Com o backend local **parado** (o build escreve em `backend/target`):
 
 ```powershell
 cd frontend
-npx vite build --mode unificado
+npx.cmd vite build --mode unificado
 (Select-String -Path dist\assets\*.js -Pattern 'sisaudin.ghc.com.br' -SimpleMatch).Count   # deve dar 0
 
 cd ..\backend
@@ -70,6 +71,7 @@ Resultado: `backend\target\sisaudin-0.0.1-SNAPSHOT.jar` (cerca de 250 MB, quase 
 
 1. Java 17 ou mais novo.
 2. Banco `sisaudin_homolog`, restaurado de um backup de produção. Usuário MySQL próprio com `SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES, DROP` nesse banco.
+   - **Backup sem a coluna `especial`** (produção ainda sem a entrega de 08/10) é o caso esperado. Não é preciso alterar a exportação: na primeira subida do JAR, o Hibernate cria a coluna e a `RelatorioEspecialMigration` classifica os relatórios antigos pela sigla do item. Antes de subir, rode a prévia da classificação; depois, confira o log e os totais (seções 3, 7 e 9 do `CHECKLIST-HOMOLOGACAO.html`). A homologação serve de ensaio dessa mesma migração em produção.
 3. Pasta de execução, por exemplo `C:\sisaudin-homolog\`, com:
    - o JAR;
    - `application.properties`, copiado de `application.properties.homologacao.exemplo` com os `TROCAR_*` preenchidos;

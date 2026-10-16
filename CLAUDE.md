@@ -14,7 +14,7 @@ Sistema de auditoria interna do GHC. **Este repositório é uma cópia de teste*
 - Backend: `mvnw.cmd spring-boot:run` em `backend/` (porta 8080). Banco: MySQL local `sisaudin_novo_v10`, com `ddl-auto=update`.
 - Frontend: `npm run dev` em `frontend/` (porta 5173). Em desenvolvimento usa `frontend/.env.development`, que aponta para `http://localhost:8080`.
 - Endereço da API: sempre por `frontend/src/api/config.js` (`API_URL`, `API_BASE`). Não escreva a URL de produção no código.
-- JAR unificado (front dentro do JAR, usado na homologação): `npx vite build --mode unificado` em `frontend/` e depois `mvnw.cmd clean package -DskipTests` em `backend/`. O `pom.xml` copia `frontend/dist` para `static/`; sem o build do front, o JAR sai sem telas e sem aviso. `npm run build` não serve para isso (aponta para produção).
+- JAR unificado (front dentro do JAR, usado na homologação): `npx.cmd vite build --mode unificado` em `frontend/` (no PowerShell, `npx`/`npm` sem `.cmd` são bloqueados pela política de execução) e depois `mvnw.cmd clean package -DskipTests` em `backend/`. O `pom.xml` copia `frontend/dist` para `static/`; sem o build do front, o JAR sai sem telas e sem aviso. `npm run build` não serve para isso (aponta para produção).
 - O `git` não está no PATH desta máquina; há um em `%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git\cmd\git.exe`.
 - Para testar o backend sem derrubar o que está rodando, compile e suba uma cópia em outra porta. Não escreva em `backend/target` com a aplicação no ar.
 
