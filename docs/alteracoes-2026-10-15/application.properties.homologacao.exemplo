@@ -1,0 +1,39 @@
+# ============ Sisaudin - HOMOLOGACAO (JAR unificado) ============
+# Copiar para a pasta de execucao do JAR com o nome "application.properties"
+# e trocar todos os valores TROCAR_*. Salvar em UTF-8 sem BOM (Bloco de Notas).
+# So estao aqui as chaves que mudam; o resto vem do application.properties do JAR.
+
+server.port=8081
+
+# Link enviado nos e-mails: endereco da homologacao, nunca o de producao
+sisaudin.link=https://TROCAR_ENDERECO_HOMOLOGACAO/login
+
+# ---------- Banco (copia restaurada do backup de producao) ----------
+spring.datasource.url=jdbc:mysql://localhost:3306/sisaudin_homolog?zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true
+spring.datasource.username=sisaudin_hml
+spring.datasource.password=TROCAR_SENHA_BANCO
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+
+# Banco restaurado de producao ja tem os cadastros
+app.seeder.enabled=false
+
+# ---------- JWT: gerar um par proprio da homologacao ----------
+# PowerShell, rodar duas vezes:
+# $b = New-Object byte[] 64; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+jwt.access.secret=TROCAR_SEGREDO_1
+jwt.refresh.secret=TROCAR_SEGREDO_2
+jwt.access.expiry=86400000
+jwt.refresh.expiry=1209600000
+
+# ---------- E-mail: SMTP falso (MailHog ou smtp4dev) ----------
+# O banco de homologacao tem os e-mails reais dos usuarios.
+# Nao apontar para correio.ghc.com.br.
+spring.mail.host=localhost
+spring.mail.port=1025
+spring.mail.username=sisaudin-homologacao@ghc.com.br
+spring.mail.properties.mail.smtp.auth=false
+
+spring.security.user.name=admin
+spring.security.user.password=TROCAR_SENHA_ADMIN

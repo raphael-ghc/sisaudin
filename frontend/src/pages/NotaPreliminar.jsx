@@ -14,7 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
 import { getAllGerencias } from '../api/gerenciaApi';
 import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/notaPreliminarApi';
 import api from '../api/axiosInstance';
-import { API_URL } from '../api/config';
+import { API_URL, API_BASE } from '../api/config';
 import debounce from 'lodash.debounce';
 import { Client } from '@stomp/stompjs';
 //import SockJS from 'sockjs-client';
@@ -1149,7 +1149,7 @@ export default function NotaPreliminar() {
   {/*
   useEffect(() => {
      if (notaId) {
-        const socket = new SockJS(`${import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080'}/ws-collab`);
+        const socket = new SockJS(`${API_BASE}/ws-collab`);
         const client = new Client({
             webSocketFactory: () => socket,
             reconnectDelay: 5000,

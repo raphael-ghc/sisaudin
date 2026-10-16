@@ -1,0 +1,232 @@
+diff --git a/backend/pom.xml b/backend/pom.xml
+index e7f6d7c..f587103 100644
+--- a/backend/pom.xml
++++ b/backend/pom.xml
+@@ -159,6 +159,28 @@
+                     </annotationProcessorPaths>
+                 </configuration>
+             </plugin>
++            <!-- Copia o build do front (frontend/dist) para static/ do JAR -->
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-resources-plugin</artifactId>
++                <executions>
++                    <execution>
++                        <id>copiar-frontend</id>
++                        <phase>process-resources</phase>
++                        <goals>
++                            <goal>copy-resources</goal>
++                        </goals>
++                        <configuration>
++                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
++                            <resources>
++                                <resource>
++                                    <directory>${project.basedir}/../frontend/dist</directory>
++                                </resource>
++                            </resources>
++                        </configuration>
++                    </execution>
++                </executions>
++            </plugin>
+             <plugin>
+                 <groupId>org.springframework.boot</groupId>
+                 <artifactId>spring-boot-maven-plugin</artifactId>
+diff --git a/backend/src/main/java/sisaudin/config/WebMvcConfig.java b/backend/src/main/java/sisaudin/config/WebMvcConfig.java
+index 9bd55a5..ac66cb6 100644
+--- a/backend/src/main/java/sisaudin/config/WebMvcConfig.java
++++ b/backend/src/main/java/sisaudin/config/WebMvcConfig.java
+@@ -1,15 +1,24 @@
+ package sisaudin.config;
+ 
+ import org.springframework.context.annotation.Configuration;
++import org.springframework.core.io.ClassPathResource;
++import org.springframework.core.io.Resource;
+ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
++import org.springframework.web.servlet.resource.PathResourceResolver;
+ 
++import java.io.IOException;
+ import java.nio.file.Path;
+ import java.nio.file.Paths;
++import java.util.List;
+ 
+ @Configuration
+ public class WebMvcConfig implements WebMvcConfigurer {
+ 
++    // Caminhos do backend que nunca devem cair no index.html do front
++    private static final List<String> ROTAS_BACKEND =
++            List.of("api/", "uploads/", "ws-collab", "v3/", "swagger-ui", "error");
++
+     @Override
+     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+         Path uploadDir = Paths.get("uploads");
+@@ -17,5 +26,27 @@ public class WebMvcConfig implements WebMvcConfigurer {
+         
+         registry.addResourceHandler("/uploads/**")
+                 .addResourceLocations("file:/" + uploadPath + "/");
++
++        // Front (build do Vite copiado para static/ no JAR). Arquivo inexistente
++        // devolve o index.html, para o React Router tratar a rota.
++        registry.addResourceHandler("/**")
++                .addResourceLocations("classpath:/static/")
++                .resourceChain(true)
++                .addResolver(new PathResourceResolver() {
++                    @Override
++                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
++                        if (!resourcePath.isEmpty()) {
++                            Resource arquivo = location.createRelative(resourcePath);
++                            if (arquivo.exists() && arquivo.isReadable()) {
++                                return arquivo;
++                            }
++                        }
++                        if (ROTAS_BACKEND.stream().anyMatch(resourcePath::startsWith)) {
++                            return null;
++                        }
++                        Resource index = new ClassPathResource("/static/index.html");
++                        return index.exists() ? index : null;
++                    }
++                });
+     }
+ }
+diff --git a/backend/src/main/java/sisaudin/security/config/SecurityConfig.java b/backend/src/main/java/sisaudin/security/config/SecurityConfig.java
+index db4b4e3..da0a167 100644
+--- a/backend/src/main/java/sisaudin/security/config/SecurityConfig.java
++++ b/backend/src/main/java/sisaudin/security/config/SecurityConfig.java
+@@ -1,5 +1,6 @@
+ package sisaudin.security.config;
+ 
++import jakarta.servlet.http.HttpServletRequest;
+ import sisaudin.security.jwt.JwtAccessDeniedHandler;
+ import sisaudin.security.jwt.JwtAuthenticationEntryPoint;
+ import sisaudin.security.jwt.JwtFilter;
+@@ -55,6 +56,8 @@ public class SecurityConfig {
+                         .requestMatchers("/ws-collab/**").permitAll()
+                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                         .requestMatchers("/error").permitAll()
++                        // Front embutido no JAR: só leitura (GET) de index.html, assets e rotas do React
++                        .requestMatchers(SecurityConfig::isPaginaDoFront).permitAll()
+                         .anyRequest().authenticated())
+ // using JWT            .httpBasic(Customizer.withDefaults())
+                 .exceptionHandling(e -> e
+@@ -78,6 +81,13 @@ public class SecurityConfig {
+         // httpSecurity.formLogin(Customizer.withDefaults());
+     }
+ 
++    private static boolean isPaginaDoFront(HttpServletRequest request) {
++        String path = request.getRequestURI().substring(request.getContextPath().length());
++        return "GET".equals(request.getMethod())
++                && !path.startsWith("/api/")
++                && !path.startsWith("/uploads/");
++    }
++
+     @Bean
+     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+         return config.getAuthenticationManager();
+diff --git a/frontend/src/api/config.js b/frontend/src/api/config.js
+index 52ee6a0..24abe0f 100644
+--- a/frontend/src/api/config.js
++++ b/frontend/src/api/config.js
+@@ -1,4 +1,5 @@
+ // Endereços do backend. Em desenvolvimento vêm do .env.development;
+ // sem as variáveis definidas, valem os endereços de produção.
+-export const API_BASE = import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080';
+-export const API_URL = import.meta.env.VITE_API_URL || 'https://sisaudin.ghc.com.br/api';
++// Valor vazio é aceito: no JAR unificado o front chama o próprio servidor ("/api").
++export const API_BASE = import.meta.env.VITE_API_BASE ?? 'https://sisaudin.ghc.com.br:8080';
++export const API_URL = import.meta.env.VITE_API_URL ?? 'https://sisaudin.ghc.com.br/api';
+diff --git a/frontend/src/pages/NotaPreliminar.jsx b/frontend/src/pages/NotaPreliminar.jsx
+index a107c2f..ab6ce5b 100644
+--- a/frontend/src/pages/NotaPreliminar.jsx
++++ b/frontend/src/pages/NotaPreliminar.jsx
+@@ -14,7 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/notaPreliminarApi';
+ import api from '../api/axiosInstance';
+-import { API_URL } from '../api/config';
++import { API_URL, API_BASE } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -1149,7 +1149,7 @@ export default function NotaPreliminar() {
+   {/*
+   useEffect(() => {
+      if (notaId) {
+-        const socket = new SockJS(`${import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080'}/ws-collab`);
++        const socket = new SockJS(`${API_BASE}/ws-collab`);
+         const client = new Client({
+             webSocketFactory: () => socket,
+             reconnectDelay: 5000,
+diff --git a/frontend/src/pages/NotaTecnica.jsx b/frontend/src/pages/NotaTecnica.jsx
+index e511db1..c39d185 100644
+--- a/frontend/src/pages/NotaTecnica.jsx
++++ b/frontend/src/pages/NotaTecnica.jsx
+@@ -14,7 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/notaTecnicaApi';
+ import api from '../api/axiosInstance';
+-import { API_URL } from '../api/config';
++import { API_URL, API_BASE } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -1123,7 +1123,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   {/*
+   useEffect(() => {
+      if (notaId) {
+-        const socket = new SockJS(`${import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080'}/ws-collab`);
++        const socket = new SockJS(`${API_BASE}/ws-collab`);
+         const client = new Client({
+             webSocketFactory: () => socket,
+             reconnectDelay: 5000,
+diff --git a/frontend/src/pages/Parecer.jsx b/frontend/src/pages/Parecer.jsx
+index 8dcdcc6..af2a0fe 100644
+--- a/frontend/src/pages/Parecer.jsx
++++ b/frontend/src/pages/Parecer.jsx
+@@ -14,7 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/parecerApi';
+ import api from '../api/axiosInstance';
+-import { API_URL } from '../api/config';
++import { API_URL, API_BASE } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -1139,7 +1139,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   {/*
+   useEffect(() => {
+      if (parecerId) {
+-        const socket = new SockJS(`${import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080'}/ws-collab`);
++        const socket = new SockJS(`${API_BASE}/ws-collab`);
+         const client = new Client({
+             webSocketFactory: () => socket,
+             reconnectDelay: 5000,
+diff --git a/frontend/src/pages/RelatorioPreliminar.jsx b/frontend/src/pages/RelatorioPreliminar.jsx
+index 38cf5bc..165e158 100644
+--- a/frontend/src/pages/RelatorioPreliminar.jsx
++++ b/frontend/src/pages/RelatorioPreliminar.jsx
+@@ -14,7 +14,7 @@ import { getAllGeneric } from '../api/genericApi';
+ import { getAllGerencias } from '../api/gerenciaApi';
+ import { getRelatorioById, updateRelatorioById, getRelatorioByItemTrabalho, createEmptyRelatorio } from '../api/relatorioPreliminarApi';
+ import api from '../api/axiosInstance';
+-import { API_URL } from '../api/config';
++import { API_URL, API_BASE } from '../api/config';
+ import debounce from 'lodash.debounce';
+ import { Client } from '@stomp/stompjs';
+ //import SockJS from 'sockjs-client';
+@@ -1204,7 +1204,7 @@ export default function RelatorioPreliminar() {
+   {/*
+   useEffect(() => {
+      if (relatorioId) {
+-        const socket = new SockJS(`${import.meta.env.VITE_API_BASE || 'https://sisaudin.ghc.com.br:8080'}/ws-collab`);
++        const socket = new SockJS(`${API_BASE}/ws-collab`);
+         const client = new Client({
+             webSocketFactory: () => socket,
+             reconnectDelay: 5000,
+diff --git a/frontend/.env.unificado b/frontend/.env.unificado
+new file mode 100644
+index 0000000..835f13e
+--- /dev/null
++++ b/frontend/.env.unificado
+@@ -0,0 +1,2 @@
++VITE_API_BASE=
++VITE_API_URL=/api

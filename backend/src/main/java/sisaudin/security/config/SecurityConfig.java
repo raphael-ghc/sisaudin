@@ -1,5 +1,6 @@
 package sisaudin.security.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import sisaudin.security.jwt.JwtAccessDeniedHandler;
 import sisaudin.security.jwt.JwtAuthenticationEntryPoint;
 import sisaudin.security.jwt.JwtFilter;
@@ -55,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/ws-collab/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Front embutido no JAR: só leitura (GET) de index.html, assets e rotas do React
+                        .requestMatchers(SecurityConfig::isPaginaDoFront).permitAll()
                         .anyRequest().authenticated())
 // using JWT            .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(e -> e
@@ -76,6 +79,13 @@ public class SecurityConfig {
                 .build();
 
         // httpSecurity.formLogin(Customizer.withDefaults());
+    }
+
+    private static boolean isPaginaDoFront(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return "GET".equals(request.getMethod())
+                && !path.startsWith("/api/")
+                && !path.startsWith("/uploads/");
     }
 
     @Bean
