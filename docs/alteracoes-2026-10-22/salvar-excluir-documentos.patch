@@ -1,0 +1,180 @@
+diff --git a/frontend/src/pages/ItemTrabalhoList.jsx b/frontend/src/pages/ItemTrabalhoList.jsx
+index 85dca7f..5fda72b 100644
+--- a/frontend/src/pages/ItemTrabalhoList.jsx
++++ b/frontend/src/pages/ItemTrabalhoList.jsx
+@@ -426,23 +426,26 @@ export default function ItemTrabalhoList() {
+   const confirmDeleteDocument = async () => {
+     if (docToDelete) {
+       try {
+-        let endpoint = '';
+-        const rota = docToDelete.rotaEditar || '';
+-        const id = docToDelete.id;
+-        
+-        if (rota.includes('/ordem-servico/')) endpoint = `/ordens-servico/${id}`;
+-        else if (rota.includes('/comunicacao/')) endpoint = `/comunicacoes-auditoria/${id}`;
+-        else if (rota.includes('/solicitacao/')) endpoint = `/solicitacoes-auditoria/${id}`;
+-        else if (rota.includes('/planejamento/')) endpoint = `/planejamentos/${id}`;
+-        else if (rota.includes('/matriz-achados/')) endpoint = `/matrizes-achados/${id}`;
+-        else if (rota.includes('/relatorio-preliminar/')) endpoint = `/relatorios-preliminar/${id}`;
+-        else if (rota.includes('/relatorio-final/')) endpoint = `/relatorios-final/${id}`;
+-        else if (rota.includes('/reuniao-busca-conjunta/')) endpoint = `/reunioes-busca-conjunta/${id}`;
+-        else if (rota.includes('/nota-tecnica/')) endpoint = `/notas-tecnicas/${id}`;
+-        else if (rota.includes('/nota-final/')) endpoint = `/notas-finais/${id}`;
+-        else if (rota.includes('/nota-preliminar/')) endpoint = `/notas-preliminar/${id}`;
+-        else if (rota.includes('/parecer/')) endpoint = `/pareceres/${id}`;
+-        
++        // Rota de exclusão pelo tipo enviado pelo backend (FluxoDocumentoService.extrairDocumentosCriados)
++        const rotasExclusao = {
++          ORDEM_SERVICO: '/ordens-servico',
++          COMUNICACAO_AUDITORIA: '/comunicacoes',
++          SOLICITACAO_AUDITORIA: '/solicitacoes',
++          NOTA_AUDITORIA_PRELIMINAR: '/notas-preliminar',
++          NOTA_AUDITORIA_FINAL: '/notas-final',
++          NOTA_TECNICA: '/notas-tecnicas',
++          PARECER: '/pareceres',
++          RELATORIO_PRELIMINAR: '/relatorios-preliminar',
++          RELATORIO_FINAL: '/relatorios-final',
++          REUNIAO: '/reunioes',
++          VISITA: '/visitas',
++          PLANEJAMENTO: '/planejamentos',
++          MATRIZ_ACHADOS: '/matrizes-achados',
++          REUNIAO_BUSCA_CONJUNTA: '/reunioes-busca-conjunta',
++        };
++        const base = rotasExclusao[docToDelete.tipo];
++        const endpoint = base ? `${base}/${docToDelete.id}` : '';
++
+         if (endpoint) {
+           await api.delete(endpoint);
+           toast.success('Documento excluído com sucesso!');
+diff --git a/frontend/src/pages/NotaFinal.jsx b/frontend/src/pages/NotaFinal.jsx
+index 8378baf..4105947 100644
+--- a/frontend/src/pages/NotaFinal.jsx
++++ b/frontend/src/pages/NotaFinal.jsx
+@@ -1031,7 +1031,7 @@ export default function NotaFinal() {
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1126,7 +1126,7 @@ export default function NotaFinal() {
+   const handleSaveManual = async () => {
+       if (!notaId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { return; }
+       setSaving(true);
+       setAutoSaveStatus('saving');
+       try {
+diff --git a/frontend/src/pages/NotaPreliminar.jsx b/frontend/src/pages/NotaPreliminar.jsx
+index ab6ce5b..e8efd55 100644
+--- a/frontend/src/pages/NotaPreliminar.jsx
++++ b/frontend/src/pages/NotaPreliminar.jsx
+@@ -864,7 +864,7 @@ export default function NotaPreliminar() {
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1081,7 +1081,7 @@ export default function NotaPreliminar() {
+   const handleSaveManual = async () => {
+     if (!notaId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { return; }
+     setSaving(true);
+       setAutoSaveStatus('saving');
+       try {
+diff --git a/frontend/src/pages/NotaTecnica.jsx b/frontend/src/pages/NotaTecnica.jsx
+index c39d185..4f59e23 100644
+--- a/frontend/src/pages/NotaTecnica.jsx
++++ b/frontend/src/pages/NotaTecnica.jsx
+@@ -837,7 +837,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1055,7 +1055,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   const handleSaveManual = async () => {
+     if (!notaId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { return; }
+     setSaving(true);
+       setAutoSaveStatus('saving');
+       try {
+diff --git a/frontend/src/pages/Parecer.jsx b/frontend/src/pages/Parecer.jsx
+index af2a0fe..eb3ccf3 100644
+--- a/frontend/src/pages/Parecer.jsx
++++ b/frontend/src/pages/Parecer.jsx
+@@ -845,7 +845,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1068,7 +1068,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   const handleSaveManual = async () => {
+     if (!parecerId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, parecerId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, parecerId, selectedItemTrabalhoId))) { return; }
+     setSaving(true);
+       setAutoSaveStatus('saving');
+       try {
+diff --git a/frontend/src/pages/RelatorioFinal.jsx b/frontend/src/pages/RelatorioFinal.jsx
+index ba6fc7e..aa6e0ff 100644
+--- a/frontend/src/pages/RelatorioFinal.jsx
++++ b/frontend/src/pages/RelatorioFinal.jsx
+@@ -1035,7 +1035,7 @@ export default function RelatorioFinal() {
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1130,7 +1130,7 @@ export default function RelatorioFinal() {
+   const handleSaveManual = async () => {
+       if (!relatorioId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { return; }
+       setSaving(true);
+       setAutoSaveStatus('saving');
+       try {
+diff --git a/frontend/src/pages/RelatorioPreliminar.jsx b/frontend/src/pages/RelatorioPreliminar.jsx
+index 165e158..cb9512e 100644
+--- a/frontend/src/pages/RelatorioPreliminar.jsx
++++ b/frontend/src/pages/RelatorioPreliminar.jsx
+@@ -903,7 +903,7 @@ export default function RelatorioPreliminar() {
+       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
+           if (!id || isReadOnly) return;
+ 
+-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
++      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
+           try {
+               if (onStart) onStart();
+               await updateRelatorioById(id, dataToSave, itemTrabId);
+@@ -1128,7 +1128,7 @@ export default function RelatorioPreliminar() {
+   const handleSaveManual = async () => {
+     if (!relatorioId || isReadOnly) return;
+ 
+-    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { setLoading(false); return; }
++    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { return; }
+     setSaving(true);
+       setAutoSaveStatus('saving');
+       try {

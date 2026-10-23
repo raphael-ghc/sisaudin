@@ -864,7 +864,7 @@ export default function NotaPreliminar() {
       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
           if (!id || isReadOnly) return;
 
-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
+      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
           try {
               if (onStart) onStart();
               await updateRelatorioById(id, dataToSave, itemTrabId);
@@ -1081,7 +1081,7 @@ export default function NotaPreliminar() {
   const handleSaveManual = async () => {
     if (!notaId || isReadOnly) return;
 
-    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { setLoading(false); return; }
+    if (!(await validateNumero(numero, ano, notaId, selectedItemTrabalhoId))) { return; }
     setSaving(true);
       setAutoSaveStatus('saving');
       try {

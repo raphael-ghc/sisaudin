@@ -426,23 +426,26 @@ export default function ItemTrabalhoList() {
   const confirmDeleteDocument = async () => {
     if (docToDelete) {
       try {
-        let endpoint = '';
-        const rota = docToDelete.rotaEditar || '';
-        const id = docToDelete.id;
-        
-        if (rota.includes('/ordem-servico/')) endpoint = `/ordens-servico/${id}`;
-        else if (rota.includes('/comunicacao/')) endpoint = `/comunicacoes-auditoria/${id}`;
-        else if (rota.includes('/solicitacao/')) endpoint = `/solicitacoes-auditoria/${id}`;
-        else if (rota.includes('/planejamento/')) endpoint = `/planejamentos/${id}`;
-        else if (rota.includes('/matriz-achados/')) endpoint = `/matrizes-achados/${id}`;
-        else if (rota.includes('/relatorio-preliminar/')) endpoint = `/relatorios-preliminar/${id}`;
-        else if (rota.includes('/relatorio-final/')) endpoint = `/relatorios-final/${id}`;
-        else if (rota.includes('/reuniao-busca-conjunta/')) endpoint = `/reunioes-busca-conjunta/${id}`;
-        else if (rota.includes('/nota-tecnica/')) endpoint = `/notas-tecnicas/${id}`;
-        else if (rota.includes('/nota-final/')) endpoint = `/notas-finais/${id}`;
-        else if (rota.includes('/nota-preliminar/')) endpoint = `/notas-preliminar/${id}`;
-        else if (rota.includes('/parecer/')) endpoint = `/pareceres/${id}`;
-        
+        // Rota de exclusão pelo tipo enviado pelo backend (FluxoDocumentoService.extrairDocumentosCriados)
+        const rotasExclusao = {
+          ORDEM_SERVICO: '/ordens-servico',
+          COMUNICACAO_AUDITORIA: '/comunicacoes',
+          SOLICITACAO_AUDITORIA: '/solicitacoes',
+          NOTA_AUDITORIA_PRELIMINAR: '/notas-preliminar',
+          NOTA_AUDITORIA_FINAL: '/notas-final',
+          NOTA_TECNICA: '/notas-tecnicas',
+          PARECER: '/pareceres',
+          RELATORIO_PRELIMINAR: '/relatorios-preliminar',
+          RELATORIO_FINAL: '/relatorios-final',
+          REUNIAO: '/reunioes',
+          VISITA: '/visitas',
+          PLANEJAMENTO: '/planejamentos',
+          MATRIZ_ACHADOS: '/matrizes-achados',
+          REUNIAO_BUSCA_CONJUNTA: '/reunioes-busca-conjunta',
+        };
+        const base = rotasExclusao[docToDelete.tipo];
+        const endpoint = base ? `${base}/${docToDelete.id}` : '';
+
         if (endpoint) {
           await api.delete(endpoint);
           toast.success('Documento excluído com sucesso!');

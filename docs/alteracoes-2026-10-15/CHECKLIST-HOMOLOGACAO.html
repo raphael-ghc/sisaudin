@@ -100,8 +100,8 @@
 <div class="wrap">
 
 <header>
-  <h1>Checklist — Homologação do Sisaudin (JAR unificado)</h1>
-  <p>Levantar o ambiente de homologação com o front e a API servidos pelo mesmo JAR. Referência: <code>docs/alteracoes-2026-10-15/RELATORIO-ALTERACOES.md</code>.</p>
+  <h1>Checklist — Homologação do Sisaudin (nginx + backend)</h1>
+  <p>Levantar o ambiente de homologação com o front publicado no nginx e o backend (JAR só com a API) atrás dele. O nginx repassa <code>/api</code> e <code>/uploads</code> para o backend. Referência: <code>docs/alteracoes-2026-10-15/RELATORIO-ALTERACOES.md</code>.</p>
 </header>
 
 <div class="bar">
@@ -115,7 +115,8 @@
   <div><label for="m-resp">Responsável</label><input id="m-resp" data-field="resp"></div>
   <div><label for="m-data">Data</label><input id="m-data" data-field="data" type="date"></div>
   <div><label for="m-serv">Servidor de homologação</label><input id="m-serv" data-field="serv" placeholder="nome ou IP"></div>
-  <div><label for="m-url">Endereço de acesso</label><input id="m-url" data-field="url" placeholder="http://servidor:8081"></div>
+  <div><label for="m-url">Endereço de acesso</label><input id="m-url" data-field="url" placeholder="http://servidor (nginx)"></div>
+  <div><label for="m-banco">Nome do banco de homologação</label><input id="m-banco" data-field="banco" placeholder="sisaudin_homolog" spellcheck="false"></div>
   <div><label for="m-backup">Arquivo de backup usado</label><input id="m-backup" data-field="backup" placeholder="sisaudin_AAAA-MM-DD.sql"></div>
 </div>
 
@@ -135,9 +136,20 @@
   </div></div>
 
   <div class="item"><input type="checkbox" id="s1-porta"><div class="body">
-    <div class="title">Porta 8081 livre e liberada no firewall para a rede interna</div>
-    <div class="codebox"><pre><code>netstat -ano | findstr :8081</code></pre></div>
-    <p>Sem resultado = porta livre.</p>
+    <div class="title">Portas livres: 80 (nginx) e 8081 (backend)</div>
+    <div class="codebox"><pre><code>netstat -ano | findstr ":80 :8081"</code></pre></div>
+    <p>Nenhuma linha <code>LISTENING</code> em <code>:80</code> ou <code>:8081</code> = livres. A 80 costuma estar ocupada pelo IIS ("Serviço de Publicação na World Wide Web"); se for o caso, pare o serviço ou use outra porta no <code>listen</code> do nginx.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-firewall"><div class="body">
+    <div class="title">Firewall: liberar a porta do nginx (80/443) para a rede interna; a 8081 <b>não</b></div>
+    <p>O backend fica acessível só pelo nginx (<code>server.address=127.0.0.1</code>, seção 5). Se o nginx estiver em outra máquina, liberar a 8081 apenas para o IP dela.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s1-nginx"><div class="body">
+    <div class="title">Nginx instalado em <code>C:\nginx</code></div>
+    <p>Baixar a versão estável para Windows em nginx.org/en/download.html e descompactar em <code>C:\nginx</code> (caminho sem espaços). Guardar uma cópia de <code>C:\nginx\conf\nginx.conf</code> original.</p>
+    <div class="codebox"><pre><code>C:\nginx\nginx.exe -v</code></pre></div>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s1-smtp"><div class="body">
@@ -147,8 +159,9 @@
   </div></div>
 
   <div class="item"><input type="checkbox" id="s1-pasta"><div class="body">
-    <div class="title">Pasta de execução criada</div>
-    <div class="codebox"><pre><code>New-Item -ItemType Directory C:\sisaudin-homolog</code></pre></div>
+    <div class="title">Pastas criadas: backend (JAR) e front (arquivos do nginx)</div>
+    <div class="codebox"><pre><code>New-Item -ItemType Directory -Force C:\sisaudin-homolog, C:\sisaudin-homolog\frontend</code></pre></div>
+    <p><code>C:\sisaudin-homolog\</code> = JAR, <code>application.properties</code>, <code>uploads\</code>, <code>logs\</code>. <code>C:\sisaudin-homolog\frontend\</code> = build do front, lido pelo nginx.</p>
   </div></div>
 </section>
 
@@ -222,9 +235,11 @@ FROM information_schema.tables
 WHERE table_schema = 'sisaudin_homolog' AND table_type = 'BASE TABLE'
 GROUP BY engine;</code></pre></div>
     <p>Esperado: só <code>InnoDB</code>. Tabelas <code>MyISAM</code> não têm transação nem chave estrangeira, e o <code>ddl-auto=update</code> falha nelas com <code>Specified key was too long; max key length is 1000 bytes</code>. Se houver MyISAM, converter na homologação (gerar os comandos com a consulta abaixo, rodar com a aplicação parada) e registrar para fazer o mesmo na produção:</p>
-    <div class="codebox"><pre><code>SELECT CONCAT('ALTER TABLE `', table_name, '` ENGINE=InnoDB;')
+    <div class="codebox"><pre><code>SELECT CONCAT('ALTER TABLE `', table_schema, '`.`', table_name, '` ENGINE=InnoDB;')
 FROM information_schema.tables
-WHERE table_schema = 'sisaudin_homolog' AND engine = 'MyISAM';</code></pre></div>
+WHERE table_schema = 'sisaudin_homolog' AND table_type = 'BASE TABLE' AND engine = 'MyISAM';</code></pre></div>
+    <p class="note"><b>Esta consulta só gera os comandos</b>, como linhas de resultado. Copie todas as linhas da grade (selecionar tudo &gt; <i>Copy Field (unquoted)</i>), cole numa aba nova, comece com <code>SET SESSION sql_mode = '';</code> (evita erro com datas <code>0000-00-00</code> do sistema antigo) e execute. Depois rode de novo a consulta de mecanismo acima: só pode sobrar <code>InnoDB</code>. Conferir antes que o Workbench está conectado ao MySQL da <b>homologação</b>.</p>
+    <p>Se, após a conversão, a subida mostrar avisos <code>Cannot add or update a child row</code> ao criar chaves estrangeiras, são registros órfãos nos dados antigos: anotar a tabela e seguir.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s3-sem-especial"><div class="body">
@@ -291,7 +306,8 @@ WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%';</code>
 
 <!-- 4 -->
 <section>
-  <h2>4. Gerar o JAR (máquina de desenvolvimento) <span class="count"></span></h2>
+  <h2>4. Gerar o front e o backend (máquina de desenvolvimento) <span class="count"></span></h2>
+  <p class="intro">Dois artefatos separados: a pasta <code>frontend\dist</code> (vai para o nginx) e o JAR só com a API.</p>
 
   <div class="item"><input type="checkbox" id="s4-parar"><div class="body">
     <div class="title">Parar o backend local</div>
@@ -299,9 +315,10 @@ WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%';</code>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s4-front"><div class="body">
-    <div class="title">Gerar o front no modo <code>unificado</code></div>
+    <div class="title">Gerar o front no modo <code>nginx</code></div>
     <div class="codebox"><pre><code>cd frontend
-npx.cmd vite build --mode unificado</code></pre></div>
+npx.cmd vite build --mode nginx</code></pre></div>
+    <p>O modo <code>nginx</code> (<code>frontend/.env.nginx</code>) usa endereços relativos: o front chama <code>/api</code> no mesmo endereço de onde foi carregado, e o nginx repassa ao backend. O mesmo build serve em qualquer servidor.</p>
     <p class="note">Não usar <code>npm run build</code>: ele aponta para a produção.</p>
     <p>Usar <code>npx.cmd</code>, e não <code>npx</code>: no PowerShell, <code>npx</code> chama o <code>npx.ps1</code>, que a política de execução do Windows costuma bloquear ("a execução de scripts foi desabilitada neste sistema"). O mesmo vale para <code>npm.cmd</code>.</p>
   </div></div>
@@ -313,19 +330,11 @@ npx.cmd vite build --mode unificado</code></pre></div>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s4-jar"><div class="body">
-    <div class="title">Gerar o JAR</div>
+    <div class="title">Gerar o JAR do backend (só a API)</div>
     <div class="codebox"><pre><code>cd ..\backend
 .\mvnw.cmd clean package -DskipTests</code></pre></div>
-    <p>Sai <code>backend\target\sisaudin-0.0.1-SNAPSHOT.jar</code> (cerca de 250 MB).</p>
-  </div></div>
-
-  <div class="item"><input type="checkbox" id="s4-static"><div class="body">
-    <div class="title">Conferir que o front entrou no JAR</div>
-    <div class="codebox"><pre><code>Add-Type -A System.IO.Compression.FileSystem
-$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path target\sisaudin-0.0.1-SNAPSHOT.jar))
-$z.Entries | Where-Object FullName -like 'BOOT-INF/classes/static/index.html' | Select-Object FullName
-$z.Dispose()</code></pre></div>
-    <p>Tem de listar <code>BOOT-INF/classes/static/index.html</code>. Sem ele, o JAR sobe sem telas.</p>
+    <p>Sai <code>backend\target\sisaudin-0.0.1-SNAPSHOT.jar</code> (cerca de 250 MB, quase tudo do Playwright). Sem o perfil <code>-Pcom-front</code>, o front <b>não</b> vai dentro do JAR — é o esperado aqui.</p>
+    <p>JAR unificado (front dentro, sem nginx) continua possível: <code>npx.cmd vite build --mode unificado</code> e <code>.\mvnw.cmd clean package -DskipTests -Pcom-front</code>. Não usado neste checklist.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s4-dist"><div class="body">
@@ -335,11 +344,18 @@ $z.Dispose()</code></pre></div>
 
 <!-- 5 -->
 <section>
-  <h2>5. Pasta de execução e configuração <span class="count"></span></h2>
+  <h2>5. Publicar os arquivos e configurar o backend <span class="count"></span></h2>
 
   <div class="item"><input type="checkbox" id="s5-copiar"><div class="body">
     <div class="title">Copiar o JAR para <code>C:\sisaudin-homolog\</code></div>
     <p>Se houver anexos copiados da produção, colocar também <code>uploads\</code> nessa pasta.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s5-front"><div class="body">
+    <div class="title">Copiar o build do front para <code>C:\sisaudin-homolog\frontend\</code></div>
+    <p>Substitui o conteúdo anterior por inteiro (os nomes dos arquivos mudam a cada build). Rodar a partir da pasta do repositório:</p>
+    <div class="codebox"><pre><code>robocopy frontend\dist C:\sisaudin-homolog\frontend /MIR</code></pre></div>
+    <p>Deve existir <code>C:\sisaudin-homolog\frontend\index.html</code> e a pasta <code>assets\</code>. O nginx lê os arquivos a cada acesso: publicar um front novo não exige reiniciar nada.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s5-props"><div class="body">
@@ -358,8 +374,9 @@ $z.Dispose()</code></pre></div>
     <div class="title">Conferir as chaves que não podem ficar com valor de produção</div>
     <div class="tablewrap"><table>
       <tr><th>Chave</th><th>Valor esperado na homologação</th></tr>
-      <tr><td><code>server.port</code></td><td><code>8081</code></td></tr>
-      <tr><td><code>sisaudin.link</code></td><td>endereço da homologação + <code>/login</code></td></tr>
+      <tr><td><code>server.port</code></td><td><code>8081</code> (o mesmo do <code>proxy_pass</code> do nginx)</td></tr>
+      <tr><td><code>server.address</code></td><td><code>127.0.0.1</code> se o nginx estiver na mesma máquina</td></tr>
+      <tr><td><code>sisaudin.link</code></td><td>endereço do <b>nginx</b> da homologação + <code>/login</code> (não a porta 8081)</td></tr>
       <tr><td><code>spring.datasource.url</code></td><td>exatamente o nome do banco restaurado na seção 3 (conferir no Workbench; um nome parecido aponta para outro banco)</td></tr>
       <tr><td><code>spring.datasource.username</code></td><td><code>sisaudin_hml</code></td></tr>
       <tr><td><code>spring.mail.host</code> / <code>port</code></td><td><code>localhost</code> / <code>1025</code> (SMTP falso)</td></tr>
@@ -394,7 +411,7 @@ java "-Dloader.main=com.microsoft.playwright.CLI" -cp sisaudin-0.0.1-SNAPSHOT.ja
 
 <!-- 7 -->
 <section>
-  <h2>7. Subir a aplicação <span class="count"></span></h2>
+  <h2>7. Subir o backend <span class="count"></span></h2>
 
   <div class="item"><input type="checkbox" id="s7-subir"><div class="body">
     <div class="title">Iniciar o JAR de dentro da pasta de execução</div>
@@ -443,24 +460,83 @@ cmd /c "java -jar sisaudin-0.0.1-SNAPSHOT.jar &gt; primeira-subida.txt 2&gt;&amp
     <p>WinSW ou NSSM, com o diretório de trabalho em <code>C:\sisaudin-homolog</code> e o mesmo usuário da seção 6.</p>
   </div></div>
 
-  <div class="item"><input type="checkbox" id="s7-nginx"><div class="body">
-    <div class="title">Nginx com HTTPS na frente <span class="tag opt">opcional</span></div>
-    <p>Só como proxy de tudo para a porta 8081. Se usar, ajustar <code>sisaudin.link</code> para o endereço HTTPS.</p>
-    <div class="codebox"><pre><code>client_max_body_size 50m;
-location / {
-    proxy_pass         http://127.0.0.1:8081;
-    proxy_set_header   Host              $http_host;
-    proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Proto $scheme;
-    proxy_read_timeout 120s;
-}</code></pre></div>
+  <div class="item"><input type="checkbox" id="s7-backend-ok"><div class="body">
+    <div class="title">Backend responde na própria máquina</div>
+    <div class="codebox"><pre><code>(Invoke-WebRequest http://127.0.0.1:8081/api/fluxo-documentos/item/1 -UseBasicParsing).StatusCode</code></pre></div>
+    <p>Esperado <b>200</b>. É o backend direto, sem o nginx; o front ainda não aparece por aqui.</p>
+  </div></div>
+</section>
+
+<!-- 7b -->
+<section>
+  <h2>7b. Nginx (front + proxy para o backend) <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="s7b-conf"><div class="body">
+    <div class="title">Configurar o <code>C:\nginx\conf\nginx.conf</code></div>
+    <p>Substituir pelo modelo <code>docs/alteracoes-2026-10-15/nginx.homologacao.conf</code> e trocar <code>TROCAR_NOME_DO_SERVIDOR</code>. Conferir:</p>
+    <div class="tablewrap"><table>
+      <tr><th>Diretiva</th><th>Valor</th></tr>
+      <tr><td><code>root</code></td><td><code>C:/sisaudin-homolog/frontend</code> (barras normais)</td></tr>
+      <tr><td><code>location /</code></td><td><code>try_files $uri $uri/ /index.html;</code> (F5 nas telas do React)</td></tr>
+      <tr><td><code>location ~ ^/(api|uploads)/</code></td><td><code>proxy_pass http://127.0.0.1:8081;</code> = <code>server.port</code> do backend</td></tr>
+      <tr><td><code>client_max_body_size</code></td><td><code>50m</code> (anexos)</td></tr>
+      <tr><td><code>proxy_read_timeout</code></td><td><code>120s</code> (PDF)</td></tr>
+    </table></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7b-testar"><div class="body">
+    <div class="title">Testar a configuração e iniciar o nginx</div>
+    <div class="codebox"><pre><code>cd C:\nginx
+.\nginx.exe -t
+Start-Process .\nginx.exe</code></pre></div>
+    <p><code>-t</code> deve terminar em <code>test is successful</code>. Usar <code>Start-Process</code>: rodar <code>.\nginx.exe</code> direto prende o terminal.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Ação</th><th>Comando (de dentro de <code>C:\nginx</code>)</th></tr>
+      <tr><td>Recarregar após editar o <code>.conf</code></td><td><code>.\nginx.exe -s reload</code></td></tr>
+      <tr><td>Parar</td><td><code>.\nginx.exe -s quit</code></td></tr>
+      <tr><td>Ver erros</td><td><code>Get-Content .\logs\error.log -Tail 30</code></td></tr>
+      <tr><td>Processos presos</td><td><code>taskkill /F /IM nginx.exe</code> e iniciar de novo</td></tr>
+    </table></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7b-proxy"><div class="body">
+    <div class="title">Nginx entrega o front e repassa a API</div>
+    <div class="codebox"><pre><code>(Invoke-WebRequest http://localhost/ -UseBasicParsing).StatusCode
+(Invoke-WebRequest http://localhost/api/fluxo-documentos/item/1 -UseBasicParsing).StatusCode</code></pre></div>
+    <p>Os dois devem dar <b>200</b>.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Sintoma</th><th>Causa provável</th></tr>
+      <tr><td>Página "Welcome to nginx!"</td><td><code>root</code> ainda aponta para <code>html</code>; ou o <code>nginx.conf</code> não foi recarregado</td></tr>
+      <tr><td>403 / 404 em <code>/</code></td><td><code>root</code> errado ou <code>C:\sisaudin-homolog\frontend</code> vazio (seção 5)</td></tr>
+      <tr><td>502 em <code>/api</code></td><td>backend parado, ou porta do <code>proxy_pass</code> diferente do <code>server.port</code></td></tr>
+      <tr><td>404 ao dar F5 numa tela</td><td>falta o <code>try_files</code></td></tr>
+      <tr><td>413 ao anexar arquivo acima de 1 MB</td><td><code>client_max_body_size</code> sem efeito. Causa comum: falta o <code>;</code> no fim da linha anterior (ex.: <code>server_name</code>). O <code>nginx -t</code> <b>não acusa</b>: a diretiva seguinte vira mais um nome de servidor.</td></tr>
+    </table></div>
+    <p>Teste do limite de upload (envia 2 MB a uma rota inexistente; não grava nada). Esperado <b>404</b> (chegou ao backend); <b>413</b> = barrado pelo nginx:</p>
+    <div class="codebox"><pre><code>$b = New-Object byte[] (2MB)
+try { (Invoke-WebRequest http://localhost/api/teste-limite-upload -Method Post -Body $b -ContentType 'application/octet-stream' -UseBasicParsing).StatusCode } catch { [int]$_.Exception.Response.StatusCode }</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7b-fechado"><div class="body">
+    <div class="title">A porta 8081 não responde de outra máquina</div>
+    <p>De outro computador da rede: <code>http://SERVIDOR:8081</code> não deve abrir (com <code>server.address=127.0.0.1</code>). Todo acesso passa pelo nginx.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7b-servico"><div class="body">
+    <div class="title">Nginx iniciando com o Windows <span class="tag opt">opcional</span></div>
+    <p>WinSW ou NSSM apontando para <code>C:\nginx\nginx.exe</code>, com diretório de trabalho <code>C:\nginx</code>. Iniciar o nginx depois do backend (sem backend, <code>/api</code> dá 502, mas o nginx sobe).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s7b-https"><div class="body">
+    <div class="title">HTTPS <span class="tag opt">opcional</span></div>
+    <p>Trocar <code>listen 80</code> por <code>listen 443 ssl</code> com o certificado (bloco comentado no fim do modelo) e ajustar <code>sisaudin.link</code> para <code>https://</code>.</p>
   </div></div>
 </section>
 
 <!-- 8 -->
 <section>
   <h2>8. Testes no navegador <span class="count"></span></h2>
-  <p class="intro">Abrir o endereço da homologação, com a ferramenta do desenvolvedor (F12) na aba <b>Rede</b>.</p>
+  <p class="intro">Abrir o endereço do <b>nginx</b> da homologação (não a porta 8081), com a ferramenta do desenvolvedor (F12) na aba <b>Rede</b>.</p>
 
   <div class="item"><input type="checkbox" id="s8-login"><div class="body">
     <div class="title">Tela de login abre e o login funciona</div>
@@ -468,7 +544,7 @@ location / {
 
   <div class="item"><input type="checkbox" id="s8-rede"><div class="body">
     <div class="title">Nenhuma chamada sai para <code>sisaudin.ghc.com.br</code> <span class="tag crit">crítico</span></div>
-    <p>Filtrar a aba Rede por <code>ghc.com.br</code>. Todas as chamadas devem ir para o endereço da homologação.</p>
+    <p>Filtrar a aba Rede por <code>ghc.com.br</code>. Todas as chamadas devem ir para o endereço do nginx da homologação, e nenhuma para <code>:8081</code>.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s8-f5"><div class="body">
@@ -605,11 +681,26 @@ WHERE COALESCE(r.especial,0) &lt;&gt; (UPPER(COALESCE(t.nome,'')) LIKE '%EXTRA%'
     b.addEventListener('change', function () { state.checks[b.id] = b.checked; save(); refresh(); });
   });
 
+  // Nome do banco: troca "sisaudin_homolog" em todos os comandos pelo nome informado
+  var codes = Array.prototype.slice.call(document.querySelectorAll('code'));
+  codes.forEach(function (c) { c.setAttribute('data-original', c.textContent); });
+  function aplicarBanco(nome) {
+    var banco = (nome || '').trim().replace(/[^A-Za-z0-9_$]/g, '') || 'sisaudin_homolog';
+    codes.forEach(function (c) {
+      var orig = c.getAttribute('data-original');
+      if (orig.indexOf('sisaudin_homolog') >= 0) c.textContent = orig.replace(/sisaudin_homolog\b/g, banco);
+    });
+  }
+
   document.querySelectorAll('[data-field]').forEach(function (el) {
     var k = el.getAttribute('data-field');
     if (state.fields[k] != null) el.value = state.fields[k];
-    el.addEventListener('input', function () { state.fields[k] = el.value; save(); });
+    el.addEventListener('input', function () {
+      state.fields[k] = el.value; save();
+      if (k === 'banco') aplicarBanco(el.value);
+    });
   });
+  aplicarBanco(state.fields.banco);
 
   document.getElementById('resetBtn').addEventListener('click', function () {
     if (!confirm('Desmarcar todos os itens? Os campos de texto são mantidos.')) return;

@@ -845,7 +845,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
           if (!id || isReadOnly) return;
 
-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
+      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
           try {
               if (onStart) onStart();
               await updateRelatorioById(id, dataToSave, itemTrabId);
@@ -1068,7 +1068,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
   const handleSaveManual = async () => {
     if (!parecerId || isReadOnly) return;
 
-    if (!(await validateNumero(numero, ano, parecerId, selectedItemTrabalhoId))) { setLoading(false); return; }
+    if (!(await validateNumero(numero, ano, parecerId, selectedItemTrabalhoId))) { return; }
     setSaving(true);
       setAutoSaveStatus('saving');
       try {

@@ -4,12 +4,15 @@ Alteração feita no repositório de teste do Sisaudin em 15/10/2026: **JAR unif
 
 Ponto de partida: commit `8ffca6f` do repositório de teste. Independe das entregas de 08/10 e 09/10 (não toca nos mesmos trechos), mas deve ser aplicada depois delas.
 
+> **Atualização de 21/10/2026 — front no nginx, backend separado.** A homologação passa a usar o front publicado no nginx e o JAR só com a API. O JAR unificado continua possível, mas virou opcional (perfil Maven `com-front`). Ver a seção 5. As seções 1 a 4 descrevem a entrega original de 15/10.
+
 Documentos desta pasta:
 
 - `RELATORIO-ALTERACOES.md` — este relatório.
 - `jar-unificado.patch` — as diferenças exatas, no formato do git (inclui o arquivo novo `frontend/.env.unificado`).
 - `application.properties.homologacao.exemplo` — modelo da configuração externa da homologação.
-- `CHECKLIST-HOMOLOGACAO.html` — checklist interativo para levantar a homologação (abrir no navegador; as marcações ficam salvas nele).
+- `CHECKLIST-HOMOLOGACAO.html` — checklist interativo para levantar a homologação (abrir no navegador; as marcações ficam salvas nele). Atualizado em 21/10 para nginx + backend.
+- `nginx.homologacao.conf` — modelo do `nginx.conf` da homologação (21/10).
 
 ---
 
@@ -129,10 +132,39 @@ Também verificado:
 
 ---
 
-## 5. Como desfazer
+## 5. Atualização de 21/10/2026 — front no nginx, backend separado
+
+### O que mudou
+
+| Arquivo | Mudança |
+|---|---|
+| `backend/pom.xml` | A cópia de `frontend/dist` para dentro do JAR saiu do build padrão e foi para o perfil `com-front`. `mvnw.cmd clean package` gera o JAR **só com a API**; `-Pcom-front` gera o JAR unificado. |
+| `frontend/.env.nginx` (novo) | Mesmo conteúdo do `.env.unificado` (`VITE_API_BASE` vazio, `VITE_API_URL=/api`), com nome que indica o uso: front no nginx chamando `/api` no próprio endereço. |
+| `docs/.../nginx.homologacao.conf` (novo) | Modelo do nginx: serve `C:/sisaudin-homolog/frontend`, `try_files` para as rotas do React, repassa `/api` e `/uploads` a `127.0.0.1:8081`, `client_max_body_size 50m`, `proxy_read_timeout 120s`. |
+| `docs/.../application.properties.homologacao.exemplo` | `server.address=127.0.0.1` (backend aceita conexão só do nginx na mesma máquina) e `sisaudin.link` com o endereço do nginx. |
+| `CHECKLIST-HOMOLOGACAO.html` | Seção 1: portas 80/8081, firewall, instalação do nginx. Seção 4: build `--mode nginx` e JAR sem front. Seção 5: cópia do front para `C:\sisaudin-homolog\frontend`. Nova seção 7b: configurar, iniciar e conferir o nginx. |
+
+`WebMvcConfig` e `SecurityConfig` (entrega de 15/10) **ficam como estão**. Num JAR sem front, um GET fora de `/api` e `/uploads` responde 404 em vez de 401; atrás do nginx essas requisições nem chegam ao backend.
+
+### Caminhos que o nginx repassa ao backend
+
+- `/api/` — toda a API.
+- `/uploads/` — fotos de perfil: a URL é gravada como `/uploads/perfis/...` e o navegador a pede ao próprio nginx.
+- `/ws-collab` não precisa: o backend não tem essa rota (pendência da seção 4).
+
+### Testado
+
+- `mvnw.cmd process-resources` sem perfil não copia o front; com `-Pcom-front` copia (`static/index.html`).
+- `vite build --mode nginx` gera bundle sem `sisaudin.ghc.com.br` e com `/api` relativo.
+
+**Não testado:** o `nginx.homologacao.conf` não foi executado nesta máquina (nginx não instalado aqui); conferir com `nginx.exe -t` e os itens da seção 7b do checklist.
+
+---
+
+## 6. Como desfazer
 
 ```powershell
 git apply -R docs/alteracoes-2026-10-15/jar-unificado.patch
 ```
 
-Ou voltar os oito arquivos alterados e apagar `frontend/.env.unificado`. Não há nada a desfazer no banco.
+O patch contém as alterações de 15/10 e de 21/10 juntas. Ou voltar os oito arquivos alterados e apagar `frontend/.env.unificado` e `frontend/.env.nginx`. Não há nada a desfazer no banco.

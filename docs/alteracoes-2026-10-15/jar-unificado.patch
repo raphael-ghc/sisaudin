@@ -1,36 +1,46 @@
 diff --git a/backend/pom.xml b/backend/pom.xml
-index e7f6d7c..f587103 100644
+index e7f6d7c..82a2f3f 100644
 --- a/backend/pom.xml
 +++ b/backend/pom.xml
-@@ -159,6 +159,28 @@
-                     </annotationProcessorPaths>
-                 </configuration>
-             </plugin>
-+            <!-- Copia o build do front (frontend/dist) para static/ do JAR -->
-+            <plugin>
-+                <groupId>org.apache.maven.plugins</groupId>
-+                <artifactId>maven-resources-plugin</artifactId>
-+                <executions>
-+                    <execution>
-+                        <id>copiar-frontend</id>
-+                        <phase>process-resources</phase>
-+                        <goals>
-+                            <goal>copy-resources</goal>
-+                        </goals>
-+                        <configuration>
-+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
-+                            <resources>
-+                                <resource>
-+                                    <directory>${project.basedir}/../frontend/dist</directory>
-+                                </resource>
-+                            </resources>
-+                        </configuration>
-+                    </execution>
-+                </executions>
-+            </plugin>
-             <plugin>
-                 <groupId>org.springframework.boot</groupId>
-                 <artifactId>spring-boot-maven-plugin</artifactId>
+@@ -174,4 +174,38 @@
+         </plugins>
+     </build>
+ 
++    <profiles>
++        <!-- JAR unificado (opcional): mvnw.cmd clean package -Pcom-front
++             Copia o build do front (frontend/dist) para static/ do JAR.
++             Sem o perfil, o JAR leva só a API e o front é publicado no nginx. -->
++        <profile>
++            <id>com-front</id>
++            <build>
++                <plugins>
++                    <plugin>
++                        <groupId>org.apache.maven.plugins</groupId>
++                        <artifactId>maven-resources-plugin</artifactId>
++                        <executions>
++                            <execution>
++                                <id>copiar-frontend</id>
++                                <phase>process-resources</phase>
++                                <goals>
++                                    <goal>copy-resources</goal>
++                                </goals>
++                                <configuration>
++                                    <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
++                                    <resources>
++                                        <resource>
++                                            <directory>${project.basedir}/../frontend/dist</directory>
++                                        </resource>
++                                    </resources>
++                                </configuration>
++                            </execution>
++                        </executions>
++                    </plugin>
++                </plugins>
++            </build>
++        </profile>
++    </profiles>
++
+ </project>
 diff --git a/backend/src/main/java/sisaudin/config/WebMvcConfig.java b/backend/src/main/java/sisaudin/config/WebMvcConfig.java
 index 9bd55a5..ac66cb6 100644
 --- a/backend/src/main/java/sisaudin/config/WebMvcConfig.java
@@ -122,6 +132,14 @@ index db4b4e3..da0a167 100644
      @Bean
      public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
          return config.getAuthenticationManager();
+diff --git a/frontend/.env.unificado b/frontend/.env.unificado
+new file mode 100644
+index 0000000..835f13e
+--- /dev/null
++++ b/frontend/.env.unificado
+@@ -0,0 +1,2 @@
++VITE_API_BASE=
++VITE_API_URL=/api
 diff --git a/frontend/src/api/config.js b/frontend/src/api/config.js
 index 52ee6a0..24abe0f 100644
 --- a/frontend/src/api/config.js
@@ -222,11 +240,14 @@ index 38cf5bc..165e158 100644
          const client = new Client({
              webSocketFactory: () => socket,
              reconnectDelay: 5000,
-diff --git a/frontend/.env.unificado b/frontend/.env.unificado
+diff --git a/frontend/.env.nginx b/frontend/.env.nginx
 new file mode 100644
-index 0000000..835f13e
+index 0000000..b54112c
 --- /dev/null
-+++ b/frontend/.env.unificado
-@@ -0,0 +1,2 @@
++++ b/frontend/.env.nginx
+@@ -0,0 +1,5 @@
++# Front publicado no nginx, que repassa /api e /uploads para o backend.
++# Enderecos relativos: o front chama o mesmo endereco de onde foi carregado.
++# Build: npx.cmd vite build --mode nginx
 +VITE_API_BASE=
 +VITE_API_URL=/api

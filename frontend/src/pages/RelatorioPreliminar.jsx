@@ -903,7 +903,7 @@ export default function RelatorioPreliminar() {
       debounce(async (dataToSave, id, itemTrabId, onStart, onSuccess, onError) => {
           if (!id || isReadOnly) return;
 
-      if (!(await validateNumero(payload.numero, payload.ano, id, itemId))) return;
+      if (!(await validateNumero(dataToSave.numero, dataToSave.ano, id, itemTrabId))) return;
           try {
               if (onStart) onStart();
               await updateRelatorioById(id, dataToSave, itemTrabId);
@@ -1128,7 +1128,7 @@ export default function RelatorioPreliminar() {
   const handleSaveManual = async () => {
     if (!relatorioId || isReadOnly) return;
 
-    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { setLoading(false); return; }
+    if (!(await validateNumero(numero, ano, relatorioId, selectedItemTrabalhoId))) { return; }
     setSaving(true);
       setAutoSaveStatus('saving');
       try {

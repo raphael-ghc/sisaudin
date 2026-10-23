@@ -99,3 +99,53 @@ No arquivo `package.json`, estão disponíveis os seguintes comandos auxiliares 
 - `build`: Cria o build otimizado para produção na pasta `dist`.
 - `lint`: Executa o ESLint para verificar problemas e padronização no código.
 - `preview`: Inicia um servidor local para visualizar como ficou a versão compilada (`build`) do projeto.
+
+---
+
+## 5. Resumo de Execução (Desenvolvimento e Produção)
+
+### No ambiente de desenvolvimento
+
+- **Para executar:**
+  - **Backend:**
+    ```bash
+    mvn spring-boot:run
+    ```
+  - **Frontend:**
+    ```bash
+    npm run dev
+    ```
+
+- **Para gerar pacote:**
+  - **Backend:**
+    ```bash
+    mvn clean package -DskipTests
+    ```
+  - **Frontend:**
+    ```bash
+    npm run build
+    ```
+
+---
+
+### No ambiente de produção 
+
+- **Para executar:**
+  - **Backend:**
+    ```cmd
+    cd C:\caminho\backend
+    java -jar sisaudin.jar
+    ```
+  - **Frontend:**
+    ```cmd
+    cd C:\caminho\nginx
+    ```
+    *[Colar o conteúdo da pasta `dist` dentro da pasta `html`]*
+    ```cmd
+    start nginx
+    nginx -s reload
+    ```
+
+- **Para configurar proxy reverso e certificado digital:**
+  - Diretório: `C:/nginx/conf`
+  - Alterar o arquivo `nginx.conf`
