@@ -139,6 +139,8 @@ public class NotaFinalService {
         
         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
+        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
+        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());
         if (dto.getAno() != null) nota.setAno(dto.getAno());
@@ -165,6 +167,8 @@ public class NotaFinalService {
         
         nota.setIntroducao(dto.getIntroducao());
         nota.setConsideracoes(dto.getConsideracoes());
+        nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
+        nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
 
         if (dto.getItemTrabalho() != null && dto.getItemTrabalho().getId() != null) {
             ItemTrabalho item = itemTrabalhoRepository.findById(dto.getItemTrabalho().getId())
@@ -210,6 +214,8 @@ public class NotaFinalService {
 
         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
+        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
+        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
         
         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());

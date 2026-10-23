@@ -1,0 +1,17 @@
+diff --git a/backend/src/main/java/sisaudin/model/cadastroBasico/Documento.java b/backend/src/main/java/sisaudin/model/cadastroBasico/Documento.java
+index 38d2ce8..c3e2c19 100644
+--- a/backend/src/main/java/sisaudin/model/cadastroBasico/Documento.java
++++ b/backend/src/main/java/sisaudin/model/cadastroBasico/Documento.java
+@@ -26,7 +26,11 @@ public abstract class Documento {
+ 
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "item_trabalho_id")
+-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "ordensServico", "comunicacoes", "notasPreliminar", "notasFinal", "relatoriosPreliminar", "relatoriosFinal", "planosAcaoPreliminar", "planosAcaoFinal", "notasTecnica", "reunioes", "visitas", "equipe", "planejamentos", "matrizesAchados", "reunioesBuscaConjunta", "notasMonitoramento", "solicitacoes", "pareceres"})
++    // A lista vale só para a escrita (não mandar as listas do item dentro do documento).
++    // allowSetters = true: sem isso o Jackson cria, na leitura, uma variante do leitor de ItemTrabalho que,
++    // se for criada depois de um item de trabalho ter sido salvo, perde o construtor; daí em diante todo
++    // documento enviado com "itemTrabalho": {...} era recusado com 400 até o backend reiniciar.
++    @JsonIgnoreProperties(allowSetters = true, value = {"hibernateLazyInitializer", "handler", "ordensServico", "comunicacoes", "notasPreliminar", "notasFinal", "relatoriosPreliminar", "relatoriosFinal", "planosAcaoPreliminar", "planosAcaoFinal", "notasTecnica", "reunioes", "visitas", "equipe", "planejamentos", "matrizesAchados", "reunioesBuscaConjunta", "notasMonitoramento", "solicitacoes", "pareceres"})
+     @ToString.Exclude
+     private ItemTrabalho itemTrabalho;
+ 

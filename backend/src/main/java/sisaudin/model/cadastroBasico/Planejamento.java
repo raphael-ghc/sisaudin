@@ -106,4 +106,13 @@ public class Planejamento extends Documento {
     @OneToMany(mappedBy = "planejamento", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<QuestaoPlanejamento> questoes = new ArrayList<>();
+
+    // Gerências destinatárias escolhidas na tela (nomes, como o seletor as mostra)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "planejamento_gerencia_destinataria",
+                     joinColumns = @JoinColumn(name = "planejamento_id"))
+    @OrderColumn(name = "ordem")
+    @Column(name = "gerencia")
+    @Builder.Default
+    private List<String> gerenciasDestinatarias = new ArrayList<>();
 }

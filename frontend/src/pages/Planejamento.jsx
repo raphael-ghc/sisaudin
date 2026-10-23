@@ -344,6 +344,22 @@ export default function Planejamento() {
     };
   };
 
+  // Após salvar, completa só o que o formulário ainda não tem (id, dataCriacao, ids das questões novas).
+  // Não sobrescreve o conteúdo com a resposta: o que foi digitado durante a requisição continua valendo,
+  // e "questoes" só muda de referência quando recebe ids (evita disparar outro auto-save em seguida).
+  const mesclarRespostaSalvamento = (prev, saved) => {
+    const merged = { ...prev, id: saved.id };
+    Object.keys(saved).forEach(k => {
+      if (k !== 'questoes' && (merged[k] === undefined || merged[k] === null)) merged[k] = saved[k];
+    });
+    const atuais = prev.questoes || [];
+    const salvas = saved.questoes || [];
+    if (atuais.some((q, i) => !q.id && salvas[i]?.id)) {
+      merged.questoes = atuais.map((q, i) => (!q.id && salvas[i]?.id ? { ...q, id: salvas[i].id } : q));
+    }
+    return merged;
+  };
+
   // Auto-Save de 3 segundos (lodash.debounce)
   const debouncedSave = useCallback(
     debounce(async (dataToSave, targetItemIdParam) => {
@@ -365,7 +381,7 @@ export default function Planejamento() {
         setLastSavedTime(timeStr);
         setAutoSaveStatus('salvo');
         if (saved && saved.id) {
-          setFormData(prev => ({ ...prev, id: saved.id, ...saved }));
+          setFormData(prev => mesclarRespostaSalvamento(prev, saved));
         }
       } catch (error) {
         console.error('Erro ao salvar planejamento automaticamente:', error);
@@ -408,6 +424,7 @@ export default function Planejamento() {
     formData.dataInicialRelatorio,
     formData.dataFinalRelatorio,
     formData.questoes,
+    formData.gerenciasDestinatarias,
     formData.status,
     formData.tipoAuditoria,
     formData.dataEmissao,
@@ -603,11 +620,7 @@ export default function Planejamento() {
       setLastSavedTime(now.toLocaleTimeString('pt-BR'));
       setAutoSaveStatus('salvo');
       if (saved && saved.id) {
-        setFormData(prev => ({
-          ...prev,
-          ...saved,
-          questoes: saved.questoes || []
-        }));
+        setFormData(prev => mesclarRespostaSalvamento(prev, saved));
         if (!formData.id) {
           const tgtId = formData.itemTrabalho?.id || itemTrabalhoIdParam || '';
           navigate(`/planejamento/${saved.id}${tgtId ? `?itemTrabalhoId=${tgtId}` : ''}`, { replace: true });

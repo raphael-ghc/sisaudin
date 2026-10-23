@@ -1,0 +1,895 @@
+diff --git a/backend/src/main/java/sisaudin/model/cadastroBasico/Planejamento.java b/backend/src/main/java/sisaudin/model/cadastroBasico/Planejamento.java
+index 697015e..a4d231c 100644
+--- a/backend/src/main/java/sisaudin/model/cadastroBasico/Planejamento.java
++++ b/backend/src/main/java/sisaudin/model/cadastroBasico/Planejamento.java
+@@ -106,4 +106,13 @@ public class Planejamento extends Documento {
+     @OneToMany(mappedBy = "planejamento", cascade = CascadeType.ALL, orphanRemoval = true)
+     @Builder.Default
+     private List<QuestaoPlanejamento> questoes = new ArrayList<>();
++
++    // Gerências destinatárias escolhidas na tela (nomes, como o seletor as mostra)
++    @ElementCollection(fetch = FetchType.EAGER)
++    @CollectionTable(name = "planejamento_gerencia_destinataria",
++                     joinColumns = @JoinColumn(name = "planejamento_id"))
++    @OrderColumn(name = "ordem")
++    @Column(name = "gerencia")
++    @Builder.Default
++    private List<String> gerenciasDestinatarias = new ArrayList<>();
+ }
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/NotaFinalService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/NotaFinalService.java
+index 373555a..a1d1924 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/NotaFinalService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/NotaFinalService.java
+@@ -139,6 +139,8 @@ public class NotaFinalService {
+         
+         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
++        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
+         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());
+         if (dto.getAno() != null) nota.setAno(dto.getAno());
+@@ -165,6 +167,8 @@ public class NotaFinalService {
+         
+         nota.setIntroducao(dto.getIntroducao());
+         nota.setConsideracoes(dto.getConsideracoes());
++        nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+ 
+         if (dto.getItemTrabalho() != null && dto.getItemTrabalho().getId() != null) {
+             ItemTrabalho item = itemTrabalhoRepository.findById(dto.getItemTrabalho().getId())
+@@ -210,6 +214,8 @@ public class NotaFinalService {
+ 
+         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
++        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+         
+         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
+         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());
+diff --git a/backend/src/main/java/sisaudin/service/cadastroBasico/NotaPreliminarService.java b/backend/src/main/java/sisaudin/service/cadastroBasico/NotaPreliminarService.java
+index 83c263c..5966003 100644
+--- a/backend/src/main/java/sisaudin/service/cadastroBasico/NotaPreliminarService.java
++++ b/backend/src/main/java/sisaudin/service/cadastroBasico/NotaPreliminarService.java
+@@ -56,6 +56,8 @@ public class NotaPreliminarService {
+         
+         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
++        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
+         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());
+         if (dto.getAno() != null) nota.setAno(dto.getAno());
+@@ -82,6 +84,8 @@ public class NotaPreliminarService {
+         
+         nota.setIntroducao(dto.getIntroducao());
+         nota.setConsideracoes(dto.getConsideracoes());
++        nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+         
+ 
+         if (dto.getItemTrabalho() != null && dto.getItemTrabalho().getId() != null) {
+@@ -128,6 +132,8 @@ public class NotaPreliminarService {
+ 
+         if (dto.getIntroducao() != null) nota.setIntroducao(dto.getIntroducao());
+         if (dto.getConsideracoes() != null) nota.setConsideracoes(dto.getConsideracoes());
++        if (dto.getPreliminaresTextoInicial() != null) nota.setPreliminaresTextoInicial(dto.getPreliminaresTextoInicial());
++        if (dto.getConstatacoesTextoInicial() != null) nota.setConstatacoesTextoInicial(dto.getConstatacoesTextoInicial());
+         
+         if (dto.getDataInicial() != null) nota.setDataInicial(dto.getDataInicial());
+         if (dto.getDataFinal() != null) nota.setDataFinal(dto.getDataFinal());
+diff --git a/frontend/src/pages/Parecer.jsx b/frontend/src/pages/Parecer.jsx
+index eb3ccf3..fb4f003 100644
+--- a/frontend/src/pages/Parecer.jsx
++++ b/frontend/src/pages/Parecer.jsx
+@@ -508,7 +508,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+       const elCapa = document.getElementById('page-capa');
+       const pagesCapa = getPagesForElement(elCapa);
+       const elParecer = document.getElementById('page-parecer');
+-      const pagesParecer = getPagesForElement(elParecer);
++      const pagesParecer = elParecer ? getPagesForElement(elParecer) : 0;
+       const elSumario = document.getElementById('page-sumario');
+       const pagesSumario = getPagesForElement(elSumario);
+ 
+@@ -522,12 +522,11 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+         const pageOffset = Math.floor(offsetTop / pageHeightPx);
+         return startPage + pageOffset;
+       };
+-      const elAnexoA = document.getElementById('page-anexo-a');
+-      const pagesAnexoA = getPagesForElement(elAnexoA, true);
+-      newPageNums['footer-anexoa'] = currentStartPage + pagesAnexoA - 1;
+-      newPageNums['preview-anexoa'] = currentStartPage;
+-
+-      currentStartPage += pagesAnexoA;
++      const elCorpo = document.getElementById('page-intro-plan');
++      ['preview-intro', 'preview-objetivo', 'preview-escopo', 'preview-consideracoes'].forEach(t => {
++        newPageNums[t] = getTopicPage(t, elCorpo, currentStartPage);
++      });
++      currentStartPage += getPagesForElement(elCorpo);
+ 
+       anexosFinais.forEach((a) => {
+         const elAnexo = document.getElementById(`page-anexo-${a.id}`);
+@@ -553,7 +552,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+       clearTimeout(timer);
+       window.removeEventListener('resize', calculatePages);
+     };
+-  }, [preliminares, constatacoes, anexosFinais, consideracoes, preliminaresTextoInicial, constatacoesTextoInicial]);
++  }, [anexosFinais, introducao, objetivo, escopoAvaliacao, analiseFatos, consideracoes]);
+ 
+   const fetchAnexos = async (itemTrabalhoId) => {
+     if (!itemTrabalhoId) return;
+@@ -791,6 +790,9 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+ 
+             if (relRes) {
+                 setIntroducao(relRes.introducao || '');
++                setObjetivo(relRes.objetivo || '');
++                setEscopoAvaliacao(relRes.escopoAvaliacao || '');
++                setAnaliseFatos(relRes.analiseFatos || '');
+                 setConsideracoes(relRes.consideracoes || '');
+                 setDataInicial(relRes.dataInicial || '');
+                 setDataFinal(relRes.dataFinal || '');
+@@ -862,49 +864,18 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+   useEffect(() => {
+      if (parecerId && !isLoading && !isReadOnly) {
+          setAutoSaveStatus('editing');
++         // O Parecer tem só introdução, objetivo, escopo, análise dos fatos, conclusão e anexos
+          debouncedSave({
+              introducao,
+-        objetivo,
+-        escopoAvaliacao,
+-        analiseFatos,
++             objetivo,
++             escopoAvaliacao,
++             analiseFatos,
+              consideracoes,
+-             preliminaresTextoInicial: preliminaresTextoInicial || '',
+-             constatacoesTextoInicial: constatacoesTextoInicial || '',
+              dataInicial: dataInicial || null,
+              dataFinal: dataFinal || null,
+              ano: ano || null,
+              numero: numero || null,
+              gerenciasDestinatarias: gerenciasDestinatarias.map(g => ({ id: g.id, nome: g.nome })),
+-             preliminares: preliminares.map(p => ({
+-                 id: typeof p.id === 'string' || (p.id && p.id > 1000000000000) ? null : p.id,
+-                 titulo: p.titulo,
+-                 content: p.content
+-             })),
+-             constatacoes: constatacoes.map(c => ({
+-                 id: typeof c.id === 'string' || (c.id && c.id > 1000000000000) ? null : c.id,
+-                 titulo: c.titulo,
+-                 content: c.content,
+-                 resumoFato: c.resumoFato || '',
+-                 resumoCriterio: c.resumoCriterio || '',
+-                 resumoCausa: c.resumoCausa || '',
+-                 resumoImpacto: c.resumoImpacto || '',
+-                 recomendacoes: c.recomendacoes ? c.recomendacoes.map(r => ({
+-                     id: typeof r.id === 'string' || (r.id && r.id > 1000000000000) ? null : r.id,
+-                     content: r.content,
+-                     dataLimite: r.dataLimite,
+-                     nivelRisco: r.nivelRisco,
+-                     gerencia: r.gerencia,
+-                     tipoBeneficio: r.tipoBeneficio,
+-                     detalheBeneficio: r.detalheBeneficio,
+-                     statusBeneficio: r.statusBeneficio,
+-                     anoImplementacao: r.anoImplementacao,
+-                     descricaoBeneficioRealizado: r.descricaoBeneficioRealizado,
+-                     descricaoCustoBeneficio: r.descricaoCustoBeneficio,
+-                     valorCustoBeneficio: r.valorCustoBeneficio,
+-                     valorBrutoBeneficio: r.valorBrutoBeneficio,
+-                     valorLiquidoBeneficio: r.valorLiquidoBeneficio
+-                 })) : []
+-             })),
+              anexosFinais: anexosFinais.map((a, idx) => ({
+                  id: typeof a.id === 'string' || (a.id && a.id > 1000000000000) ? null : a.id,
+                  titulo: a.titulo || '',
+@@ -922,10 +893,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+          () => setAutoSaveStatus('idle')
+          );
+      }
+-  }, [introducao,
+-        objetivo,
+-        escopoAvaliacao,
+-        analiseFatos, consideracoes, preliminaresTextoInicial, constatacoesTextoInicial, selectedItemTrabalhoId, parecerId, debouncedSave, dataInicial, dataFinal, ano, numero, preliminares, constatacoes, anexosFinais, gerenciasDestinatarias, isLoading, isReadOnly]);
++  }, [introducao, objetivo, escopoAvaliacao, analiseFatos, consideracoes, selectedItemTrabalhoId, parecerId, debouncedSave, dataInicial, dataFinal, ano, numero, anexosFinais, gerenciasDestinatarias, isLoading, isReadOnly]);
+ 
+   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+ 
+@@ -1074,47 +1042,15 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+       try {
+           await updateRelatorioById(parecerId, {
+               introducao,
+-        objetivo,
+-        escopoAvaliacao,
+-        analiseFatos,
++              objetivo,
++              escopoAvaliacao,
++              analiseFatos,
+               consideracoes,
+-              preliminaresTextoInicial: preliminaresTextoInicial || '',
+-              constatacoesTextoInicial: constatacoesTextoInicial || '',
+               dataInicial: dataInicial || null,
+               dataFinal: dataFinal || null,
+               ano: ano || null,
+               numero: numero || null,
+               gerenciasDestinatarias: gerenciasDestinatarias.map(g => ({ id: g.id, nome: g.nome })),
+-              preliminares: preliminares.map(p => ({
+-                  id: typeof p.id === 'string' || (p.id && p.id > 1000000000000) ? null : p.id,
+-                  titulo: p.titulo,
+-                  content: p.content
+-              })),
+-              constatacoes: constatacoes.map(c => ({
+-                  id: typeof c.id === 'string' || (c.id && c.id > 1000000000000) ? null : c.id,
+-                  titulo: c.titulo,
+-                  content: c.content,
+-                  resumoFato: c.resumoFato || '',
+-                  resumoCriterio: c.resumoCriterio || '',
+-                  resumoCausa: c.resumoCausa || '',
+-                  resumoImpacto: c.resumoImpacto || '',
+-                  recomendacoes: c.recomendacoes ? c.recomendacoes.map(r => ({
+-                      id: typeof r.id === 'string' || (r.id && r.id > 1000000000000) ? null : r.id,
+-                      content: r.content,
+-                      dataLimite: r.dataLimite,
+-                      nivelRisco: r.nivelRisco,
+-                      gerencia: r.gerencia,
+-                      tipoBeneficio: r.tipoBeneficio,
+-                      detalheBeneficio: r.detalheBeneficio,
+-                      statusBeneficio: r.statusBeneficio,
+-                      anoImplementacao: r.anoImplementacao,
+-                      descricaoBeneficioRealizado: r.descricaoBeneficioRealizado,
+-                      descricaoCustoBeneficio: r.descricaoCustoBeneficio,
+-                      valorCustoBeneficio: r.valorCustoBeneficio,
+-                      valorBrutoBeneficio: r.valorBrutoBeneficio,
+-                      valorLiquidoBeneficio: r.valorLiquidoBeneficio
+-                  })) : []
+-              })),
+               anexosFinais: anexosFinais.map((a, idx) => ({
+                   id: typeof a.id === 'string' || (a.id && a.id > 1000000000000) ? null : a.id,
+                   titulo: a.titulo || '',
+@@ -1787,254 +1723,51 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+             
+ 
+             <section className="mb-10">
+-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b-2 border-blue-900 pb-3">
+-                <h2 className="text-xl font-bold text-blue-900">4. CONSTATAÇÕES E RECOMENDAÇÕES</h2>
+-                <button onClick={adicionarConstatacao} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium shadow-sm text-sm">
+-                  + Adicionar Constatação
+-                </button>
+-              </div>
+-
+-              <div className="mb-6 relative">
+-                <RichTextEditor readOnly={isReadOnly} 
+-                  title="Constatações e Recomendações - Texto Inicial" 
+-                  initialContent={constatacoesTextoInicial}
+-                  onChange={setConstatacoesTextoInicial}
+-                  onSave={(content) => handleAutoSave('Constatações e Recomendações - Texto Inicial', content)} 
+-                  onFocus={() => setActiveSectionId('constatacoes-texto-inicial')} 
+-                  globalCollapseAction={globalCollapseAction} 
+-                  renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao('Constatações e Recomendações - Texto Inicial')} onUpload={(file) => handleUploadAnexo(file, 'Constatações e Recomendações - Texto Inicial')} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
+-                />
+-              </div>
+-
+-              <div 
+-                className="space-y-10 min-h-[100px]"
+-                onDragOver={handleDragOver}
+-                onDrop={(e) => handleDrop(e, 'constatacao', -1)}
+-              >
+-                {constatacoes.length === 0 ? (
+-                  <div className="text-center py-10 bg-white border border-dashed border-gray-300 rounded-lg text-gray-500">Nenhuma constatação adicionada. Arraste itens para cá.</div>
+-                ) : (
+-                  constatacoes.map((item, index) => (
+-                    <div 
+-                      key={item.id} 
+-                      className="bg-white border border-blue-200 rounded-xl shadow-sm relative group cursor-grab active:cursor-grabbing"
+-                      draggable
+-                      onDragStart={(e) => handleDragStart(e, 'constatacao', index, item)}
+-                      onDragEnd={handleDragEnd}
+-                      onDragOver={handleDragOver}
+-                      onDrop={(e) => {
+-                        e.stopPropagation();
+-                        handleDrop(e, 'constatacao', index);
+-                      }}
+-                    >
+-                      <div className="absolute right-4 top-4 text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex cursor-grab z-10" title="Arraste para reordenar ou mover para informações preliminares">
+-                        <span className="text-2xl font-bold">⋮⋮</span>
+-                      </div>
+-                      <div className="bg-blue-50/40 p-4 pb-0 border-b border-blue-100">
+-                        <div className="mb-4">
+-                          <label className="block text-xs font-semibold text-gray-600 mb-1">Título da Constatação</label>
+-                          <input 
+-                            type="text" 
+-                            className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none focus:border-blue-500" 
+-                            placeholder="Ex: Pagamentos em atraso..."
+-                            value={item.titulo || ''}
+-                            onChange={(e) => atualizarConstatacao(item.id, 'titulo', e.target.value)}
+-                          />
+-                        </div>
+-                        <RichTextEditor readOnly={isReadOnly}
+-                          title={`4.${index + 1} - Constatação`}
+-                          initialContent={item.content}
+-                          onChange={(content) => atualizarConstatacao(item.id, 'content', content)}
+-                          onSave={(content) => handleAutoSave(`ParecerConstatacao ${item.id}`, content)}
+-                          onRemove={() => excluirConstatacao(item.id)}
+-                          onFocus={() => setActiveSectionId(`constatacao-${item.id}`)}
+-                          globalCollapseAction={globalCollapseAction}
+-                          renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao(`4.${index + 1} - Constatação`)} onUpload={(file) => handleUploadAnexo(file, `4.${index + 1} - Constatação`)} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
+-                        />
+-                      </div>
+-
+-                      <ResumoConstatacaoSection isReadOnly={isReadOnly}
+-                        item={item}
+-                        collapsed={collapsedResumos[item.id]}
+-                        onToggle={() => toggleResumo(item.id)}
+-                        onUpdate={atualizarConstatacao}
+-                        handleAutoSave={handleAutoSave}
+-                      />
+-
+-                      <div className="p-4 bg-white" onMouseDown={(e) => e.stopPropagation()}>
+-                        <div className="flex justify-between items-center mb-4">
+-                          <h4 className="font-semibold text-indigo-900">Recomendações</h4>
+-                          <button onClick={() => adicionarRecomendacao(item.id)} className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 rounded-md font-medium border border-indigo-200">
+-                            + Recomendação
+-                          </button>
+-                        </div>
+-                        {(!item.recomendacoes || item.recomendacoes.length === 0) ? (
+-                          <div 
+-                            className="text-sm text-gray-500 italic bg-gray-50 p-3 rounded border text-center min-h-[50px]"
+-                            onDragOver={handleDragOver}
+-                            onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'recomendacao', -1, item.id); }}
+-                          >
+-                            Nenhuma recomendação associada. Arraste recomendações para cá.
+-                          </div>
+-                        ) : (
+-                          <div 
+-                            className="space-y-6 min-h-[50px]"
+-                            onDragOver={handleDragOver}
+-                            onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'recomendacao', -1, item.id); }}
+-                          >
+-                            {item.recomendacoes.map((rec, recIndex) => (
+-                              <div 
+-                                key={rec.id} 
+-                                className="bg-slate-50 border border-indigo-100 p-4 rounded-lg relative group cursor-grab active:cursor-grabbing"
+-                                draggable
+-                                onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, 'recomendacao', recIndex, rec, item.id); }}
+-                                onDragEnd={handleDragEnd}
+-                                onDragOver={handleDragOver}
+-                                onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'recomendacao', recIndex, item.id); }}
+-                              >
+-                                <div 
+-                                  className="absolute -left-3 top-4 cursor-pointer text-red-600 bg-white rounded-full shadow border border-red-200 flex items-center justify-center p-0.5 z-10 hover:bg-red-50 transition-colors"
+-                                  onClick={() => toggleRecomendacao(rec.id)}
+-                                  title="Abrir/Recolher Recomendação"
+-                                >
+-                                  {collapsedRecomendacoes[rec.id] ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+-                                </div>
+-                                <div className="absolute right-2 top-2 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity flex cursor-grab z-10" title="Arraste para reordenar ou mover de constatação">
+-                                  <span className="text-xl font-bold">⋮⋮</span>
+-                                </div>
++              <RichTextEditor readOnly={isReadOnly}
++                title="2. OBJETIVO"
++                subtitle="Salvo automaticamente após 3 segundos de inatividade."
++                initialContent={objetivo}
++                onChange={setObjetivo}
++                onSave={(content) => handleAutoSave('2. OBJETIVO', content)}
++                onFocus={() => setActiveSectionId('objetivo')}
++                globalCollapseAction={globalCollapseAction}
++                renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao('2. OBJETIVO')} onUpload={(file) => handleUploadAnexo(file, '2. OBJETIVO')} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
++              />
++            </section>
+ 
+-                                {collapsedRecomendacoes[rec.id] ? (
+-                                  <div className="flex items-center py-2 px-4 cursor-pointer" onClick={() => toggleRecomendacao(rec.id)}>
+-                                    <span className="font-bold text-indigo-900 ml-2">Recomendação 4.{index + 1}.{recIndex + 1}</span>
+-                                    <span className="text-gray-500 text-sm ml-2 italic">- Clique para expandir</span>
+-                                  </div>
+-                                ) : (
+-                                  <>
+-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+-                                  <div>
+-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Data Limite</label>
+-                                    <input type="date" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.dataLimite} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'dataLimite', e.target.value)} />
+-                                  </div>
+-                                  <div>
+-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Risco</label>
+-                                    <SearchableSelect
+-                                      value={rec.nivelRisco}
+-                                      onChange={(val) => atualizarRecomendacao(item.id, rec.id, 'nivelRisco', val)}
+-                                      options={niveisRiscoList.map(r => ({ value: r, label: r }))}
+-                                      placeholder="Selecione..."
+-                                    />
+-                                  </div>
+-                                  <div>
+-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Gerência</label>
+-                                    <SearchableSelect
+-                                      value={rec.gerencia}
+-                                      onChange={(val) => atualizarRecomendacao(item.id, rec.id, 'gerencia', val)}
+-                                      options={gerenciasList.map(g => ({ value: g, label: g }))}
+-                                      placeholder="Selecione..."
+-                                    />
+-                                  </div>
+-                                </div>
+-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+-                                  <div>
+-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Status do Benefício</label>
+-                                    <SearchableSelect
+-                                      value={rec.statusBeneficio}
+-                                      onChange={(val) => atualizarRecomendacao(item.id, rec.id, 'statusBeneficio', val)}
+-                                      options={[
+-                                        { value: 'Esperado', label: 'Esperado' },
+-                                        { value: 'Realizado', label: 'Realizado' }
+-                                      ]}
+-                                      placeholder="Selecione..."
+-                                    />
+-                                  </div>
+-                                  <div>
+-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de Benefício</label>
+-                                    <SearchableSelect
+-                                      value={rec.tipoBeneficio}
+-                                      onChange={(val) => atualizarRecomendacao(item.id, rec.id, 'tipoBeneficio', val)}
+-                                      options={[
+-                                        { value: 'Qualitativo', label: 'Qualitativo' },
+-                                        { value: 'Financeiro', label: 'Financeiro' }
+-                                      ]}
+-                                      placeholder="Selecione..."
+-                                    />
+-                                  </div>
+-                                  {rec.tipoBeneficio && (
+-                                    <div>
+-                                      <label className="block text-xs font-semibold text-gray-600 mb-1">Detalhe do Benefício</label>
+-                                      <SearchableSelect
+-                                        value={rec.detalheBeneficio}
+-                                        onChange={(val) => atualizarRecomendacao(item.id, rec.id, 'detalheBeneficio', val)}
+-                                        options={(rec.tipoBeneficio === 'Qualitativo' ? beneficiosQualitativosList : beneficiosFinanceirosList).map(b => ({ value: b, label: b }))}
+-                                        placeholder="Selecione..."
+-                                      />
+-                                    </div>
+-                                  )}
+-                                </div>
+-                                {rec.statusBeneficio === 'Realizado' && (
+-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 mb-4 border-t border-indigo-100 pt-4">
+-                                    <div>
+-                                      <label className="block text-xs font-semibold text-gray-600 mb-1">Ano de Implementação</label>
+-                                      <input type="text" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.anoImplementacao || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'anoImplementacao', e.target.value)} placeholder="Ex: 2026" />
+-                                    </div>
+-                                    <div className="sm:col-span-2 xl:col-span-3">
+-                                      <label className="block text-xs font-semibold text-gray-600 mb-1">Descrição do Benefício Realizado</label>
+-                                      <input type="text" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.descricaoBeneficioRealizado || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'descricaoBeneficioRealizado', e.target.value)} placeholder="Descreva o benefício" />
+-                                    </div>
+-                                    
+-                                    {rec.tipoBeneficio === 'Financeiro' && (
+-                                      <>
+-                                        <div className="sm:col-span-2 xl:col-span-4">
+-                                          <label className="block text-xs font-semibold text-gray-600 mb-1">Descrição do Custo para Realizar o Benefício</label>
+-                                          <input type="text" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.descricaoCustoBeneficio || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'descricaoCustoBeneficio', e.target.value)} placeholder="Descreva o custo" />
+-                                        </div>
+-                                        <div>
+-                                          <label className="block text-xs font-semibold text-gray-600 mb-1">Valor do Custo (R$)</label>
+-                                          <input type="number" step="0.01" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.valorCustoBeneficio || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'valorCustoBeneficio', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" />
+-                                        </div>
+-                                        <div>
+-                                          <label className="block text-xs font-semibold text-gray-600 mb-1">Valor Bruto do Benefício (R$)</label>
+-                                          <input type="number" step="0.01" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.valorBrutoBeneficio || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'valorBrutoBeneficio', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" />
+-                                        </div>
+-                                        <div>
+-                                          <label className="block text-xs font-semibold text-gray-600 mb-1">Valor Líquido do Benefício (R$)</label>
+-                                          <input type="number" step="0.01" className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 outline-none" value={rec.valorLiquidoBeneficio || ''} onChange={(e) => atualizarRecomendacao(item.id, rec.id, 'valorLiquidoBeneficio', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" />
+-                                        </div>
+-                                      </>
+-                                    )}
+-                                  </div>
+-                                )}
+-                                <RichTextEditor readOnly={isReadOnly}
+-                                  title={`Recomendação 4.${index + 1}.${recIndex + 1}`}
+-                                  initialContent={rec.content}
+-                                  onChange={(content) => atualizarRecomendacao(item.id, rec.id, 'content', content)}
+-                                  onSave={(content) => handleAutoSave(`Rec ${rec.id}`, content)}
+-                                  onRemove={() => excluirRecomendacao(item.id, rec.id)}
+-                                  onFocus={() => setActiveSectionId(`recomendacao-${rec.id}`)}
+-                                  globalCollapseAction={globalCollapseAction}
+-                                  renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao(`Recomendação 4.${index + 1}.${recIndex + 1}`)} onUpload={(file) => handleUploadAnexo(file, `Recomendação 4.${index + 1}.${recIndex + 1}`)} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
+-                                />
++            <section className="mb-10">
++              <RichTextEditor readOnly={isReadOnly}
++                title="3. ESCOPO DE AVALIAÇÃO DO PARECER"
++                subtitle="Salvo automaticamente após 3 segundos de inatividade."
++                initialContent={escopoAvaliacao}
++                onChange={setEscopoAvaliacao}
++                onSave={(content) => handleAutoSave('3. ESCOPO DE AVALIAÇÃO DO PARECER', content)}
++                onFocus={() => setActiveSectionId('escopo')}
++                globalCollapseAction={globalCollapseAction}
++                renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao('3. ESCOPO DE AVALIAÇÃO DO PARECER')} onUpload={(file) => handleUploadAnexo(file, '3. ESCOPO DE AVALIAÇÃO DO PARECER')} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
++              />
++            </section>
+ 
+-                                  </>
+-                                )}
+-                              </div>
+-                            ))}
+-                          </div>
+-                        )}
+-                      </div>
+-                    </div>
+-                  ))
+-                )}
+-              </div>
++            <section className="mb-10">
++              <RichTextEditor readOnly={isReadOnly}
++                title="ANÁLISE DOS FATOS (opcional)"
++                subtitle="Itens I a IV, exibidos logo após o Escopo, sem título próprio. Pode ficar vazio se os itens estiverem no Escopo."
++                initialContent={analiseFatos}
++                onChange={setAnaliseFatos}
++                onSave={(content) => handleAutoSave('ANÁLISE DOS FATOS', content)}
++                onFocus={() => setActiveSectionId('analise')}
++                globalCollapseAction={globalCollapseAction}
++                renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao('ANÁLISE DOS FATOS')} onUpload={(file) => handleUploadAnexo(file, 'ANÁLISE DOS FATOS')} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
++              />
+             </section>
+ 
+             <section className="mb-10">
+               <RichTextEditor readOnly={isReadOnly}
+-                title="5. CONSIDERAÇÕES FINAIS"
++                title="4. CONCLUSÃO"
+                 subtitle="Salvo automaticamente após 3 segundos de inatividade."
+                 initialContent={consideracoes}
+                 onChange={setConsideracoes}
+-                onSave={(content) => handleAutoSave('5. CONSIDERAÇÕES', content)}
++                onSave={(content) => handleAutoSave('5. CONSIDERAÇÕES FINAIS', content)}
+                 onFocus={() => setActiveSectionId('consideracoes')}
+                 globalCollapseAction={globalCollapseAction}
+                 renderAttachments={() => <FileAttachmentManager files={getAnexosBySecao('5. CONSIDERAÇÕES FINAIS')} onUpload={(file) => handleUploadAnexo(file, '5. CONSIDERAÇÕES FINAIS')} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />}
+@@ -2043,17 +1776,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+ 
+             <section className="mb-10">
+               <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b-2 border-blue-900 pb-3">
+-                <h2 className="text-xl font-bold text-blue-900">6. ANEXO A - PLANO DE AÇÃO</h2>
+-              </div>
+-              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+-                <p className="text-gray-500 font-medium">O Plano de Ação é gerado automaticamente com base nas Constatações registradas.</p>
+-                <p className="text-gray-400 text-sm mt-2">Ele será exibido no documento final como Anexo A.</p>
+-              </div>
+-            </section>
+-
+-            <section className="mb-10">
+-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b-2 border-blue-900 pb-3">
+-                <h2 className="text-xl font-bold text-blue-900">7. ANEXOS (ADICIONAIS)</h2>
++                <h2 className="text-xl font-bold text-blue-900">5. ANEXOS</h2>
+                 <button onClick={adicionarAnexoFinal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium shadow-sm text-sm">
+                   + Novo Anexo
+                 </button>
+@@ -2090,7 +1813,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                             {collapsedAnexos[item.id] ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                           </button>
+                           <h4 className="font-semibold text-gray-700">
+-                            {`Anexo ${String.fromCharCode(66 + index)}`} {item.titulo ? `- ${item.titulo}` : ''}
++                            {`Anexo ${String.fromCharCode(65 + index)}`} {item.titulo ? `- ${item.titulo}` : ''}
+                           </h4>
+                         </div>
+                       </div>
+@@ -2142,7 +1865,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                           <div onMouseDown={(e) => e.stopPropagation()}>
+                             {item.tipo === 'texto' ? (
+                               <RichTextEditor readOnly={isReadOnly}
+-                                title={`Anexo ${String.fromCharCode(66 + index)}`}
++                                title={`Anexo ${String.fromCharCode(65 + index)}`}
+                                 initialContent={item.content}
+                                 onChange={(content) => atualizarAnexoFinal(item.id, 'content', content)}
+                                 onSave={(content) => handleAutoSave(`AnexoFinal ${item.id}`, content)}
+@@ -2152,7 +1875,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                               />
+                             ) : (
+                               <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+-                                <h4 className="font-semibold text-gray-700 mb-2">Anexar Arquivo para o Anexo {String.fromCharCode(66 + index)}</h4>
++                                <h4 className="font-semibold text-gray-700 mb-2">Anexar Arquivo para o Anexo {String.fromCharCode(65 + index)}</h4>
+                                 <FileAttachmentManager files={getAnexosBySecao(`Anexo ${String.fromCharCode(66 + index)}`)} onUpload={(file) => handleUploadAnexo(file, `Anexo ${String.fromCharCode(66 + index)}`)} onDelete={handleDeleteAnexo} globalCollapseAction={globalCollapseAction} />
+                               </div>
+                             )}
+@@ -2364,131 +2087,41 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+ 
+             </div>
+ 
+-            {/* === PÁGINA 2: NOTA INTRODUTÓRIA === */}
+-            <div className="page portrait" id="page-parecer" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+-                <div style={{ padding: '30px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+-                    <h2 className="center-title" style={{ marginBottom: '30px' }}>Parecer Introdutória</h2>
+-                    <div style={{ textAlign: 'justify', fontSize: '11pt', lineHeight: 1.8, fontFamily: '"Times New Roman", Times, serif' }}>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}>Considerando as alterações introduzidas em nossos instrumentos de comunicação, no sentido de torná-los mais acessíveis e interativos, destacamos aqui os principais tópicos que você poderá encontrar ao ler este documento, bem como suas definições e finalidades:</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Informações Preliminares</strong> são dados e informações que o leitor deve conhecer para contextualizar-se no trabalho e melhor compreender os tópicos seguintes;</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Constatações</strong> são fatos diagnosticados pela Equipe de Auditoria acerca dos quais estão associados riscos de desconformidades;</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Recomendações</strong> são proposições de ações realizadas pela Equipe de Auditoria, a fim de que os gestores possam mitigar ou eliminar os riscos identificados;</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Benefícios Esperados</strong> são aprimoramentos e vantagens de gestão que a Equipe de Auditoria acredita que podem ser alcançados caso a Recomendação seja implementada;</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Benefícios Realizados</strong> são aprimoramentos e vantagens de gestão que foram alcançados por meio da implementação da Recomendação; e</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}><strong>Riscos</strong> são eventos que, caso ocorram, poderão prejudicar o atingimento dos objetivos traçados pela instituição;</p>
+-                        <p style={{ textIndent: '40px', marginBottom: '15px' }}>Agradecemos pela sua atenção e colocamo-nos à disposição, caso entenda necessário, para debater aspectos deste relatório.</p>
+-                    </div>
+-                </div>
+-            </div>
+-
+             {/* === PÁGINA 3: SUMÁRIO === */} 
+             <div className="page portrait" id="page-sumario" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}> 
+                 <h2 className="center-title">Sumário</h2> 
+                 <div>
+                   <ul className="toc-list">
+-                    <li className="toc-item"><a href="#preview-intro" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">1. INTRODUÇÃO</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-intro'] || 4}</span></a></li>
+-                    
+-                    <li className="toc-item"><a href="#preview-consideracoes" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">5. CONSIDERAÇÕES FINAIS</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-consideracoes'] || 5}</span></a></li>
+-                    <li className="toc-item"><a href="#preview-anexoa" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">6. ANEXO A - PLANO DE AÇÃO</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-anexoa'] || 6}</span></a></li>
++                    <li className="toc-item"><a href="#preview-intro" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">1. INTRODUÇÃO</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-intro'] || 3}</span></a></li>
++                    <li className="toc-item"><a href="#preview-objetivo" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">2. OBJETIVO</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-objetivo'] || 3}</span></a></li>
++                    <li className="toc-item"><a href="#preview-escopo" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">3. ESCOPO DE AVALIAÇÃO DO PARECER</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-escopo'] || 3}</span></a></li>
++                    <li className="toc-item"><a href="#preview-consideracoes" className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">4. CONCLUSÃO</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers['preview-consideracoes'] || 4}</span></a></li>
+                     {anexosFinais.map((a, i) => (
+-                      <li key={a.id} className="toc-item"><a href={`#preview-anexo-${a.id}`} className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">{7+i}. ANEXO {String.fromCharCode(66 + i)}{a.titulo ? ` - ${a.titulo.toUpperCase()}` : ''}</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers[`preview-anexo-${a.id}`] || (7+i)}</span></a></li>
++                      <li key={a.id} className="toc-item"><a href={`#preview-anexo-${a.id}`} className="toc-link" style={{ textDecoration: 'none', color: 'inherit' }}><span className="toc-title">{5+i}. ANEXO {String.fromCharCode(65 + i)}{a.titulo ? ` - ${a.titulo.toUpperCase()}` : ''}</span><span className="toc-dots"></span><span className="toc-page-num">{pageNumbers[`preview-anexo-${a.id}`] || (5+i)}</span></a></li>
+                     ))}
+                   </ul>
+                 </div> 
+             </div>
+ 
+-            {/* === PÁGINA 4: CORPO DO RELATÓRIO === */} 
++            {/* === PÁGINA 3: CORPO DO PARECER === */} 
+             <div className="page portrait relative" id="page-intro-plan" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}> 
+                 <h2 id="preview-intro">1. INTRODUÇÃO</h2> 
+                 <div className="texto-comum" dangerouslySetInnerHTML={{ __html: introducao || '<p class="text-gray-400 italic">Preencha a introdução no editor...</p>' }} />
+-            </div>
+ 
+-            {/* === PÁGINA 5: INFORMAÇÕES PRELIMINARES E CONSTATAÇÕES === */} 
+-            <div className="page portrait relative hidden" id="page-preliminares-constatacoes" style={{display: "none"}}> 
+-                {preliminaresTextoInicial ? (
+-                  <div className="texto-comum" style={{ marginBottom: '20px' }} dangerouslySetInnerHTML={{ __html: preliminaresTextoInicial }} />
+-                ) : (
+-                  <div className="texto-comum" style={{ marginBottom: '20px' }}> 
+-                      <p>Abaixo são detalhadas as informações preliminares levantadas pela equipe de auditoria.</p> 
+-                  </div>
+-                )}
+-                {preliminares.length === 0 ? <p className="italic text-gray-500 mb-6">Nenhuma informação preliminar registrada.</p> : preliminares.map((p, i) => (
+-                  <React.Fragment key={p.id}>
+-                    <div className="texto-comum" dangerouslySetInnerHTML={{ __html: p.content }} />
+-                  </React.Fragment>
+-                ))}
+-
+-                {constatacoesTextoInicial ? (
+-                  <div className="texto-comum" style={{ marginBottom: '20px' }} dangerouslySetInnerHTML={{ __html: constatacoesTextoInicial }} />
+-                ) : (
+-                  <div className="texto-comum" style={{ marginBottom: '20px' }}> 
+-                      <p>Abaixo são detalhadas as inconformidades mapeadas pela equipe técnica, bem como as recomendações emitidas, estruturadas e direcionadas por Gerência Destinatária responsável pela implementação.</p> 
+-                  </div>
+-                )}
++                <h2 id="preview-objetivo">2. OBJETIVO</h2> 
++                <div className="texto-comum" dangerouslySetInnerHTML={{ __html: objetivo || '<p class="text-gray-400 italic">Preencha o objetivo no editor...</p>' }} />
+ 
+-                {constatacoes.length === 0 ? <p className="italic text-gray-500 mb-6">Nenhuma constatação registrada.</p> : constatacoes.map((c, i) => {
+-                  
+-                  // Agrupar recomendações por gerência
+-                  const recsPorGerencia = {};
+-                  c.recomendacoes?.forEach(r => {
+-                    const gerencia = r.gerencia || 'Sem Gerência Definida';
+-                    if (!recsPorGerencia[gerencia]) recsPorGerencia[gerencia] = [];
+-                    recsPorGerencia[gerencia].push(r);
+-                  });
++                <h2 id="preview-escopo">3. ESCOPO DE AVALIAÇÃO DO PARECER</h2> 
++                <div className="texto-comum" dangerouslySetInnerHTML={{ __html: escopoAvaliacao || '<p class="text-gray-400 italic">Preencha o escopo de avaliação no editor...</p>' }} />
+ 
+-                  return (
+-                    <div key={c.id}>
+-                      <div className="texto-comum" dangerouslySetInnerHTML={{ __html: c.content }} />
+-                      
+-                      {Object.keys(recsPorGerencia).length > 0 && (
+-                        <h4 style={{ fontWeight: 'bold', fontSize: '10.5pt', color: 'var(--ghc-primary)', marginTop: '20px', marginBottom: '10px', textTransform: 'uppercase', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+-                          RECOMENDAÇÕES
+-                        </h4>
+-                      )}
+-                      {Object.keys(recsPorGerencia).map(ger => (
+-                        <div key={ger} className="rec-block">
+-                          <div className="rec-gerencia">Destinatário: {ger}</div>
+-                          {recsPorGerencia[ger].map((r, ri) => {
+-                            
+-                            let bgBadge = 'bg-gray-400';
+-                            if (r.nivelRisco === 'Crítico') bgBadge = 'bg-critico';
+-                            if (r.nivelRisco === 'Alto') bgBadge = 'bg-alto';
+-                            if (r.nivelRisco === 'Médio') bgBadge = 'bg-medio';
+-                            if (r.nivelRisco === 'Baixo') bgBadge = 'bg-baixo';
+-
+-                            return (
+-                              <div key={r.id} className="rec-item">
+-                                {(() => {
+-                                  const originalIndex = (c.recomendacoes || []).findIndex(origR => origR.id === r.id);
+-                                  const displayIndex = originalIndex !== -1 ? originalIndex + 1 : ri + 1;
+-                                  return (
+-                                    <>
+-                                      <div dangerouslySetInnerHTML={{ __html: `<strong>RECOMENDAÇÃO ${displayIndex.toString().padStart(2, '0')}:</strong> ` + r.content }} />
+-                                      <div className="rec-meta">
+-                                          <span><strong>Nível de Risco:</strong> <span className={`badge-risco ${bgBadge}`}>{r.nivelRisco || 'N/D'}</span></span>
+-                                          <span><strong>Data Limite:</strong> <span>{formatDataBr(r.dataLimite)}</span></span>
+-                                      </div>
+-                                    </>
+-                                  );
+-                                })()}
+-                                {r.tipoBeneficio && (
+-                                  <div className="rec-beneficio-inline">
+-                                      <strong>Benefício Esperado:</strong> 
+-                                      <strong style={{ fontSize: '8pt', color: 'var(--ghc-primary)', textTransform: 'uppercase', marginLeft: 4 }}>Tipo:</strong> <span className="beneficio-tag">{r.tipoBeneficio}</span> 
+-                                      <span style={{ marginLeft: 6 }}>{r.detalheBeneficio}</span>
+-                                  </div>
+-                                )}
+-                              </div>
+-                            );
+-                          })}
+-                        </div>
+-                      ))}
+-                    </div>
+-                  );
+-                })}
++                {/* Análise dos fatos (itens I a IV): segue o escopo, sem título próprio. Opcional: nos pareceres
++                    existentes os itens I a IV costumam estar no próprio escopo, e a análise fica vazia. */}
++                {(analiseFatos || '').replace(/<[^>]*>|&nbsp;/g, '').trim() !== '' && (
++                  <div id="preview-analise" className="texto-comum" dangerouslySetInnerHTML={{ __html: analiseFatos }} />
++                )}
+ 
+-                <h2 id="preview-consideracoes">5. CONSIDERAÇÕES FINAIS</h2> 
+-                <div className="texto-comum" dangerouslySetInnerHTML={{ __html: consideracoes || '<p class="text-gray-400 italic">Preencha as considerações finais...</p>' }} />
++                <h2 id="preview-consideracoes">4. CONCLUSÃO</h2> 
++                <div className="texto-comum" dangerouslySetInnerHTML={{ __html: consideracoes || '<p class="text-gray-400 italic">Preencha a conclusão no editor...</p>' }} />
+ 
+                 <div style={{ marginTop: '50px', pageBreakInside: 'avoid', fontFamily: '"Times New Roman", Times, serif' }}>
+                     <p style={{ fontWeight: 'bold', fontSize: '11pt', marginBottom: '60px', color: '#000' }}>Responsáveis por este trabalho de Auditoria:</p>
+@@ -2544,93 +2177,10 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+                 </div>
+             </div>
+ 
+-            {/* === PÁGINA 6: ANEXO A === */}
+-            <div className="page landscape relative landscape-page" id="page-anexo-a"> 
+-                <h2 id="preview-anexoa">6. ANEXO A - PLANO DE AÇÃO</h2> 
+-                
+-                {constatacoes.length === 0 ? <p className="italic text-gray-500">O Plano de Ação será gerado automaticamente quando houverem Constatações cadastradas.</p> : constatacoes.map((c, i) => {
+-                  const showFato = hasResumoContent(c.resumoFato);
+-                  const showCriterio = hasResumoContent(c.resumoCriterio);
+-                  const showCausa = hasResumoContent(c.resumoCausa);
+-                  const showImpacto = hasResumoContent(c.resumoImpacto);
+-                  const activeQuadrosCount = [showFato, showCriterio, showCausa, showImpacto].filter(Boolean).length;
+-
+-                  return (
+-                    <div key={c.id} style={{ marginBottom: 40 }}>
+-                      <div style={{ marginTop: 5, fontSize: '10pt', fontWeight: 'bold', color: 'var(--ghc-primary)', textTransform: 'uppercase' }}>CONSTATAÇÃO {(i+1).toString().padStart(2, '0')}{c.titulo ? `: ${c.titulo}` : ''}</div> 
+-                      {activeQuadrosCount > 0 && (
+-                        <div className="matriz-container" style={{ gridTemplateColumns: `repeat(${activeQuadrosCount}, 1fr)` }}> 
+-                            {showFato && (
+-                              <div className="matriz-box box-fato"> <div className="matriz-header">O FATO (SITUAÇÃO)</div> <div className="matriz-text" dangerouslySetInnerHTML={{ __html: c.resumoFato?.replace(/\n/g, '<br/>') }} /> </div> 
+-                            )}
+-                            {showCriterio && (
+-                              <div className="matriz-box box-criterio"> <div className="matriz-header">CRITÉRIO (REGRA)</div> <div className="matriz-text" dangerouslySetInnerHTML={{ __html: c.resumoCriterio?.replace(/\n/g, '<br/>') }} /> </div> 
+-                            )}
+-                            {showCausa && (
+-                              <div className="matriz-box box-causa"> <div className="matriz-header">CAUSA PROVÁVEL</div> <div className="matriz-text" dangerouslySetInnerHTML={{ __html: c.resumoCausa?.replace(/\n/g, '<br/>') }} /> </div> 
+-                            )}
+-                            {showImpacto && (
+-                              <div className="matriz-box box-impacto"> <div className="matriz-header">IMPACTO E RISCO</div> <div className="matriz-text" dangerouslySetInnerHTML={{ __html: c.resumoImpacto?.replace(/\n/g, '<br/>') }} /> </div> 
+-                            )}
+-                        </div>
+-                      )}
+-
+-                      <table className="action-plan-table"> 
+-                          <thead> 
+-                              <tr> 
+-                                  <th style={{ width: '24%' }}>Recomendação Proposta</th> 
+-                                  <th style={{ width: '14%' }}>Gerência Destinatária</th> 
+-                                  <th style={{ width: '9%' }}>Data Limite</th> 
+-                                  <th style={{ width: '9%' }}>Nível Risco</th> 
+-                                  <th style={{ width: '33%' }}>Benefício</th> 
+-                                  <th style={{ width: '11%' }}>Status</th> 
+-                              </tr> 
+-                          </thead> 
+-                          <tbody> 
+-                              {(!c.recomendacoes || c.recomendacoes.length === 0) ? (
+-                                <tr><td colSpan="6" className="text-center italic text-gray-500">Nenhuma recomendação vinculada a esta constatação.</td></tr>
+-                              ) : c.recomendacoes.map((r, ri) => {
+-                                let bgBadge = 'bg-gray-400';
+-                                if (r.nivelRisco === 'Crítico') bgBadge = 'bg-critico';
+-                                if (r.nivelRisco === 'Alto') bgBadge = 'bg-alto';
+-                                if (r.nivelRisco === 'Médio') bgBadge = 'bg-medio';
+-                                if (r.nivelRisco === 'Baixo') bgBadge = 'bg-baixo';
+-
+-                                return (
+-                                  <tr key={r.id} className="sep-rec"> 
+-                                      <td>
+-                                        <strong style={{ color: 'var(--ghc-primary)' }}>RECOMENDAÇÃO {(ri+1).toString().padStart(2, '0')}:</strong>
+-                                        <div dangerouslySetInnerHTML={{ __html: r.content }} />
+-                                      </td> 
+-                                      <td>{r.gerencia || 'Não definida'}</td> 
+-                                      <td>{formatDataBr(r.dataLimite)}</td> 
+-                                      <td><span className={`badge-risco ${bgBadge}`}>{r.nivelRisco || 'N/D'}</span></td> 
+-                                      <td> 
+-                                          {r.tipoBeneficio ? (
+-                                            <>
+-                                              <div className="beneficio-container"> 
+-                                                  <strong style={{ fontSize: '8pt', color: 'var(--ghc-primary)', textTransform: 'uppercase' }}>Tipo:</strong>
+-                                                  <span className="beneficio-tag">{r.tipoBeneficio}</span> 
+-                                              </div> 
+-                                              <div className="beneficio-detalhes">
+-                                                  <div className="bd-item"><strong>Descrição do Benefício:</strong> <span>{r.detalheBeneficio}</span></div>
+-                                              </div>
+-                                            </>
+-                                          ) : <span className="text-gray-400 italic">Não definido</span>}
+-                                      </td> 
+-                                      <td><span className="badge-status status-nao">Não Iniciada</span></td> 
+-                                  </tr> 
+-                                );
+-                              })}
+-                          </tbody> 
+-                      </table>
+-                    </div>
+-                  );
+-                })}
+-            </div>
+-
+             {/* === PÁGINAS DE ANEXOS ADICIONAIS === */}
+             {anexosFinais.map((anexo, i) => {
++              // Chave dos arquivos enviados ('Anexo B', 'Anexo C'...), mantida da época do Anexo A (Plano de Ação).
++              // A letra exibida no documento começa em A.
+               const letraAnexo = String.fromCharCode(66 + i);
+               const secaoFiles = getAnexosBySecao(`Anexo ${letraAnexo}`);
+               const allFiles = (anexo.arquivos && anexo.arquivos.length > 0) 
+@@ -2646,7 +2196,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
+               
+               return (
+                 <div key={anexo.id} className={`page ${orientationClass} relative`} id={`page-anexo-${anexo.id}`} style={{ padding: '2cm' }}>
+-                    <h2 id={`sec-anexo-${letraAnexo.toLowerCase()}`}>{7+i}. ANEXO {letraAnexo}{anexo.titulo ? ` - ${anexo.titulo.toUpperCase()}` : ''}</h2>
++                    <h2 id={`sec-anexo-${letraAnexo.toLowerCase()}`}>{5+i}. ANEXO {String.fromCharCode(65 + i)}{anexo.titulo ? ` - ${anexo.titulo.toUpperCase()}` : ''}</h2>
+                     
+                     {anexo.tipo === 'texto' ? (
+                       <div className="texto-comum" dangerouslySetInnerHTML={{ __html: anexo.content }} />
+diff --git a/frontend/src/pages/Planejamento.jsx b/frontend/src/pages/Planejamento.jsx
+index 75bf23f..1f34fda 100644
+--- a/frontend/src/pages/Planejamento.jsx
++++ b/frontend/src/pages/Planejamento.jsx
+@@ -344,6 +344,22 @@ export default function Planejamento() {
+     };
+   };
+ 
++  // Após salvar, completa só o que o formulário ainda não tem (id, dataCriacao, ids das questões novas).
++  // Não sobrescreve o conteúdo com a resposta: o que foi digitado durante a requisição continua valendo,
++  // e "questoes" só muda de referência quando recebe ids (evita disparar outro auto-save em seguida).
++  const mesclarRespostaSalvamento = (prev, saved) => {
++    const merged = { ...prev, id: saved.id };
++    Object.keys(saved).forEach(k => {
++      if (k !== 'questoes' && (merged[k] === undefined || merged[k] === null)) merged[k] = saved[k];
++    });
++    const atuais = prev.questoes || [];
++    const salvas = saved.questoes || [];
++    if (atuais.some((q, i) => !q.id && salvas[i]?.id)) {
++      merged.questoes = atuais.map((q, i) => (!q.id && salvas[i]?.id ? { ...q, id: salvas[i].id } : q));
++    }
++    return merged;
++  };
++
+   // Auto-Save de 3 segundos (lodash.debounce)
+   const debouncedSave = useCallback(
+     debounce(async (dataToSave, targetItemIdParam) => {
+@@ -365,7 +381,7 @@ export default function Planejamento() {
+         setLastSavedTime(timeStr);
+         setAutoSaveStatus('salvo');
+         if (saved && saved.id) {
+-          setFormData(prev => ({ ...prev, id: saved.id, ...saved }));
++          setFormData(prev => mesclarRespostaSalvamento(prev, saved));
+         }
+       } catch (error) {
+         console.error('Erro ao salvar planejamento automaticamente:', error);
+@@ -408,6 +424,7 @@ export default function Planejamento() {
+     formData.dataInicialRelatorio,
+     formData.dataFinalRelatorio,
+     formData.questoes,
++    formData.gerenciasDestinatarias,
+     formData.status,
+     formData.tipoAuditoria,
+     formData.dataEmissao,
+@@ -603,11 +620,7 @@ export default function Planejamento() {
+       setLastSavedTime(now.toLocaleTimeString('pt-BR'));
+       setAutoSaveStatus('salvo');
+       if (saved && saved.id) {
+-        setFormData(prev => ({
+-          ...prev,
+-          ...saved,
+-          questoes: saved.questoes || []
+-        }));
++        setFormData(prev => mesclarRespostaSalvamento(prev, saved));
+         if (!formData.id) {
+           const tgtId = formData.itemTrabalho?.id || itemTrabalhoIdParam || '';
+           navigate(`/planejamento/${saved.id}${tgtId ? `?itemTrabalhoId=${tgtId}` : ''}`, { replace: true });
