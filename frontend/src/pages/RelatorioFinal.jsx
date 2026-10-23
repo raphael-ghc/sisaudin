@@ -955,13 +955,13 @@ export default function RelatorioFinal() {
 
                 if (relRes && relRes.id) {
                     setRelatorioId(relRes.id);
-                    const basePath = location.pathname.startsWith('/relatorio') ? '/relatorio' : '/relatorio-final';
+                    const basePath = '/relatorio-final'; // rota de edição do RAI-F/REAI-F (App.jsx: /relatorio-final/:id)
                     const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                     navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
                 }
             } else if (relRes && !relatorioId) {
                 setRelatorioId(relRes.id);
-                const basePath = location.pathname.startsWith('/relatorio') ? '/relatorio' : '/relatorio-final';
+                const basePath = '/relatorio-final'; // rota de edição do RAI-F/REAI-F (App.jsx: /relatorio-final/:id)
                 const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                 navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
             }
