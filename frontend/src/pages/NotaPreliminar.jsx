@@ -792,13 +792,13 @@ export default function NotaPreliminar() {
                 relRes = await createEmptyRelatorio();
                 if (relRes && relRes.id) {
                     setRelatorioId(relRes.id);
-                    const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/NotaPreliminar';
+                    const basePath = '/nota-preliminar'; // rota de edição da Nota de Auditoria Preliminar (App.jsx: /nota-preliminar/:id)
                     const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                     navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
                 }
             } else if (relRes && !notaId) {
                 setRelatorioId(relRes.id);
-                const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/NotaPreliminar';
+                const basePath = '/nota-preliminar'; // rota de edição da Nota de Auditoria Preliminar (App.jsx: /nota-preliminar/:id)
                 const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                 navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
             }

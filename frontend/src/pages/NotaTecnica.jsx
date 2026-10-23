@@ -769,13 +769,13 @@ const [analiseFatos, setAnaliseFatos] = useState('');
                 relRes = await createEmptyRelatorio();
                 if (relRes && relRes.id) {
                     setRelatorioId(relRes.id);
-                    const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/NotaTecnica';
+                    const basePath = '/nota-tecnica'; // rota de edição da Nota Técnica (App.jsx: /nota-tecnica/:id)
                     const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                     navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
                 }
             } else if (relRes && !notaId) {
                 setRelatorioId(relRes.id);
-                const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/NotaTecnica';
+                const basePath = '/nota-tecnica'; // rota de edição da Nota Técnica (App.jsx: /nota-tecnica/:id)
                 const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                 navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
             }

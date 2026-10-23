@@ -952,13 +952,13 @@ export default function NotaFinal() {
 
                 if (relRes && relRes.id) {
                     setRelatorioId(relRes.id);
-                    const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/nota-final';
+                    const basePath = '/nota-final'; // rota de edição da Nota de Auditoria Final (App.jsx: /nota-final/:id)
                     const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                     navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
                 }
             } else if (relRes && !notaId) {
                 setRelatorioId(relRes.id);
-                const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/nota-final';
+                const basePath = '/nota-final'; // rota de edição da Nota de Auditoria Final (App.jsx: /nota-final/:id)
                 const queryStr = location.search || (itemTrabalhoIdParam ? `?itemTrabalhoId=${itemTrabalhoIdParam}` : '');
                 navigate(`${basePath}/${relRes.id}${queryStr}`, { replace: true });
             }

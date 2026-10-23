@@ -38,7 +38,7 @@ Cada item de trabalho (PAINT ou EXTRA) recebe documentos: OS, CA, SAI, Planejame
 - Em repositórios de entidades que estendem `Documento`, um método `findByItemTrabalhoId` falha em tempo de execução: o Spring Data resolve o campo transiente `Documento.itemTrabalhoId`. Use `findByItemTrabalho_Id` ou `@Query`. Corrigido em `PlanejamentoRepository`; ainda quebrado em `MatrizAchados`, `Visita`, `Reuniao`, `PlanoAcaoPreliminar`, `PlanoAcaoFinal` e `DocumentoRepository`.
 - PATCH de relatório sem as listas (`constatacoes`, `preliminares`, `anexosFinais`) apaga as filhas: a entidade inicia as listas vazias e o serviço trata vazio como "remover tudo". As telas sempre mandam as listas completas; ao testar a API à mão, mande-as também.
 - A exclusão de documentos pela lista de itens (`ItemTrabalhoList`) usa o campo `tipo` do documento para escolher a rota; a `rotaEditar` do backend não segue um padrão único (ex.: `/RelatorioPreliminar/{id}`).
-- Após criar, as telas de documento trocam a URL com `basePath` calculado por `location.pathname.startsWith(...)`. Corrigido no RAI-F (ia para `/relatorio/{id}`, 404); ainda errado em `NotaPreliminar`, `NotaFinal` e `NotaTecnica`, que vão para `/nota/{id}` (rota da tela `Nota`, outra tela).
+- Após criar, as telas de documento trocam a URL para `{basePath}/{id}`. O `basePath` tem de ser a rota de edição da própria tela (a mesma `rotaEditar` do `FluxoDocumentoService`); calculá-lo por `location.pathname.startsWith(...)` mandava o RAI-F para `/relatorio/{id}` (404) e as notas para `/nota/{id}` (tela `Nota`). Corrigido em 23/10 nas quatro telas.
 - As telas de documento são grandes e muito parecidas entre si; uma mudança em uma costuma ter de ser repetida nas outras.
 - O banco local tem números de RAI duplicados e um item (IT-81) com dois relatórios preliminares.
 
@@ -50,4 +50,4 @@ O histórico do que foi alterado aqui, com regras, roteiro de implantação, pro
 - `docs/alteracoes-2026-10-09/` — correção: RAI só em item PAINT, REAI só em item EXTRA. Parte do código já com a entrega de 08/10 e substitui a regra "qualquer item aceita RAI ou REAI" descrita lá.
 - `docs/alteracoes-2026-10-15/` — homologação: front no nginx e backend separado (atualizado em 21/10; o JAR unificado ficou opcional), com modelos de `application.properties` e `nginx.conf` e o checklist.
 - `docs/alteracoes-2026-10-22/` — correção (só front): salvamento automático de RAI-P, RAI-F, notas e parecer; exclusão de documentos pela lista de itens.
-- `docs/alteracoes-2026-10-23/` — correção (só front): 404 ao criar RAI-F/REAI-F (URL trocada para `/relatorio/{id}`, rota inexistente).
+- `docs/alteracoes-2026-10-23/` — correção (só front): após criar, RAI-F/REAI-F ia para `/relatorio/{id}` (404) e as notas preliminar, final e técnica abriam a tela `Nota`.

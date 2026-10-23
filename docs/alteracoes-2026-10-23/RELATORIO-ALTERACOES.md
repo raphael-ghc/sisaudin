@@ -2,12 +2,14 @@
 
 Correção: ao criar um **Relatório de Auditoria Final (RAI-F ou REAI-F)** pelo menu "Criar Documento" da tela Gerir Itens de Trabalho, a tela mostrava **404 — Página não encontrada**, embora o relatório fosse criado e pudesse ser editado depois pela lista.
 
-Só o frontend muda (um arquivo, duas linhas). Backend, banco e regras de negócio não mudam. Aplicar depois da entrega de 22/10.
+Na mesma entrega, o defeito equivalente das **notas** (Nota de Auditoria Preliminar, Nota de Auditoria Final e Nota Técnica), que após criar abriam a tela errada (seção 4).
+
+Só o frontend muda (quatro arquivos, duas linhas em cada). Backend, banco e regras de negócio não mudam. Aplicar depois da entrega de 22/10.
 
 Documentos desta pasta:
 
 - `RELATORIO-ALTERACOES.md` — este relatório.
-- `rai-f-404-apos-criar.patch` — a diferença exata, no formato do git.
+- `rai-f-404-apos-criar.patch` — as diferenças exatas dos quatro arquivos, no formato do git (a partir do commit anterior a `4d56a31`).
 
 ---
 
@@ -56,25 +58,57 @@ const basePath = '/relatorio-final'; // rota de edição do RAI-F/REAI-F (App.js
 - Casamento de rotas com o `react-router-dom` do projeto (tabela acima).
 - Build do front (`vite build --mode nginx`).
 
-**Não testado no navegador.** Conferir na homologação: criar um RAI-F (e um REAI-F) pelo menu de um item; a tela deve abrir o relatório em `/relatorio-final/{id}` e o relatório deve aparecer uma única vez no item.
+Para as notas, a mesma verificação de rotas (tabela da seção 4) e o build.
 
-## 4. Achado relacionado, não corrigido (fora do escopo pedido)
+**Não testado no navegador.** Conferir na homologação, criando pelo menu de um item:
 
-O mesmo trecho existe em outras telas. Destino após criar, partindo da rota usada pelo menu:
+- RAI-F e REAI-F: abre em `/relatorio-final/{id}`;
+- Nota de Auditoria Preliminar: abre em `/nota-preliminar/{id}`, na tela da nota preliminar;
+- Nota de Auditoria Final: abre em `/nota-final/{id}`;
+- Nota Técnica: abre em `/nota-tecnica/{id}`;
+- em todos, o documento aparece uma única vez no item.
 
-| Tela | Rota do menu | Vai para | Rota existe? | Efeito |
-|---|---|---|---|---|
-| Nota de Auditoria Preliminar | `/nota-preliminar` | `/nota/{id}` | sim, mas é da tela **`Nota`** | abre outra tela com o id da nota preliminar |
-| Nota de Auditoria Final | `/nota-final` | `/nota/{id}` | idem | idem |
-| Nota Técnica | `/nota-tecnica` | `/nota/{id}` | idem | idem |
-| Parecer | `/parecer` | `/parecer/{id}` | sim | correto |
-| RAI-P / REAI-P | `/RelatorioPreliminar` | `/RelatorioPreliminar/{id}` | sim | correto |
+## 4. Notas: mesma causa, tela errada após criar
 
-Nas três notas, a tela `Nota` busca o registro em outra tabela (`/api/notas/{id}`); o resultado depende de existir uma nota com o mesmo id. Vale reproduzir na homologação antes de corrigir: a correção é análoga (fixar `basePath` em `/nota-preliminar`, `/nota-final` e `/nota-tecnica`).
+### Causa
+
+O mesmo trecho existe nas telas das notas, com o prefixo `/nota`:
+
+```js
+const basePath = location.pathname.startsWith('/nota') ? '/nota' : '/NotaPreliminar'; // ou '/nota-final', '/NotaTecnica'
+```
+
+As rotas de criação (`/nota-preliminar`, `/nota-final`, `/nota-tecnica`, e também `/notas-*/novo` das listas) começam com `/nota`, então as três iam para **`/nota/{id}`** — rota existente, mas da tela **`Nota`**, que é outra tela e busca o registro em outra tabela. As alternativas `/NotaPreliminar/{id}` e `/NotaTecnica/{id}` nem existem como rota (cairiam no 404).
+
+| Endereço | Rota / componente |
+|---|---|
+| `/nota/7` (antes, nas três) | `/nota/:id` → **`Nota`** (tela errada) |
+| `/nota-preliminar/7` (depois) | `/nota-preliminar/:id` → `NotaPreliminar` |
+| `/nota-final/7` (depois) | `/nota-final/:id` → `NotaFinal` |
+| `/nota-tecnica/7` (depois) | `/nota-tecnica/:id` → `NotaTecnica` |
+
+### Correção
+
+Nos dois pontos de cada tela:
+
+| Arquivo | `basePath` |
+|---|---|
+| `frontend/src/pages/NotaPreliminar.jsx` | `'/nota-preliminar'` |
+| `frontend/src/pages/NotaFinal.jsx` | `'/nota-final'` |
+| `frontend/src/pages/NotaTecnica.jsx` | `'/nota-tecnica'` |
+
+São as mesmas rotas que a lista de itens usa para editar cada nota (`FluxoDocumentoService`, `rotaEditar`). As três telas têm a mesma estrutura do RAI-F (estado `notaId` iniciado pelo `id` da URL, `location.pathname` sem outro uso), então valem as mesmas garantias da seção 2.
+
+### Telas conferidas e mantidas
+
+| Tela | Vai para | Situação |
+|---|---|---|
+| Parecer | `/parecer/{id}` | correto, não mudou |
+| RAI-P / REAI-P | `/RelatorioPreliminar/{id}` | correto, não mudou |
 
 ## 5. Implantação
 
-1. Aplicar o patch (ou copiar `frontend/src/pages/RelatorioFinal.jsx`).
+1. Aplicar o patch (ou copiar `RelatorioFinal.jsx`, `NotaPreliminar.jsx`, `NotaFinal.jsx` e `NotaTecnica.jsx` de `frontend/src/pages/`).
 2. `npx.cmd vite build --mode nginx` em `frontend/`.
 3. `robocopy frontend\dist C:\sisaudin-homolog\frontend /MIR` — não precisa reiniciar backend nem nginx.
 4. No navegador, Ctrl+F5 e o teste da seção 3.
