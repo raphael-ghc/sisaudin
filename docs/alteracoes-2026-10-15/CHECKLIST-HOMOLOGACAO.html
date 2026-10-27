@@ -300,7 +300,7 @@ FROM relatorio_final r
 JOIN item_trabalho i ON i.id = r.item_trabalho_id
 JOIN tipo_item t ON t.id = i.tipo_item_id
 WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%';</code></pre></div>
-    <p class="note">A consulta <b>F</b> mostra os relatórios antigos que ficarão como RAI em item EXTRA. Eles continuam funcionando; reclassificar é decisão caso a caso (pode gerar número repetido na sequência REAI). Anotar a quantidade nas observações.</p>
+    <p class="note">A consulta <b>F</b> mostra os relatórios de item EXTRA que a primeira subida vai marcar como RAI (a rotina usa a sigla). Pela regra de 26/10, eles passam a REAI pelo script da seção 9 (<code>docs/alteracoes-2026-10-26</code>). Anotar a quantidade nas observações.</p>
   </div></div>
 </section>
 
@@ -627,7 +627,18 @@ FROM relatorio_preliminar r
 JOIN item_trabalho i ON i.id = r.item_trabalho_id
 LEFT JOIN tipo_item t ON t.id = i.tipo_item_id
 WHERE COALESCE(r.especial,0) &lt;&gt; (UPPER(COALESCE(t.nome,'')) LIKE '%EXTRA%');</code></pre></div>
-    <p>O resultado deve conter só relatórios antigos.</p>
+    <p>Antes do script abaixo: só relatórios antigos de item EXTRA (como RAI). <b>Depois do script: deve vir vazio.</b></p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s9-reai"><div class="body">
+    <div class="title">Reclassificar relatórios de itens EXTRA como REAI (regra de 26/10)</div>
+    <p>Scripts em <code>docs/alteracoes-2026-10-26/</code>. Em cada um, trocar <code>TROCAR_NOME_DO_BANCO</code> pelo nome do banco.</p>
+    <ol>
+      <li><code>reai-1-previa.sql</code>: só consulta. Conferir a lista (antes → depois) e guardar a saída. A consulta 2 lista relatórios <b>já emitidos</b> que mudariam de número.</li>
+      <li><code>reai-2-aplicar.sql</code>: roda em transação e termina com <code>ROLLBACK</code>. Conferir A, B e C (vazias) e D.</li>
+      <li>Trocar <code>ROLLBACK;</code> por <code>COMMIT;</code> na última linha e executar de novo.</li>
+    </ol>
+    <p>Depois: a consulta do item anterior deve vir vazia; abrir um REAI reclassificado (ex.: IT-79) e conferir o número na tela e no PDF.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s9-registro"><div class="body">

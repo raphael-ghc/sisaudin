@@ -39,6 +39,8 @@ Documentos desta pasta:
 
 ### Relatórios que já existem
 
+> **Atualizado em 26/10/2026:** a área decidiu que os relatórios antigos de itens EXTRA passam a REAI, com a sequência REAI renumerada por ano na ordem de criação. Ver `docs/alteracoes-2026-10-26/`. O que segue descreve o comportamento desta entrega (o código), que não mudou.
+
 - **Nenhum relatório existente é reclassificado ou renumerado por esta entrega.**
 - Relatórios que estejam fora da regra (por exemplo, um RAI em item EXTRA) continuam abrindo e sendo salvos normalmente.
 - **O par preliminar/final segue o relatório que já existe no item**, mesmo que ele esteja fora da regra. Um item EXTRA com um RAI-P antigo gera RAI-F com o mesmo número, em vez de ficar sem poder emitir o final.

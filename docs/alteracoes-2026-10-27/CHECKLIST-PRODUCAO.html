@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist Produção Sisaudin</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1d2330; --muted: #5d6677;
+    --border: #dde1e8; --accent: #1f5fae; --accent-soft: #e6eefa;
+    --ok: #217a45; --ok-soft: #e4f3ea; --warn: #8a5a00; --warn-soft: #fdf3dc;
+    --danger: #a52a2a; --danger-soft: #fbe7e7; --code-bg: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+      --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+      --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+      --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+    --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+    --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+    --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 0; color: var(--muted); }
+  .bar {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 12px 0; margin: 16px 0 8px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .progress { flex: 1 1 220px; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+  #progressText { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 120px; }
+  button {
+    font: inherit; font-size: .85rem; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); border-radius: 6px; padding: 5px 10px;
+  }
+  button:hover { border-color: var(--accent); }
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  }
+  .meta label { display: block; font-size: .8rem; color: var(--muted); }
+  .meta input {
+    width: 100%; font: inherit; padding: 6px 8px; margin-top: 2px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  section {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 4px 18px 14px; margin-top: 18px;
+  }
+  section h2 { font-size: 1.15rem; margin: 14px 0 4px; display: flex; justify-content: space-between; gap: 8px; }
+  section h2 .count { font-size: .8rem; font-weight: normal; color: var(--muted); white-space: nowrap; }
+  section > p.intro { margin: 0 0 8px; color: var(--muted); }
+  .item ul, .item ol { margin: 4px 0 0; padding-left: 20px; }
+  section.done h2 .count { color: var(--ok); }
+  .item { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
+  .item:first-of-type { border-top: 0; }
+  .item input[type=checkbox] { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--ok); }
+  .item .body { flex: 1; min-width: 0; }
+  .item.checked .title { text-decoration: line-through; color: var(--muted); }
+  .title { font-weight: 600; }
+  .item .body p { margin: 4px 0 0; }
+  .tag { font-size: .72rem; font-weight: 600; padding: 1px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
+  .tag.opt { background: var(--accent-soft); color: var(--accent); }
+  .tag.crit { background: var(--danger-soft); color: var(--danger); }
+  .note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; margin: 6px 0 0; border-radius: 0 6px 6px 0; font-size: .9rem; }
+  .note.danger { border-color: var(--danger); background: var(--danger-soft); }
+  .codebox { position: relative; margin: 6px 0 0; }
+  pre {
+    margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; padding-right: 64px; overflow-x: auto; font: 13px/1.45 Consolas, "Cascadia Mono", monospace;
+  }
+  .codebox button { position: absolute; top: 5px; right: 5px; font-size: .75rem; padding: 2px 8px; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .9em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin-top: 6px; }
+  th, td { text-align: left; border: 1px solid var(--border); padding: 4px 8px; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .tablewrap { overflow-x: auto; }
+  footer { margin-top: 24px; color: var(--muted); font-size: .85rem; }
+  @media print {
+    .bar button, .codebox button { display: none; }
+    .bar { position: static; }
+    body { background: #fff; color: #000; }
+    section { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Checklist — Implantação do Sisaudin em produção</h1>
+  <p>Leva para produção as entregas de 08/10 a 26/10 (REAI, correções de salvamento, Parecer, Planejamento, front no nginx). Servidor <code>172.16.253.238</code>, banco <code>sisaudin_novo_v10</code>. Detalhes de cada entrega em <code>docs/alteracoes-*</code>.</p>
+</header>
+
+<div class="bar">
+  <div class="progress" aria-hidden="true"><div id="progressFill"></div></div>
+  <span id="progressText">0 de 0</span>
+  <button type="button" onclick="window.print()">Imprimir</button>
+  <button type="button" id="resetBtn">Limpar marcações</button>
+</div>
+
+<div class="meta">
+  <div><label for="m-resp">Responsável</label><input id="m-resp" data-field="resp"></div>
+  <div><label for="m-data">Data da janela</label><input id="m-data" data-field="data" type="date"></div>
+  <div><label for="m-banco">Banco de produção</label><input id="m-banco" data-field="banco" placeholder="sisaudin_novo_v10" spellcheck="false"></div>
+  <div><label for="m-backend">Pasta do backend (JAR) no servidor</label><input id="m-backend" data-field="backend" placeholder="ex.: C:\sisaudin" spellcheck="false"></div>
+  <div><label for="m-nginx">Pasta do nginx no servidor</label><input id="m-nginx" data-field="nginx" placeholder="ex.: C:\nginx-1.xx" spellcheck="false"></div>
+  <div><label for="m-pacote">Pasta do pacote no servidor (JAR, dist, scripts)</label><input id="m-pacote" data-field="pacote" placeholder="ex.: C:\temp\pacote-sisaudin" spellcheck="false"></div>
+  <div><label for="m-bk">Pasta do backup (seção 3)</label><input id="m-bk" data-field="pastabackup" placeholder="ex.: C:\backup-sisaudin-20261027-1900" spellcheck="false"></div>
+  <div><label for="m-commit">Commit do JAR</label><input id="m-commit" data-field="commit" placeholder="git log -1"></div>
+  <div><label for="m-backup">Arquivo de backup do banco</label><input id="m-backup" data-field="backup"></div>
+</div>
+<p style="color:var(--muted);font-size:.85rem;margin:6px 2px 0">Os campos de banco e de pastas são aplicados em todos os comandos abaixo (botão "Copiar" incluído).</p>
+
+<!-- 0 -->
+<section>
+  <h2>0. Antes da janela <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p0-codigo"><div class="body">
+    <div class="title">Confirmar de que código sai o JAR <span class="tag crit">crítico</span></div>
+    <p>Este repositório é uma cópia de teste. Gerar o JAR daqui substitui todo o código de produção. Confirmar uma das duas:</p>
+    <ul>
+      <li>o código de produção é igual a este repositório até o commit <code>8ffca6f</code> (ponto de partida das entregas); ou</li>
+      <li>as entregas (<code>docs/alteracoes-2026-10-08</code> a <code>-26</code>) foram aplicadas no repositório de produção, e o JAR e o front saem de lá.</li>
+    </ul>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-homolog"><div class="body">
+    <div class="title">Homologação concluída com os mesmos artefatos</div>
+    <p>Checklist de homologação (<code>docs/alteracoes-2026-10-15/CHECKLIST-HOMOLOGACAO.html</code>) completo, seções 7 a 9, com <b>o mesmo commit</b> que vai para produção, incluindo os scripts REAI.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-reai"><div class="body">
+    <div class="title">Área de auditoria de acordo com a reclassificação REAI</div>
+    <p>Relatórios de itens EXTRA passam a REAI; a sequência REAI é renumerada por ano na ordem de criação. Com os dados de 21/10: IT-51 → REAI 1/2025, IT-52 → REAI 2/2025, IT-79 → REAI 1/2026, IT-91 (rascunho) 11/2026 → <b>2</b>/2026, IT-89 (rascunho) 12/2026 → <b>3</b>/2026.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-janela"><div class="body">
+    <div class="title">Janela combinada e usuários avisados</div>
+    <p>O sistema fica fora do ar durante a troca (estimar de 30 a 60 minutos). Ninguém deve estar editando documentos.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-acesso"><div class="body">
+    <div class="title">Acessos no servidor e forma de iniciar o backend anotados</div>
+    <p>Acesso de administrador ao servidor <code>172.16.253.238</code>, ao MySQL (Workbench), à pasta do nginx e à pasta do JAR. Anotar <b>como o backend é iniciado hoje</b> (serviço do Windows, atalho, <code>.bat</code>) e de qual pasta — é dali que o Spring lê a configuração e onde fica <code>uploads\</code>.</p>
+  </div></div>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2>1. Gerar os artefatos (máquina de desenvolvimento) <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p1-parar"><div class="body">
+    <div class="title">Backend local parado</div>
+    <p>O build escreve em <code>backend\target</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-front"><div class="body">
+    <div class="title">Front no modo <code>nginx</code> (endereços relativos)</div>
+    <div class="codebox"><pre><code>cd frontend
+npx.cmd vite build --mode nginx
+(Select-String -Path dist\assets\*.js -Pattern 'sisaudin.ghc.com.br','localhost:8080' -SimpleMatch).Count</code></pre></div>
+    <p>A contagem tem de ser <b>0</b>. Não usar <code>npm run build</code>: ele aponta para <code>https://sisaudin.ghc.com.br:8080</code>, que não é o endereço da produção.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-jar"><div class="body">
+    <div class="title">JAR só com a API e commit anotado</div>
+    <div class="codebox"><pre><code>cd ..\backend
+.\mvnw.cmd clean package -DskipTests</code></pre></div>
+    <p>Sem <code>-Pcom-front</code>. Sai <code>backend\target\sisaudin-0.0.1-SNAPSHOT.jar</code> (~250 MB). Anotar o commit no topo deste checklist.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-confere-jar"><div class="body">
+    <div class="title">Conferir que o JAR tem as entregas</div>
+    <div class="codebox"><pre><code>Add-Type -A System.IO.Compression.FileSystem
+$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path target\sisaudin-0.0.1-SNAPSHOT.jar))
+$e = $z.GetEntry('BOOT-INF/classes/sisaudin/model/cadastroBasico/Planejamento.class')
+$s = New-Object IO.StreamReader($e.Open(), [Text.Encoding]::GetEncoding(28591)); $t = $s.ReadToEnd(); $s.Close()
+"gerencias do Planejamento: " + $t.Contains('planejamento_gerencia_destinataria')
+"front dentro do JAR (deve ser False): " + [bool]$z.GetEntry('BOOT-INF/classes/static/index.html')
+$z.Dispose()</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-pacote"><div class="body">
+    <div class="title">Pacote para o servidor</div>
+    <ul>
+      <li>o JAR;</li>
+      <li>a pasta <code>frontend\dist</code>;</li>
+      <li><code>docs\alteracoes-2026-10-26\reai-1-previa.sql</code> e <code>reai-2-aplicar.sql</code>;</li>
+      <li>o <code>application.properties</code> de produção (seção 2).</li>
+    </ul>
+  </div></div>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2>2. Configuração de produção do backend <span class="count"></span></h2>
+  <p class="intro">Hoje a configuração de produção está embutida no JAR. O JAR novo traz a do repositório, que difere em duas chaves. Por isso ela passa a ficar num arquivo ao lado do JAR.</p>
+
+  <div class="item"><input type="checkbox" id="p2-arquivo"><div class="body">
+    <div class="title">Criar <code>application.properties</code> ao lado do JAR</div>
+    <p>Conteúdo: o <code>application.properties</code> que a produção usa hoje (o de dentro do JAR atual). Para extraí-lo do JAR em uso:</p>
+    <div class="codebox"><pre><code>mkdir C:\temp\jar-prod; cd C:\temp\jar-prod
+tar -xf "PASTA_DO_BACKEND\sisaudin-0.0.1-SNAPSHOT.jar" BOOT-INF/classes/application.properties
+copy BOOT-INF\classes\application.properties "PASTA_DO_BACKEND\application.properties.novo"</code></pre></div>
+    <p>Na troca (seção 4) ele vira <code>application.properties</code>. Depois, apagar <code>C:\temp\jar-prod</code> (tem senha).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-chaves"><div class="body">
+    <div class="title">Conferir as chaves</div>
+    <div class="tablewrap"><table>
+      <tr><th>Chave</th><th>Valor de produção</th><th>No JAR novo, sem o arquivo</th></tr>
+      <tr><td><code>sisaudin.link</code></td><td><code>http://172.16.253.238/login</code></td><td><code>https://sisaudin.ghc.com.br/login</code></td></tr>
+      <tr><td><code>app.seeder.enabled</code></td><td><code>false</code></td><td><b><code>true</code></b> (carga inicial rodaria em produção)</td></tr>
+      <tr><td><code>spring.datasource.url</code></td><td><code>…/sisaudin_novo_v10…</code></td><td>igual</td></tr>
+      <tr><td><code>spring.jpa.hibernate.ddl-auto</code></td><td><code>update</code> (necessário: cria a coluna e a tabela novas)</td><td>igual</td></tr>
+      <tr><td><code>server.port</code></td><td><code>8080</code> (= <code>proxy_pass</code> do nginx)</td><td>igual</td></tr>
+      <tr><td><code>spring.jpa.show-sql</code></td><td><code>true</code> na primeira subida (mostra os comandos de estrutura); <code>false</code> depois</td><td>igual</td></tr>
+    </table></div>
+    <p>Salvar em UTF-8 sem BOM (Bloco de Notas). Não colocar este arquivo no git.</p>
+  </div></div>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2>3. Parar e fazer backup <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p3-parar"><div class="body">
+    <div class="title">Parar o backend atual</div>
+    <p>Pelo mesmo meio pelo qual ele é iniciado (seção 0). Conferir que a porta 8080 não responde:</p>
+    <div class="codebox"><pre><code>netstat -ano | findstr ":8080"</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p3-db"><div class="body">
+    <div class="title">Backup do banco <span class="tag crit">obrigatório</span></div>
+    <div class="codebox"><pre><code>mysqldump -u root -p --single-transaction --routines --triggers --events sisaudin_novo_v10 &gt; sisaudin_novo_v10_ANTES.sql</code></pre></div>
+    <p>Ou Workbench: <b>Server &gt; Data Export</b>, schema inteiro, <b>Dump Structure and Data</b>, <b>Self-Contained File</b>, <b>Single Transaction</b>, procedures/events/triggers. A última linha do arquivo deve ser <code>-- Dump completed on …</code>. Anotar o nome no topo.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p3-arquivos"><div class="body">
+    <div class="title">Guardar o que será trocado</div>
+    <div class="codebox"><pre><code>$bk = "C:\backup-sisaudin-$(Get-Date -Format yyyyMMdd-HHmm)"; New-Item -ItemType Directory $bk | Out-Null
+Copy-Item "PASTA_DO_BACKEND\*.jar" $bk
+if (Test-Path "PASTA_DO_BACKEND\application.properties") { Copy-Item "PASTA_DO_BACKEND\application.properties" $bk }
+robocopy "PASTA_DO_BACKEND\uploads" "$bk\uploads" /E /NFL /NDL
+Copy-Item "PASTA_DO_NGINX\conf\nginx.conf" $bk
+robocopy "PASTA_DO_NGINX\html" "$bk\html" /E /NFL /NDL
+$bk</code></pre></div>
+    <p>JAR atual, <code>uploads\</code> (o banco guarda só o caminho dos anexos), <code>nginx.conf</code> e o front atual (pasta <code>html</code> do nginx).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p3-contagem"><div class="body">
+    <div class="title">Contagem de linhas antes (guardar a saída)</div>
+    <div class="codebox"><pre><code>SELECT 'item_trabalho' t, COUNT(*) FROM sisaudin_novo_v10.item_trabalho
+UNION ALL SELECT 'relatorio_preliminar', COUNT(*) FROM sisaudin_novo_v10.relatorio_preliminar
+UNION ALL SELECT 'relatorio_final', COUNT(*) FROM sisaudin_novo_v10.relatorio_final
+UNION ALL SELECT 'planejamento', COUNT(*) FROM sisaudin_novo_v10.planejamento
+UNION ALL SELECT 'parecer', COUNT(*) FROM sisaudin_novo_v10.parecer
+UNION ALL SELECT 'pessoa', COUNT(*) FROM sisaudin_novo_v10.pessoa;</code></pre></div>
+  </div></div>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2>4. Subir o backend novo <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p4-copiar"><div class="body">
+    <div class="title">Trocar o JAR e ativar a configuração externa</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_BACKEND"
+Copy-Item CAMINHO_DO_PACOTE\sisaudin-0.0.1-SNAPSHOT.jar . -Force
+Rename-Item application.properties.novo application.properties</code></pre></div>
+    <p>Rodar o backend <b>de dentro</b> desta pasta (o Spring lê o <code>application.properties</code> da pasta de execução).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-chromium"><div class="body">
+    <div class="title">Chromium do Playwright (PDF) presente</div>
+    <p>A versão do Playwright não mudou (1.41.0); se a produção já gerava PDF, nada a fazer. Conferir:</p>
+    <div class="codebox"><pre><code>java "-Dloader.main=com.microsoft.playwright.CLI" -cp sisaudin-0.0.1-SNAPSHOT.jar org.springframework.boot.loader.launch.PropertiesLauncher --version</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-subir"><div class="body">
+    <div class="title">Primeira subida gravando o console</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_BACKEND"
+cmd /c "java -jar sisaudin-0.0.1-SNAPSHOT.jar &gt; primeira-subida.txt 2&gt;&amp;1"</code></pre></div>
+    <p>Em outra janela, acompanhar:</p>
+    <div class="codebox"><pre><code>Get-Content "PASTA_DO_BACKEND\primeira-subida.txt" -Wait -Tail 40</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-log"><div class="body">
+    <div class="title">Conferir a subida <span class="tag crit">crítico</span></div>
+    <div class="codebox"><pre><code>$f = "PASTA_DO_BACKEND\primeira-subida.txt"
+"subiu: " + (Select-String $f -Pattern 'Started SisaudinApplication' -CaseSensitive -Quiet)
+"erros de DDL: " + (Select-String $f -Pattern 'Error executing DDL' -SimpleMatch | Measure-Object).Count
+"--- comandos de estrutura:"; Select-String $f -Pattern '^Hibernate: (create|alter|drop) ' | ForEach-Object { $_.Line }
+"--- migracao:"; Select-String $f -Pattern 'RelatorioEspecialMigration' -SimpleMatch | ForEach-Object { $_.Line }
+"insercoes na subida (carga inicial): " + (Select-String $f -Pattern '^Hibernate: insert ' | Measure-Object).Count</code></pre></div>
+    <p>Esperado (testado com o backup de produção de 21/10):</p>
+    <ul>
+      <li><code>subiu: True</code>, <code>erros de DDL: 0</code>, <code>insercoes: 0</code>;</li>
+      <li>exatamente 4 comandos: <code>alter table relatorio_preliminar add column especial</code>, o mesmo em <code>relatorio_final</code>, <code>create table planejamento_gerencia_destinataria</code> e a chave estrangeira dela;</li>
+      <li>duas linhas <code>[RelatorioEspecialMigration] …: 0 marcados como REAI, N como RAI</code> (em 21/10: 19 e 9).</li>
+    </ul>
+    <p class="note danger">Erro de DDL, <code>Access denied</code> ou <code>APPLICATION FAILED</code>: parar e ir para a seção 10.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-api"><div class="body">
+    <div class="title">API responde na própria máquina</div>
+    <div class="codebox"><pre><code>(Invoke-WebRequest http://127.0.0.1:8080/api/fluxo-documentos/item/1 -UseBasicParsing).StatusCode</code></pre></div>
+    <p>Esperado <b>200</b>.</p>
+  </div></div>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2>5. Reclassificar relatórios de itens EXTRA (REAI) <span class="count"></span></h2>
+  <p class="intro">Scripts em <code>docs/alteracoes-2026-10-26/</code>. Em cada um, trocar <code>TROCAR_NOME_DO_BANCO</code> por <code>sisaudin_novo_v10</code>. Só depois da primeira subida (precisa da coluna <code>especial</code>).</p>
+
+  <div class="item"><input type="checkbox" id="p5-previa"><div class="body">
+    <div class="title">Prévia: <code>reai-1-previa.sql</code> (só consulta)</div>
+    <p>Conferir a lista "hoje → depois" com a combinada na seção 0 e <b>guardar a saída</b> (registra os números antigos). A consulta 2 lista relatórios já emitidos que mudariam de número — em 21/10, nenhum; se aparecer algum, decidir com a área antes de seguir.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p5-rollback"><div class="body">
+    <div class="title">Aplicação em teste: <code>reai-2-aplicar.sql</code> como está (termina em ROLLBACK)</div>
+    <p>Conferências <b>A</b>, <b>B</b> e <b>C</b> vazias; <b>D</b> com os números REAI esperados (em 21/10: 2025 → 1,2; 2026 → 1,2,3).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p5-commit"><div class="body">
+    <div class="title">Gravar: trocar <code>ROLLBACK;</code> por <code>COMMIT;</code> na última linha e executar</div>
+    <p>Não precisa reiniciar o backend.</p>
+  </div></div>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2>6. Nginx e front <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p6-conf"><div class="body">
+    <div class="title">Atualizar o bloco <code>server</code> do <code>nginx.conf</code></div>
+    <p>Substituir só o bloco <code>server { … }</code> ativo. Acrescenta: anexos até 50 MB (hoje 1 MB), <code>/uploads</code> para o backend, tempo maior para PDF, cabeçalhos <code>X-Forwarded-*</code>, <code>index.html</code> sem cache e compressão.</p>
+    <div class="codebox"><pre><code>	server {
+		listen 80;
+		server_name localhost;
+
+		client_max_body_size 50m;
+
+		gzip       on;
+		gzip_types text/css application/javascript application/json image/svg+xml;
+
+		location / {
+			root   html;
+			index  index.html index.htm;
+			try_files $uri $uri/ /index.html;
+		}
+
+		location = /index.html {
+			root   html;
+			add_header Cache-Control "no-cache";
+		}
+
+		location ~ ^/(api|uploads)/ {
+			proxy_pass http://127.0.0.1:8080;
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade $http_upgrade;
+			proxy_set_header Connection 'upgrade';
+			proxy_set_header Host $host;
+			proxy_set_header X-Real-IP $remote_addr;
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header X-Forwarded-Proto $scheme;
+			proxy_cache_bypass $http_upgrade;
+			proxy_read_timeout 120s;
+		}
+	}</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-testar"><div class="body">
+    <div class="title">Testar a configuração</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_NGINX"
+.\nginx.exe -t</code></pre></div>
+    <p>Deve terminar em <code>test is successful</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-front"><div class="body">
+    <div class="title">Publicar o front na pasta <code>html</code></div>
+    <div class="codebox"><pre><code>robocopy CAMINHO_DO_PACOTE\dist "PASTA_DO_NGINX\html" /MIR</code></pre></div>
+    <p><code>/MIR</code> apaga os arquivos antigos da pasta (o backup está na seção 3).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-reload"><div class="body">
+    <div class="title">Recarregar o nginx</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_NGINX"
+.\nginx.exe -s reload</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-upload"><div class="body">
+    <div class="title">Limite de upload pelo nginx</div>
+    <div class="codebox"><pre><code>$b = New-Object byte[] (2MB)
+try { (Invoke-WebRequest http://localhost/api/teste-limite-upload -Method Post -Body $b -ContentType 'application/octet-stream' -UseBasicParsing).StatusCode } catch { [int]$_.Exception.Response.StatusCode }</code></pre></div>
+    <p>Esperado <b>404</b> (chegou ao backend). <b>413</b> = o nginx barrou: conferir <code>client_max_body_size</code> e o <code>;</code> da linha anterior (o <code>nginx -t</code> não acusa).</p>
+  </div></div>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2>7. Testes no navegador <span class="count"></span></h2>
+  <p class="intro">Em <code>http://172.16.253.238</code>, com <b>Ctrl+F5</b> e a aba <b>Rede</b> aberta (F12). Em produção, evitar criar documentos de teste: cada relatório criado consome um número da sequência. Preferir abrir documentos existentes; se for preciso criar, excluir em seguida.</p>
+
+  <div class="item"><input type="checkbox" id="p7-login"><div class="body">
+    <div class="title">Login, navegação e F5</div>
+    <p>Login funciona; F5 numa tela interna (ex.: um item de trabalho) recarrega a mesma tela.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-rede"><div class="body">
+    <div class="title">Nenhuma chamada a <code>:8080</code> ou <code>sisaudin.ghc.com.br</code> <span class="tag crit">crítico</span></div>
+    <p>Filtrar a aba Rede por <code>8080</code> e por <code>ghc.com.br</code>: nada. Tudo vai para <code>172.16.253.238/api/…</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-reai"><div class="body">
+    <div class="title">REAIs reclassificados</div>
+    <p>Abrir o relatório do IT-79: cabeçalho e capa como <b>REAI 01/2026</b>; gerar o PDF e conferir. Na lista de itens, os documentos de IT-51 e IT-52 aparecem como REAI.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-menu"><div class="body">
+    <div class="title">Menu "Criar Documento"</div>
+    <p>Item PAINT sem relatório: RAI liberado, REAI bloqueado. Item EXTRA sem relatório: o contrário. (Só abrir o menu; não criar.)</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-parecer"><div class="body">
+    <div class="title">Parecer existente</div>
+    <p>Abrir um parecer: <b>Objetivo e Escopo aparecem preenchidos</b> (antes vinham vazios e eram apagados ao salvar). Sem a seção de constatações. Pré-visualização: 1 Introdução, 2 Objetivo, 3 Escopo, 4 Conclusão e assinaturas.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-salvar"><div class="body">
+    <div class="title">Salvar depois de salvar um item de trabalho</div>
+    <p>Editar e salvar um item de trabalho; <b>em seguida</b>, abrir um planejamento ou relatório em edição, alterar um campo, esperar "Salvo" e recarregar. Antes da correção, essa ordem fazia o documento não salvar (400).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-planejamento"><div class="body">
+    <div class="title">Planejamento: gerências destinatárias</div>
+    <p>Num planejamento em edição, escolher uma gerência, esperar "Salvo", recarregar: a gerência continua selecionada.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-anexo"><div class="body">
+    <div class="title">Anexo acima de 1 MB e foto de perfil</div>
+    <p>Anexar um arquivo de 2 a 5 MB num documento em edição, baixar e excluir. A foto de perfil aparece (agora <code>/uploads</code> passa pelo nginx).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-pdf"><div class="body">
+    <div class="title">PDF de um documento existente</div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-email"><div class="body">
+    <div class="title">E-mail com o link certo</div>
+    <p>Na próxima notificação enviada pelo sistema, o link deve ser <code>http://172.16.253.238/login</code>. Em produção o e-mail é real: testar só com a própria conta.</p>
+  </div></div>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2>8. Conferências no banco <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p8-tipos"><div class="body">
+    <div class="title">Todo relatório com tipo e nenhum item EXTRA com RAI</div>
+    <div class="codebox"><pre><code>SELECT 'preliminar' AS tabela, t.nome AS tipo_item,
+       CASE WHEN r.especial IS NULL THEN 'NULO' WHEN r.especial = 1 THEN 'REAI' ELSE 'RAI' END AS tipo, COUNT(*) AS qtd
+FROM sisaudin_novo_v10.relatorio_preliminar r
+LEFT JOIN sisaudin_novo_v10.item_trabalho i ON i.id = r.item_trabalho_id
+LEFT JOIN sisaudin_novo_v10.tipo_item t ON t.id = i.tipo_item_id
+GROUP BY 2, 3
+UNION ALL
+SELECT 'final', t.nome, CASE WHEN r.especial IS NULL THEN 'NULO' WHEN r.especial = 1 THEN 'REAI' ELSE 'RAI' END, COUNT(*)
+FROM sisaudin_novo_v10.relatorio_final r
+LEFT JOIN sisaudin_novo_v10.item_trabalho i ON i.id = r.item_trabalho_id
+LEFT JOIN sisaudin_novo_v10.tipo_item t ON t.id = i.tipo_item_id
+GROUP BY 2, 3;</code></pre></div>
+    <p>Esperado: nenhuma linha <code>NULO</code>; EXTRA só com REAI; PAINT só com RAI.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-duplicados"><div class="body">
+    <div class="title">Nenhum número REAI repetido</div>
+    <div class="codebox"><pre><code>SELECT 'preliminar' AS tabela, ano, numero, COUNT(*) FROM sisaudin_novo_v10.relatorio_preliminar WHERE especial = 1 GROUP BY ano, numero HAVING COUNT(*) &gt; 1
+UNION ALL
+SELECT 'final', ano, numero, COUNT(*) FROM sisaudin_novo_v10.relatorio_final WHERE especial = 1 GROUP BY ano, numero HAVING COUNT(*) &gt; 1;</code></pre></div>
+    <p>Esperado: vazio.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-contagem"><div class="body">
+    <div class="title">Mesma contagem de linhas de antes</div>
+    <p>Repetir a consulta da seção 3 e comparar: tudo igual (a implantação só acrescenta a coluna <code>especial</code> e a tabela vazia <code>planejamento_gerencia_destinataria</code>).</p>
+  </div></div>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2>9. Encerramento <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p9-showsql"><div class="body">
+    <div class="title">Desligar o registro de SQL <span class="tag opt">recomendado</span></div>
+    <p>No <code>application.properties</code> externo: <code>spring.jpa.show-sql=false</code>; reiniciar o backend fora do horário de uso.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-servico"><div class="body">
+    <div class="title">Backend iniciando sozinho, da pasta certa</div>
+    <p>Se for serviço do Windows (WinSW/NSSM) ou <code>.bat</code>, conferir que o diretório de trabalho é <code>PASTA_DO_BACKEND</code> (configuração externa e <code>uploads\</code>).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-porta"><div class="body">
+    <div class="title">Fechar a porta 8080 para a rede <span class="tag opt">recomendado</span></div>
+    <p>O front novo usa só o nginx (porta 80). Se nenhum outro sistema chama a 8080 diretamente, limitar a 8080 à própria máquina no firewall.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-avisar"><div class="body">
+    <div class="title">Avisar os usuários</div>
+    <p>Sistema de volta; relatórios de itens EXTRA agora como REAI; rascunhos do IT-91 e do IT-89 renumerados (REAI 2/2026 e 3/2026). Pedir Ctrl+F5 no primeiro acesso.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-monitorar"><div class="body">
+    <div class="title">Acompanhar o log nos primeiros dias</div>
+    <p>Procurar <code>ERROR</code>, <code>Exception</code> e <code>HttpMessageNotReadable</code> no console/log do backend e <code>413</code>/<code>502</code>/<code>504</code> no <code>logs\access.log</code> do nginx.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-pendencias"><div class="body">
+    <div class="title">Registrar as pendências de segurança</div>
+    <p>Para uma próxima etapa: segredos JWT ainda são os de um tutorial público; banco acessado com <code>root</code>/<code>mysql</code>; remetente de e-mail pessoal.</p>
+  </div></div>
+
+  <div class="meta" style="margin-top:8px">
+    <div style="grid-column:1/-1"><label for="m-obs">Observações</label>
+      <textarea id="m-obs" data-field="obs" rows="5" style="width:100%;font:inherit;padding:6px 8px;margin-top:2px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px"></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section>
+  <h2>10. Plano de volta (se algo crítico falhar) <span class="count"></span></h2>
+  <p class="intro">Voltar se: o backend não sobe, há erro de DDL, login não funciona, documentos não salvam ou não abrem. Não é preciso voltar o banco só por causa da estrutura: o código anterior ignora a coluna <code>especial</code> e a tabela nova.</p>
+
+  <div class="item"><input type="checkbox" id="p10-backend"><div class="body">
+    <div class="title">Backend anterior</div>
+    <p>Parar o backend novo; recolocar o JAR anterior do backup; <b>remover ou renomear o <code>application.properties</code> externo</b> se ele não existia antes (o JAR anterior tem a configuração dentro); subir como antes.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p10-nginx"><div class="body">
+    <div class="title">Nginx e front anteriores</div>
+    <div class="codebox"><pre><code>Copy-Item "PASTA_DO_BACKUP\nginx.conf" "PASTA_DO_NGINX\conf\nginx.conf" -Force
+robocopy "PASTA_DO_BACKUP\html" "PASTA_DO_NGINX\html" /MIR
+cd "PASTA_DO_NGINX"; .\nginx.exe -t; .\nginx.exe -s reload</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p10-banco"><div class="body">
+    <div class="title">Banco (só se necessário)</div>
+    <p>Restaurar o backup da seção 3 só se a reclassificação REAI tiver de ser desfeita ou se houver dano nos dados. <b>Perde-se o que foi gravado depois do backup.</b></p>
+  </div></div>
+</section>
+
+<footer>
+  As marcações e os campos ficam salvos apenas neste navegador. Para registrar oficialmente, use <b>Imprimir</b> (pode salvar como PDF).
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'sisaudin-checklist-producao-v1';
+  var state = { checks: {}, fields: {} };
+  try { var raw = localStorage.getItem(KEY); if (raw) state = JSON.parse(raw) || state; } catch (e) {}
+  state.checks = state.checks || {}; state.fields = state.fields || {};
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.item input[type=checkbox]'));
+  function refresh() {
+    var done = 0;
+    boxes.forEach(function (b) { b.closest('.item').classList.toggle('checked', b.checked); if (b.checked) done++; });
+    document.getElementById('progressFill').style.width = (boxes.length ? done / boxes.length * 100 : 0) + '%';
+    document.getElementById('progressText').textContent = done + ' de ' + boxes.length + ' concluídos';
+    document.querySelectorAll('section').forEach(function (s) {
+      var bs = s.querySelectorAll('.item input[type=checkbox]'); var n = 0;
+      bs.forEach(function (b) { if (b.checked) n++; });
+      var c = s.querySelector('h2 .count'); if (c) c.textContent = n + '/' + bs.length;
+      s.classList.toggle('done', bs.length > 0 && n === bs.length);
+    });
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!state.checks[b.id];
+    b.addEventListener('change', function () { state.checks[b.id] = b.checked; save(); refresh(); });
+  });
+
+  // Campos aplicados nos comandos: troca o marcador pelo valor informado
+  var TOKENS = { banco: 'sisaudin_novo_v10', backend: 'PASTA_DO_BACKEND', nginx: 'PASTA_DO_NGINX', pacote: 'CAMINHO_DO_PACOTE', pastabackup: 'PASTA_DO_BACKUP' };
+  var codes = Array.prototype.slice.call(document.querySelectorAll('code'));
+  codes.forEach(function (c) { c.setAttribute('data-original', c.textContent); });
+  function aplicar() {
+    codes.forEach(function (c) {
+      var t = c.getAttribute('data-original');
+      Object.keys(TOKENS).forEach(function (k) {
+        var v = (state.fields[k] || '').trim().replace(/[\\\/]+$/, '');
+        if (k === 'banco') v = v.replace(/[^A-Za-z0-9_$]/g, '');
+        if (v) t = t.split(TOKENS[k]).join(v);
+      });
+      c.textContent = t;
+    });
+  }
+  document.querySelectorAll('[data-field]').forEach(function (el) {
+    var k = el.getAttribute('data-field');
+    if (state.fields[k] != null) el.value = state.fields[k];
+    el.addEventListener('input', function () { state.fields[k] = el.value; save(); if (TOKENS[k]) aplicar(); });
+  });
+  aplicar();
+
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('Desmarcar todos os itens? Os campos de texto são mantidos.')) return;
+    state.checks = {}; save(); boxes.forEach(function (b) { b.checked = false; }); refresh();
+  });
+
+  document.querySelectorAll('.codebox').forEach(function (box) {
+    var btn = document.createElement('button'); btn.type = 'button'; btn.textContent = 'Copiar';
+    btn.addEventListener('click', function () {
+      var text = box.querySelector('pre').innerText;
+      var ok = function () { btn.textContent = 'Copiado'; setTimeout(function () { btn.textContent = 'Copiar'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, function () { fallback(text); ok(); }); }
+      else { fallback(text); ok(); }
+    });
+    box.appendChild(btn);
+  });
+  function fallback(text) {
+    var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
+    t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t);
+  }
+  refresh();
+})();
+</script></body>
+</html>

@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testes de Sistema Sisaudin</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1d2330; --muted: #5d6677;
+    --border: #dde1e8; --accent: #1f5fae; --accent-soft: #e6eefa;
+    --ok: #217a45; --ok-soft: #e4f3ea; --warn: #8a5a00; --warn-soft: #fdf3dc;
+    --danger: #a52a2a; --danger-soft: #fbe7e7; --code-bg: #f0f2f5;
+    --na: #5d6677; --na-soft: #eceef2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+      --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+      --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+      --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+      --na: #9aa3b2; --na-soft: #252a33;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+    --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+    --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+    --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+    --na: #9aa3b2; --na-soft: #252a33;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .bar {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 10px 0; margin: 16px 0 8px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 320px; }
+  .chip { font-size: .8rem; padding: 2px 9px; border-radius: 99px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .st-pend { background: var(--na-soft); color: var(--na); }
+  .st-ok { background: var(--ok-soft); color: var(--ok); }
+  .st-falha { background: var(--danger-soft); color: var(--danger); }
+  .st-bloq { background: var(--warn-soft); color: var(--warn); }
+  .st-na { background: var(--accent-soft); color: var(--accent); }
+  button {
+    font: inherit; font-size: .85rem; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); border-radius: 6px; padding: 5px 10px;
+  }
+  button:hover { border-color: var(--accent); }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-top: 14px; }
+  .panel h2 { font-size: 1.1rem; margin: 0 0 6px; }
+  .panel ul, .panel ol { margin: 4px 0; padding-left: 20px; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .meta label { display: block; font-size: .8rem; color: var(--muted); }
+  .meta input, .meta select {
+    width: 100%; font: inherit; padding: 6px 8px; margin-top: 2px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .filter { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: .9rem; }
+  .filter input { width: 17px; height: 17px; accent-color: var(--accent); }
+  .banner { border-left: 3px solid var(--danger); background: var(--danger-soft); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 10px; display: none; }
+  .banner.show { display: block; }
+  section.suite { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 18px 10px; margin-top: 18px; }
+  section.suite > h2 { font-size: 1.15rem; margin: 14px 0 2px; display: flex; justify-content: space-between; gap: 8px; }
+  section.suite > h2 .count { font-size: .8rem; font-weight: normal; color: var(--muted); white-space: nowrap; }
+  section.suite > p.intro { margin: 0 0 6px; color: var(--muted); }
+  .case { border-top: 1px solid var(--border); padding: 12px 0; }
+  .case.hidden { display: none; }
+  .case-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .case-id { font: 600 .82rem Consolas, "Cascadia Mono", monospace; color: var(--accent); }
+  .case-title { font-weight: 600; flex: 1 1 300px; }
+  .tag { font-size: .72rem; font-weight: 600; padding: 1px 7px; border-radius: 99px; white-space: nowrap; }
+  .tag.h { background: var(--warn-soft); color: var(--warn); }
+  .tag.hp { background: var(--ok-soft); color: var(--ok); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-top: 6px; }
+  .grid h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 4px 0 2px; }
+  .grid ol, .grid ul { margin: 0; padding-left: 20px; }
+  .pre { font-size: .9rem; color: var(--muted); margin: 4px 0 0; }
+  .note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; margin: 8px 0 0; border-radius: 0 6px 6px 0; font-size: .9rem; }
+  .result { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin-top: 10px; }
+  .result select { font: inherit; font-size: .9rem; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .result textarea {
+    flex: 1 1 300px; min-height: 36px; font: inherit; font-size: .9rem; padding: 6px 8px; resize: vertical;
+    background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .case[data-st="ok"] .result select { border-color: var(--ok); color: var(--ok); }
+  .case[data-st="falha"] .result select { border-color: var(--danger); color: var(--danger); }
+  .case[data-st="bloq"] .result select { border-color: var(--warn); color: var(--warn); }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .9em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin-top: 6px; }
+  th, td { text-align: left; border: 1px solid var(--border); padding: 4px 8px; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .tablewrap { overflow-x: auto; }
+  b.tok { color: var(--accent); }
+  footer { margin-top: 24px; color: var(--muted); font-size: .85rem; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  @media print {
+    .bar button, .filter { display: none; }
+    .bar { position: static; }
+    body { background: #fff; color: #000; }
+    .case { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Testes de sistema — alterações de outubro/2026</h1>
+  <p>Roteiro para o usuário conferir no navegador as alterações de 08/10 a 26/10: RAI e REAI, salvamento dos documentos, abertura após criar, exclusão pela lista de itens, textos iniciais das notas, Planejamento, Parecer e relatórios antigos reclassificados.</p>
+</header>
+
+<div class="bar">
+  <div class="chips" id="chips"></div>
+  <button type="button" id="copyBtn">Copiar resultado</button>
+  <button type="button" id="csvBtn">Baixar planilha</button>
+  <button type="button" onclick="window.print()">Imprimir</button>
+  <button type="button" id="resetBtn">Limpar</button>
+</div>
+
+<div class="panel">
+  <h2>Identificação</h2>
+  <div class="meta">
+    <div><label for="f-testador">Quem testou</label><input id="f-testador" data-field="testador"></div>
+    <div><label for="f-data">Data</label><input id="f-data" data-field="data" type="date"></div>
+    <div><label for="f-amb">Ambiente</label>
+      <select id="f-amb" data-field="ambiente">
+        <option value="Homologação">Homologação</option>
+        <option value="Produção">Produção</option>
+      </select></div>
+    <div><label for="f-nav">Navegador</label><input id="f-nav" data-field="navegador" placeholder="ex.: Chrome, Edge"></div>
+  </div>
+  <h2 style="margin-top:14px">Itens de trabalho usados nos testes</h2>
+  <p class="pre" style="margin-top:0">Preencha com o código de cada item (veja o teste PRE-01). O código passa a aparecer nos passos.</p>
+  <div class="meta" style="margin-top:6px">
+    <div><label for="f-paint">Item PAINT</label><input id="f-paint" data-field="PAINT" placeholder="ex.: IT-120"></div>
+    <div><label for="f-extra">Item EXTRA</label><input id="f-extra" data-field="EXTRA" placeholder="ex.: IT-121"></div>
+    <div><label for="f-semtipo">Item sem tipo</label><input id="f-semtipo" data-field="SEMTIPO" placeholder="ex.: IT-122"></div>
+    <div><label for="f-notas">Item para as notas de auditoria</label><input id="f-notas" data-field="NOTAS" placeholder="ex.: IT-123"></div>
+    <div><label for="f-ntec">Item para a nota técnica</label><input id="f-ntec" data-field="NTEC" placeholder="ex.: IT-124"></div>
+    <div><label for="f-parecer">Item para o parecer</label><input id="f-parecer" data-field="PARECER" placeholder="ex.: IT-125"></div>
+  </div>
+  <label class="filter"><input type="checkbox" id="onlyProd"> Mostrar só os testes que podem ser feitos em produção</label>
+  <div class="banner" id="prodBanner"><b>Produção:</b> faça só os testes marcados “Homologação e produção”. Eles apenas consultam: não crie, não altere e não exclua documentos. Cada relatório criado em produção consome um número da sequência oficial.</div>
+</div>
+
+<div class="panel">
+  <h2>Como usar</h2>
+  <ul>
+    <li>Siga os testes na ordem: os primeiros criam os documentos que os seguintes usam.</li>
+    <li>Em cada teste, marque <b>Passou</b>, <b>Falhou</b>, <b>Bloqueado</b> (não foi possível executar) ou <b>Não se aplica</b>.</li>
+    <li>Se o teste falhar, anote na observação a <b>hora</b>, o <b>documento</b> (tipo e número), a <b>mensagem</b> que apareceu e o que você esperava. Se puder, tire um print da tela.</li>
+    <li>“Salvo” significa o aviso <b>“Salvo às hh:mm”</b>, perto do topo do editor. Ele aparece cerca de 3 segundos depois que você para de digitar.</li>
+    <li>“Recarregar” significa apertar <b>F5</b>. Antes de começar, aperte <b>Ctrl+F5</b> uma vez para carregar a versão nova das telas.</li>
+    <li>O que você preencher fica guardado neste navegador. No fim, use <b>Copiar resultado</b> ou <b>Baixar planilha</b> e envie à equipe do sistema.</li>
+  </ul>
+  <p class="pre"><span class="tag h">Homologação</span> cria, altera ou exclui documentos: só no ambiente de homologação.
+  <span class="tag hp">Homologação e produção</span> só consulta.</p>
+</div>
+
+<div id="suites"></div>
+
+<footer>
+  Detalhes técnicos de cada alteração: <code>docs/alteracoes-2026-10-08</code> a <code>docs/alteracoes-2026-10-26</code>. Roteiro de implantação: <code>docs/alteracoes-2026-10-27/CHECKLIST-PRODUCAO.html</code>.
+</footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // amb: 'H' = só homologação (cria/altera/exclui); 'HP' = também em produção (só consulta)
+  var SUITES = [
+    { id: 'PRE', titulo: '1. Preparação', intro: 'Acesso ao sistema e itens de trabalho separados para os testes.', casos: [
+      { id: 'PRE-01', amb: 'H', titulo: 'Separar os itens de trabalho de teste',
+        passos: ['Em <b>Itens de Trabalho</b>, crie seis itens sem documentos: um com tipo <b>PAINT</b>, um <b>EXTRA</b>, um <b>sem tipo</b> e mais três de qualquer tipo, para as notas de auditoria, a nota técnica e o parecer.',
+                 'Anote o código de cada um nos campos “Itens de trabalho usados nos testes”, no topo desta página.'],
+        esperado: ['Os seis itens aparecem na lista de itens de trabalho.'],
+        nota: 'Use itens criados para o teste, nunca itens reais. Nota preliminar, nota técnica, parecer e relatório preliminar não convivem no mesmo item, por isso são necessários itens separados.' },
+      { id: 'PRE-02', amb: 'HP', titulo: 'Entrar no sistema com a versão nova',
+        passos: ['Abra o endereço do sistema e aperte <b>Ctrl+F5</b>.', 'Entre com seu usuário e senha.'],
+        esperado: ['A tela inicial abre, sem mensagem de erro.'] }
+    ]},
+    { id: 'ACE', titulo: '2. Acesso e arquivos', intro: 'O sistema agora é servido pelo nginx. Estes testes conferem páginas internas, anexos e PDF.', casos: [
+      { id: 'ACE-01', amb: 'HP', titulo: 'Recarregar uma página interna',
+        passos: ['Abra um documento já existente (por exemplo, um relatório).', 'Aperte <b>F5</b>.'],
+        esperado: ['A mesma tela volta, com o documento.', 'Não aparece “404 Not Found” nem página em branco.'] },
+      { id: 'ACE-02', amb: 'HP', titulo: 'Abrir um anexo já existente',
+        passos: ['Abra um documento que tenha arquivo anexado.', 'Clique no arquivo.'],
+        esperado: ['O arquivo abre ou é baixado normalmente.'] },
+      { id: 'ACE-03', amb: 'H', titulo: 'Enviar um anexo grande',
+        passos: ['Em um documento de teste (por exemplo, o Planejamento do item {PAINT}, depois do teste PLA-01), anexe um PDF entre 5 MB e 20 MB.', 'Recarregue a página.'],
+        esperado: ['Aparece “Anexo adicionado com sucesso!”.', 'Depois de recarregar, o arquivo continua na lista e abre.'],
+        nota: 'Antes da mudança, arquivos acima de 1 MB podiam ser recusados pelo servidor.' },
+      { id: 'ACE-04', amb: 'HP', titulo: 'Gerar PDF no servidor',
+        passos: ['Abra um relatório existente.', 'Clique em <b>Gerar PDF no Servidor</b>.'],
+        esperado: ['O PDF é gerado e baixado, com capa, sumário e conteúdo do relatório.'] }
+    ]},
+    { id: 'REL', titulo: '3. RAI e REAI: menu e criação', intro: 'Regra: item PAINT gera RAI (Relatório de Auditoria Interna); item EXTRA gera REAI (Relatório Especial). Item sem tipo não gera relatório. Cada item tem um só relatório preliminar.', casos: [
+      { id: 'REL-01', amb: 'HP', titulo: 'Menu “Criar Documento” em item PAINT',
+        pre: 'Em produção, use um item PAINT real ainda sem relatório e apenas abra o menu, sem criar nada.',
+        passos: ['Na lista de itens, abra o menu <b>Criar Documento</b> do item {PAINT}.'],
+        esperado: ['“RAI-P - Relatório de Auditoria Preliminar” e “RAI-F - Relatório de Auditoria Final” estão disponíveis.',
+                   '“REAI-P” e “REAI-F” estão bloqueados, com o motivo “REAI só pode ser gerado em item de trabalho EXTRA”.'] },
+      { id: 'REL-02', amb: 'HP', titulo: 'Menu “Criar Documento” em item EXTRA',
+        pre: 'Em produção, use um item EXTRA real ainda sem relatório e apenas abra o menu.',
+        passos: ['Abra o menu <b>Criar Documento</b> do item {EXTRA}.'],
+        esperado: ['“REAI-P - Relatório Especial de Auditoria Preliminar” e “REAI-F - Relatório Especial de Auditoria Final” estão disponíveis.',
+                   '“RAI-P” e “RAI-F” estão bloqueados, com o motivo “RAI só pode ser gerado em item de trabalho PAINT”.'] },
+      { id: 'REL-03', amb: 'HP', titulo: 'Menu “Criar Documento” em item sem tipo',
+        pre: 'Em produção, só se houver item real sem tipo.',
+        passos: ['Abra o menu <b>Criar Documento</b> do item {SEMTIPO}.'],
+        esperado: ['RAI-P, RAI-F, REAI-P e REAI-F estão bloqueados, com o motivo “Defina o tipo do item de trabalho (PAINT ou EXTRA)”.'] },
+      { id: 'REL-04', amb: 'H', titulo: 'Criar RAI-P em item PAINT',
+        passos: ['Anote o maior número de RAI do ano atual (lista de documentos ou relatório mais recente).',
+                 'No item {PAINT}, escolha <b>Criar Documento → RAI-P</b>. Se aparecer janela pedindo justificativa, preencha e continue.'],
+        esperado: ['O editor do relatório abre, sem mensagem de erro.',
+                   'A capa diz “Relatório de Auditoria Interna”.',
+                   'O número é o maior RAI do ano + 1.'] },
+      { id: 'REL-05', amb: 'H', titulo: 'Criar REAI-P em item EXTRA',
+        passos: ['Anote o maior número de REAI do ano atual.',
+                 'No item {EXTRA}, escolha <b>Criar Documento → REAI-P</b>.'],
+        esperado: ['A capa diz “Relatório Especial de Auditoria Interna” e o título, “Relatório Especial de Auditoria nº NN/AAAA”.',
+                   'O número é o maior REAI do ano + 1. A sequência do REAI é separada da do RAI.',
+                   'Na lista de documentos do item, ele aparece como “Relatório Especial de Auditoria Preliminar”.'] },
+      { id: 'REL-06', amb: 'H', titulo: 'Só um relatório preliminar por item',
+        passos: ['Abra de novo o menu <b>Criar Documento</b> do item {EXTRA}.'],
+        esperado: ['REAI-P está bloqueado, com o motivo “Já existe um Relatório Preliminar criado”.'] },
+      { id: 'REL-07', amb: 'H', titulo: 'Criar REAI-F e continuar no editor',
+        passos: ['No item {EXTRA}, escolha <b>Criar Documento → REAI-F</b>. Se pedir justificativa, preencha e continue.',
+                 'Depois de criado, recarregue a página (F5).'],
+        esperado: ['O editor do relatório final abre direto, sem tela de erro (antes aparecia 404).',
+                   'O número e o ano são os mesmos do REAI-P do item.',
+                   'Depois de recarregar, o relatório continua aberto.'] },
+      { id: 'REL-08', amb: 'H', titulo: 'Criar RAI-F em item PAINT',
+        passos: ['No item {PAINT}, escolha <b>Criar Documento → RAI-F</b>.', 'Recarregue a página.'],
+        esperado: ['Abre direto no editor, sem 404.', 'Número e ano iguais aos do RAI-P do item.'] },
+      { id: 'REL-09', amb: 'H', titulo: 'Seletor de item de trabalho no relatório',
+        passos: ['No REAI-P do item {EXTRA}, abra o seletor “Selecione o Item de Trabalho Base”.'],
+        esperado: ['A lista mostra só itens EXTRA, além do item já vinculado.', 'Itens PAINT não aparecem.'] }
+    ]},
+    { id: 'ANT', titulo: '4. Relatórios antigos reclassificados', intro: 'Depois da implantação, todo relatório de item EXTRA passou a ser REAI, e a numeração REAI de cada ano seguiu a ordem de criação. Relatórios de item PAINT não mudaram.', casos: [
+      { id: 'ANT-01', amb: 'HP', titulo: 'Relatório antigo de item EXTRA aparece como REAI',
+        passos: ['Abra a lista de documentos de um item EXTRA que já tinha relatório antes da implantação.', 'Abra o relatório.'],
+        esperado: ['Na lista, aparece como “Relatório Especial de Auditoria Preliminar” (ou “Final”).', 'A capa diz “Relatório Especial de Auditoria Interna”.'] },
+      { id: 'ANT-02', amb: 'HP', titulo: 'Numeração dos REAI antigos (produção)',
+        passos: ['Abra os relatórios dos itens da tabela e compare o número.'],
+        tabela: { cab: ['Item', 'Antes', 'Depois (esperado)'], linhas: [
+          ['IT-51', 'RAI', 'REAI 01/2025'],
+          ['IT-52', 'RAI', 'REAI 02/2025'],
+          ['IT-79 (preliminar e final)', 'RAI', 'REAI 01/2026'],
+          ['IT-91', 'RAI 11/2026', 'REAI 02/2026'],
+          ['IT-89', 'RAI 12/2026', 'REAI 03/2026'] ] },
+        esperado: ['Os números batem com a coluna “Depois”.'],
+        nota: 'Valores calculados com a cópia do banco de produção de 21/10. Se algum relatório de item EXTRA tiver sido criado depois dessa data, confira com a prévia gerada na implantação (reai-1-previa.sql). Em homologação, use a prévia do banco de homologação.' },
+      { id: 'ANT-03', amb: 'HP', titulo: 'Preliminar e final do mesmo item com o mesmo número',
+        passos: ['Abra o REAI-P e o REAI-F do item IT-79 (ou de outro item EXTRA que tenha os dois).'],
+        esperado: ['Os dois têm o mesmo número e o mesmo ano.'] },
+      { id: 'ANT-04', amb: 'HP', titulo: 'Relatórios de item PAINT não mudaram',
+        passos: ['Abra dois relatórios antigos de itens PAINT e compare com o PDF ou registro anterior à implantação.'],
+        esperado: ['Continuam como “Relatório de Auditoria Interna”, com o mesmo número e o mesmo ano.'] },
+      { id: 'ANT-05', amb: 'HP', titulo: 'Próximo relatório continua a sequência',
+        passos: ['Quando for criado o primeiro relatório real depois da implantação, confira o número.'],
+        esperado: ['Próximo REAI de 2026: <b>04/2026</b>. Próximo RAI de 2026: <b>11/2026</b> (pelos dados de 21/10).'],
+        nota: 'Em produção, não crie relatório só para testar: espere o primeiro relatório real.' }
+    ]},
+    { id: 'SAV', titulo: '5. Salvamento automático', intro: 'Antes da correção, estes documentos mostravam o texto na tela, mas não gravavam as alterações.', casos: [] },
+    { id: 'ROT', titulo: '6. Notas: abrir na tela certa depois de criar', intro: 'Antes, depois de criar, as notas abriam numa tela genérica.', casos: [
+      { id: 'ROT-01', amb: 'H', titulo: 'Criar Nota de Auditoria Preliminar',
+        passos: ['No item {NOTAS}, escolha <b>Criar Documento → Nota de Auditoria Preliminar</b>.', 'Recarregue a página.'],
+        esperado: ['Abre o editor da nota preliminar, com as seções “Informações Preliminares - Texto Inicial” e “Constatações e Recomendações - Texto Inicial”.', 'Depois de recarregar, a mesma nota continua aberta.'] },
+      { id: 'ROT-02', amb: 'H', titulo: 'Criar Nota de Auditoria Final',
+        passos: ['No item {NOTAS}, escolha <b>Criar Documento → Nota de Auditoria Final</b>. Se pedir justificativa, preencha e continue.', 'Recarregue a página.'],
+        esperado: ['Abre o editor da nota final.', 'Depois de recarregar, a mesma nota continua aberta.'] },
+      { id: 'ROT-03', amb: 'H', titulo: 'Criar Nota Técnica',
+        passos: ['No item {NTEC}, escolha <b>Criar Documento → Nota Técnica</b>.', 'Recarregue a página.'],
+        esperado: ['Abre o editor da nota técnica.', 'Depois de recarregar, a mesma nota continua aberta.'] }
+    ]},
+    { id: 'NOT', titulo: '7. Textos iniciais das notas', intro: 'Antes, os dois “Texto Inicial” das notas preliminar e final voltavam vazios ao reabrir.', casos: [
+      { id: 'NOT-01', amb: 'H', titulo: 'Textos iniciais da Nota de Auditoria Preliminar',
+        passos: ['Na nota preliminar do item {NOTAS}, escreva um texto em “Informações Preliminares - Texto Inicial” e outro em “Constatações e Recomendações - Texto Inicial”.', 'Espere “Salvo às hh:mm” e recarregue.'],
+        esperado: ['Os dois textos continuam lá.', 'As demais seções não mudaram.'] },
+      { id: 'NOT-02', amb: 'H', titulo: 'Textos iniciais da Nota de Auditoria Final',
+        passos: ['Repita o teste anterior na nota final do item {NOTAS}.'],
+        esperado: ['Os dois textos continuam lá depois de recarregar.'] }
+    ]},
+    { id: 'PLA', titulo: '8. Planejamento, Matriz de Achados e Busca Conjunta', intro: 'Antes, depois de alguém salvar um item de trabalho, esses documentos davam erro ao salvar até o sistema ser reiniciado. O Planejamento também perdia parte do que era digitado, e as gerências destinatárias não eram gravadas.', casos: [
+      { id: 'PLA-01', amb: 'H', titulo: 'Criar Planejamento logo depois de salvar um item',
+        passos: ['Edite o item {PAINT} (por exemplo, mude a descrição) e salve.', 'Logo em seguida, escolha <b>Criar Documento → Planejamento</b> no mesmo item.', 'Preencha o “Escopo do Planejamento” e recarregue.'],
+        esperado: ['Aparece “Planejamento criado com sucesso!”.', 'Não aparece “Erro ao salvar Planejamento.”.', 'Depois de recarregar, o escopo continua preenchido.'] },
+      { id: 'PLA-02', amb: 'H', titulo: 'Várias edições seguidas',
+        passos: ['No Planejamento do item {PAINT}, escreva em “Escopo do Planejamento”, “Descrição do Objeto Auditado” e “Principais Riscos”, um depois do outro, sem esperar entre eles.', 'Termine cada texto com uma palavra fácil de achar (ex.: FIM1, FIM2, FIM3).', 'Espere 10 segundos e recarregue.'],
+        esperado: ['Os três campos estão completos, inclusive as palavras do final.'] },
+      { id: 'PLA-03', amb: 'H', titulo: 'Tela parada não fica salvando',
+        passos: ['Deixe o Planejamento aberto por 1 minuto, sem digitar.'],
+        esperado: ['O sistema não fica salvando sozinho a cada poucos segundos (o aviso de salvamento não reaparece).'] },
+      { id: 'PLA-04', amb: 'H', titulo: 'Gerências destinatárias são gravadas',
+        passos: ['Em “Gerências Destinatárias”, escolha duas gerências.', 'Espere alguns segundos e recarregue.'],
+        esperado: ['As duas gerências continuam selecionadas, na mesma ordem.'] },
+      { id: 'PLA-05', amb: 'H', titulo: 'Remover uma gerência destinatária',
+        passos: ['Remova uma das duas gerências.', 'Espere alguns segundos e recarregue.'],
+        esperado: ['Só a outra gerência continua selecionada.'] },
+      { id: 'PLA-06', amb: 'H', titulo: 'Questões de auditoria não se duplicam',
+        passos: ['Adicione uma questão de auditoria e preencha o “Conteúdo da Questão de Auditoria”.', 'Edite outro campo do planejamento, espere e recarregue.'],
+        esperado: ['A questão aparece uma vez só, com o conteúdo digitado.'] },
+      { id: 'PLA-07', amb: 'H', titulo: 'Matriz de Achados depois de salvar um item',
+        passos: ['Salve de novo o item {PAINT}.', 'Escolha <b>Criar Documento → Matriz de Achados</b>, preencha um campo e recarregue.'],
+        esperado: ['A matriz é criada, sem mensagem de erro.', 'O campo preenchido continua lá depois de recarregar.'] },
+      { id: 'PLA-08', amb: 'H', titulo: 'Reunião de Busca Conjunta depois de salvar um item',
+        passos: ['Salve de novo o item {PAINT}.', 'Escolha <b>Criar Documento → Resultado de Reunião de Busca Conjunta</b>. Se pedir justificativa, preencha e continue.'],
+        esperado: ['A reunião é criada, sem mensagem de erro.'] }
+    ]},
+    { id: 'PAR', titulo: '9. Parecer', intro: 'Decisão da área: o Parecer segue o modelo oficial (ex.: Parecer 01/2026), sem constatações nem recomendações.', casos: [
+      { id: 'PAR-01', amb: 'HP', titulo: 'Seções do editor',
+        passos: ['Abra um parecer existente.'],
+        esperado: ['Seções: “1. INTRODUÇÃO”, “2. OBJETIVO”, “3. ESCOPO DE AVALIAÇÃO DO PARECER”, “ANÁLISE DOS FATOS (opcional)”, “4. CONCLUSÃO” e “5. ANEXOS”.',
+                   'Não há “Constatações e Recomendações” nem “Anexo A – Plano de Ação”.'] },
+      { id: 'PAR-02', amb: 'HP', titulo: 'Parecer existente abre com Objetivo e Escopo',
+        passos: ['Abra um parecer antigo que tenha objetivo e escopo (ex.: Parecer 01/2026).'],
+        esperado: ['“2. OBJETIVO” e “3. ESCOPO DE AVALIAÇÃO DO PARECER” aparecem preenchidos. Antes da correção, vinham vazios.'],
+        nota: 'Nos pareceres antigos, os itens I a IV estão dentro do Escopo; por isso a Análise dos Fatos pode estar vazia.' },
+      { id: 'PAR-03', amb: 'H', titulo: 'Criar parecer e gravar todas as seções',
+        passos: ['No item {PARECER}, escolha <b>Criar Documento → Parecer</b>.', 'Escreva um texto em cada seção: Introdução, Objetivo, Escopo, Análise dos Fatos e Conclusão.', 'Espere “Salvo às hh:mm” e recarregue.'],
+        esperado: ['As cinco seções continuam com o texto digitado.'] },
+      { id: 'PAR-04', amb: 'HP', titulo: 'Pré-visualização e PDF na ordem do modelo',
+        passos: ['Abra a visualização do documento final (ou <b>Gerar PDF no Servidor</b>) de um parecer.'],
+        esperado: ['Ordem: capa, sumário, 1 INTRODUÇÃO, 2 OBJETIVO, 3 ESCOPO DE AVALIAÇÃO DO PARECER, análise dos fatos (sem título, se houver), 4 CONCLUSÃO, assinaturas e anexos.',
+                   'Não há glossário de constatações e recomendações.', 'Os números de página do sumário batem com as páginas.'] },
+      { id: 'PAR-05', amb: 'H', titulo: 'Análise dos Fatos vazia não aparece',
+        passos: ['No parecer de teste, apague o texto da “ANÁLISE DOS FATOS (opcional)”.', 'Espere e abra a visualização.'],
+        esperado: ['Depois do Escopo vem direto a 4 CONCLUSÃO, sem bloco em branco.'] },
+      { id: 'PAR-06', amb: 'HP', titulo: 'Anexos já enviados continuam ligados',
+        passos: ['Abra um parecer antigo que tenha arquivo anexado.'],
+        esperado: ['O arquivo continua no mesmo anexo e abre.', 'Na visualização, os anexos começam em “5. ANEXO A”.'] },
+      { id: 'PAR-07', amb: 'H', titulo: 'Adicionar anexo ao parecer',
+        passos: ['No parecer de teste, adicione um anexo, dê um título e envie um arquivo.', 'Recarregue e abra a visualização.'],
+        esperado: ['O arquivo continua no anexo.', 'Na visualização, aparece como “5. ANEXO A - TÍTULO”.'] }
+    ]},
+    { id: 'EXC', titulo: '10. Excluir documentos pela lista de itens', intro: 'Antes, alguns documentos não eram excluídos e aparecia “Não foi possível identificar o tipo do documento para exclusão”. Estes testes também limpam os documentos criados acima.', casos: [
+      { id: 'EXC-01', amb: 'H', titulo: 'Excluir REAI-P sem afetar o REAI-F',
+        passos: ['Na lista de documentos do item {EXTRA}, clique em <b>Excluir Documento</b> no REAI-P e confirme em “Sim, Excluir”.', 'Abra o REAI-F do mesmo item.'],
+        esperado: ['Aparece “Documento excluído com sucesso!” e o REAI-P sai da lista.', 'O REAI-F continua abrindo, com o conteúdo.'] },
+      { id: 'EXC-02', amb: 'H', titulo: 'Excluir RAI-P',
+        passos: ['Exclua o RAI-P do item {PAINT} pela lista de documentos.'],
+        esperado: ['“Documento excluído com sucesso!” e o RAI-P sai da lista.'] },
+      { id: 'EXC-03', amb: 'H', titulo: 'Excluir Comunicação e Solicitação de Auditoria',
+        passos: ['No item {PAINT}, crie uma Comunicação de Auditoria e uma Solicitação de Auditoria (se ainda não existirem).', 'Exclua as duas pela lista de documentos.'],
+        esperado: ['As duas são excluídas, com “Documento excluído com sucesso!”.'] },
+      { id: 'EXC-04', amb: 'H', titulo: 'Excluir Nota de Auditoria Final',
+        passos: ['Exclua a nota final do item {NOTAS} pela lista de documentos.'],
+        esperado: ['A nota é excluída, com “Documento excluído com sucesso!”.'] },
+      { id: 'EXC-05', amb: 'H', titulo: 'Excluir Reunião e Visita',
+        passos: ['No item {PAINT}, crie uma Reunião e uma Visita.', 'Exclua as duas pela lista de documentos.'],
+        esperado: ['As duas são excluídas, sem mensagem de erro.'] },
+      { id: 'EXC-06', amb: 'H', titulo: 'Limpar os demais documentos de teste',
+        passos: ['Exclua os documentos que sobraram nos itens de teste: REAI-F, RAI-F, notas, nota técnica, parecer, planejamento, matriz e reunião de busca conjunta.', 'Se quiser, exclua também os seis itens de teste.'],
+        esperado: ['Todos são excluídos, sem mensagem de erro.'] }
+    ]}
+  ];
+
+  // Suíte de salvamento: mesmo roteiro para os seis documentos
+  [['SAV-01', 'RAI-P / REAI-P', 'no RAI-P do item {PAINT} (ou no REAI-P do item {EXTRA})'],
+   ['SAV-02', 'RAI-F / REAI-F', 'no RAI-F do item {PAINT} (ou no REAI-F do item {EXTRA})'],
+   ['SAV-03', 'Nota de Auditoria Preliminar', 'na nota preliminar do item {NOTAS}'],
+   ['SAV-04', 'Nota de Auditoria Final', 'na nota final do item {NOTAS}'],
+   ['SAV-05', 'Nota Técnica', 'na nota técnica do item {NTEC}'],
+   ['SAV-06', 'Parecer', 'no parecer do item {PARECER}']].forEach(function (d) {
+    SUITES[4].casos.push({ id: d[0], amb: 'H', titulo: 'Salvamento automático: ' + d[1],
+      pre: 'Faça depois do teste que cria o documento.',
+      passos: ['Escreva “TESTE” e a hora atual em uma seção de texto ' + d[2] + '.', 'Espere aparecer “Salvo às hh:mm”.', 'Recarregue a página (F5).'],
+      esperado: ['O texto digitado continua lá.', 'Nenhuma mensagem de erro.'] });
+  });
+  SUITES[4].casos.push({ id: 'SAV-07', amb: 'H', titulo: 'Aviso de número repetido não trava a tela',
+    passos: ['No RAI-P do item {PAINT}, troque o número por um já usado por outro RAI do mesmo ano.', 'Clique em <b>Salvar</b>.', 'Volte o número ao original.'],
+    esperado: ['Aparece o aviso de número repetido.', 'A tela continua funcionando (não fica em branco nem travada).'] });
+
+  var STATUS = [
+    ['', 'Não executado', 'st-pend'],
+    ['ok', 'Passou', 'st-ok'],
+    ['falha', 'Falhou', 'st-falha'],
+    ['bloq', 'Bloqueado', 'st-bloq'],
+    ['na', 'Não se aplica', 'st-na']
+  ];
+  var TOKENS = { PAINT: 'item PAINT de teste', EXTRA: 'item EXTRA de teste', SEMTIPO: 'item sem tipo de teste',
+                 NOTAS: 'item das notas', NTEC: 'item da nota técnica', PARECER: 'item do parecer' };
+  var KEY = 'sisaudin-testes-sistema-v1';
+
+  var state = load();
+  function load() {
+    try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') return { f: s.f || {}, r: s.r || {} }; } catch (e) {}
+    return { f: {}, r: {} };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function tok(html) {
+    return html.replace(/\{(PAINT|EXTRA|SEMTIPO|NOTAS|NTEC|PARECER)\}/g, function (_, k) {
+      var v = (state.f[k] || '').trim();
+      return '<b class="tok" data-tok="' + k + '">' + esc(v || TOKENS[k]) + '</b>';
+    });
+  }
+  function lista(tag, itens) { return '<' + tag + '>' + itens.map(function (i) { return '<li>' + tok(i) + '</li>'; }).join('') + '</' + tag + '>'; }
+
+  function render() {
+    var html = '';
+    SUITES.forEach(function (s) {
+      html += '<section class="suite" data-suite="' + s.id + '"><h2><span>' + s.titulo + '</span><span class="count"></span></h2>';
+      if (s.intro) html += '<p class="intro">' + s.intro + '</p>';
+      s.casos.forEach(function (c) {
+        var r = state.r[c.id] || {};
+        html += '<div class="case" data-id="' + c.id + '" data-amb="' + c.amb + '" data-st="' + (r.st || '') + '">';
+        html += '<div class="case-head"><span class="case-id">' + c.id + '</span><span class="case-title">' + c.titulo + '</span>' +
+                (c.amb === 'H' ? '<span class="tag h">Homologação</span>' : '<span class="tag hp">Homologação e produção</span>') + '</div>';
+        if (c.pre) html += '<p class="pre"><b>Antes:</b> ' + tok(c.pre) + '</p>';
+        html += '<div class="grid"><div><h3>Passos</h3>' + lista('ol', c.passos);
+        if (c.tabela) {
+          html += '<div class="tablewrap"><table><tr>' + c.tabela.cab.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr>' +
+                  c.tabela.linhas.map(function (l) { return '<tr>' + l.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+        }
+        html += '</div><div><h3>Resultado esperado</h3>' + lista('ul', c.esperado) + '</div></div>';
+        if (c.nota) html += '<p class="note">' + tok(c.nota) + '</p>';
+        html += '<div class="result"><select aria-label="Resultado de ' + c.id + '">' +
+                STATUS.map(function (o) { return '<option value="' + o[0] + '"' + ((r.st || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+                '</select><textarea placeholder="Observação (obrigatória se falhou: hora, documento, mensagem)" aria-label="Observação de ' + c.id + '">' + esc(r.obs || '') + '</textarea></div>';
+        html += '</div>';
+      });
+      html += '</section>';
+    });
+    document.getElementById('suites').innerHTML = html;
+  }
+
+  function refreshTokens() {
+    document.querySelectorAll('b.tok').forEach(function (b) {
+      var k = b.getAttribute('data-tok'); var v = (state.f[k] || '').trim();
+      b.textContent = v || TOKENS[k];
+    });
+  }
+
+  function todos() { var a = []; SUITES.forEach(function (s) { s.casos.forEach(function (c) { a.push({ s: s, c: c }); }); }); return a; }
+
+  function resumo() {
+    var cont = { '': 0, ok: 0, falha: 0, bloq: 0, na: 0 };
+    todos().forEach(function (x) { var st = (state.r[x.c.id] || {}).st || ''; cont[st]++; });
+    document.getElementById('chips').innerHTML = STATUS.map(function (o) {
+      return '<span class="chip ' + o[2] + '">' + o[1] + ': ' + cont[o[0]] + '</span>';
+    }).join('');
+    SUITES.forEach(function (s) {
+      var feitos = s.casos.filter(function (c) { return (state.r[c.id] || {}).st; }).length;
+      var falhas = s.casos.filter(function (c) { return (state.r[c.id] || {}).st === 'falha'; }).length;
+      var el = document.querySelector('section[data-suite="' + s.id + '"] .count');
+      if (el) el.textContent = feitos + ' de ' + s.casos.length + ' executados' + (falhas ? ' · ' + falhas + ' com falha' : '');
+    });
+    return cont;
+  }
+
+  function aplicarFiltro() {
+    var so = document.getElementById('onlyProd').checked;
+    document.querySelectorAll('.case').forEach(function (el) {
+      el.classList.toggle('hidden', so && el.getAttribute('data-amb') !== 'HP');
+    });
+    document.getElementById('prodBanner').classList.toggle('show', state.f.ambiente === 'Produção');
+  }
+
+  function rotulo(st) { for (var i = 0; i < STATUS.length; i++) if (STATUS[i][0] === st) return STATUS[i][1]; return 'Não executado'; }
+  function textoItem(c) { return c.titulo; }
+
+  function textoResultado() {
+    var cont = resumo(), f = state.f, out = [];
+    out.push('Testes de sistema Sisaudin — alterações de outubro/2026');
+    out.push('Quem testou: ' + (f.testador || '-') + ' | Data: ' + (f.data || '-') + ' | Ambiente: ' + (f.ambiente || 'Homologação') + ' | Navegador: ' + (f.navegador || '-'));
+    out.push('Passou: ' + cont.ok + ' | Falhou: ' + cont.falha + ' | Bloqueado: ' + cont.bloq + ' | Não se aplica: ' + cont.na + ' | Não executado: ' + cont['']);
+    var problemas = todos().filter(function (x) { var st = (state.r[x.c.id] || {}).st; return st === 'falha' || st === 'bloq'; });
+    if (problemas.length) {
+      out.push(''); out.push('Falhas e bloqueios:');
+      problemas.forEach(function (x) { var r = state.r[x.c.id]; out.push('- ' + x.c.id + ' ' + textoItem(x.c) + ' [' + rotulo(r.st) + ']: ' + (r.obs || '(sem observação)')); });
+    }
+    out.push(''); out.push('Todos os testes:');
+    todos().forEach(function (x) { var r = state.r[x.c.id] || {}; out.push(x.c.id + ' — ' + rotulo(r.st || '') + (r.obs ? ' — ' + r.obs.replace(/\s+/g, ' ') : '')); });
+    return out.join('\n');
+  }
+
+  function csv() {
+    function cel(v) { v = String(v == null ? '' : v); return '"' + v.replace(/"/g, '""') + '"'; }
+    var f = state.f, linhas = [['Suíte', 'Teste', 'Título', 'Ambiente do teste', 'Resultado', 'Observação', 'Quem testou', 'Data', 'Ambiente', 'Navegador']];
+    todos().forEach(function (x) {
+      var r = state.r[x.c.id] || {};
+      linhas.push([x.s.titulo, x.c.id, x.c.titulo, x.c.amb === 'H' ? 'Homologação' : 'Homologação e produção', rotulo(r.st || ''), r.obs || '',
+                   f.testador || '', f.data || '', f.ambiente || 'Homologação', f.navegador || '']);
+    });
+    var conteudo = '﻿' + linhas.map(function (l) { return l.map(cel).join(';'); }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([conteudo], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'testes-sisaudin-' + (f.data || 'resultado') + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  // Campos do topo
+  document.querySelectorAll('[data-field]').forEach(function (el) {
+    var k = el.getAttribute('data-field');
+    if (state.f[k] != null) el.value = state.f[k];
+    else if (k === 'ambiente') state.f[k] = el.value;
+    el.addEventListener('input', function () {
+      state.f[k] = el.value; save(); refreshTokens();
+      if (k === 'ambiente') {
+        if (el.value === 'Produção') document.getElementById('onlyProd').checked = true;
+        aplicarFiltro();
+      }
+    });
+    el.addEventListener('change', function () { el.dispatchEvent(new Event('input')); });
+  });
+
+  render();
+
+  document.getElementById('suites').addEventListener('change', function (e) {
+    var caseEl = e.target.closest('.case'); if (!caseEl) return;
+    var id = caseEl.getAttribute('data-id'); var r = state.r[id] || (state.r[id] = {});
+    if (e.target.tagName === 'SELECT') { r.st = e.target.value; caseEl.setAttribute('data-st', r.st); }
+    save(); resumo();
+  });
+  document.getElementById('suites').addEventListener('input', function (e) {
+    if (e.target.tagName !== 'TEXTAREA') return;
+    var id = e.target.closest('.case').getAttribute('data-id');
+    (state.r[id] || (state.r[id] = {})).obs = e.target.value; save();
+  });
+
+  document.getElementById('onlyProd').checked = state.f.ambiente === 'Produção';
+  document.getElementById('onlyProd').addEventListener('change', aplicarFiltro);
+
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var t = textoResultado(), btn = this;
+    function ok() { btn.textContent = 'Copiado'; setTimeout(function () { btn.textContent = 'Copiar resultado'; }, 1500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, function () { window.prompt('Copie o texto:', t); });
+    else window.prompt('Copie o texto:', t);
+  });
+  document.getElementById('csvBtn').addEventListener('click', csv);
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('Apagar todos os resultados e campos preenchidos nesta página?')) return;
+    state = { f: { ambiente: 'Homologação' }, r: {} }; save();
+    document.querySelectorAll('[data-field]').forEach(function (el) { el.value = el.tagName === 'SELECT' ? 'Homologação' : ''; });
+    document.getElementById('onlyProd').checked = false;
+    render(); resumo(); aplicarFiltro();
+  });
+
+  resumo(); aplicarFiltro();
+})();
+</script>
+</body>
+</html>
