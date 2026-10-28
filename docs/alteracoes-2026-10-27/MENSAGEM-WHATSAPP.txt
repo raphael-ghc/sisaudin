@@ -1,0 +1,25 @@
+*Sisaudin atualizado* ✅
+
+Pessoal, o Sisaudin foi atualizado. No primeiro acesso, apertem *Ctrl+F5*.
+
+*O que mudou:*
+
+📄 *RAI x REAI:* item PAINT gera RAI e item EXTRA gera REAI (Relatório Especial), com numeração própria. O menu "Criar Documento" só libera o relatório certo. Item sem tipo não gera relatório.
+
+🔢 *Relatórios antigos de itens EXTRA* passaram a REAI e foram renumerados por ordem de criação:
+• IT-51 → REAI 01/2025
+• IT-52 → REAI 02/2025
+• IT-79 → REAI 01/2026
+• IT-91 (era RAI 11/2026) → REAI 02/2026
+• IT-89 (era RAI 12/2026) → REAI 03/2026
+Os relatórios de itens PAINT não mudaram.
+
+💾 *Salvamento automático* voltou a funcionar nos relatórios, nas notas e no Parecer. Esperem aparecer "Salvo às hh:mm" antes de sair da tela.
+
+📝 *Parecer* agora segue o modelo oficial: Introdução, Objetivo, Escopo, Análise dos Fatos (opcional), Conclusão e Anexos. Sem constatações e recomendações.
+
+📋 *Planejamento:* as gerências destinatárias ficam gravadas, e o erro que às vezes impedia salvar foi corrigido.
+
+🛠️ *Outras correções:* o RAI-F não dá mais erro depois de criado, a exclusão de documentos pela lista de itens funciona, os textos iniciais das notas são gravados e anexos de até 50 MB são aceitos.
+
+Problemas? Mandem a hora, o documento e um print da mensagem. 🙏

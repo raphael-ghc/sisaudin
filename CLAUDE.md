@@ -49,6 +49,8 @@ Cada item de trabalho (PAINT ou EXTRA) recebe documentos: OS, CA, SAI, Planejame
 
 ## Levar alterações para produção
 
+Proposta de processo (ramos, versões, build, CI/CD), ainda não adotada: `docs/PROCESSO-GCS-DEVOPS.md`.
+
 O histórico do que foi alterado aqui, com regras, roteiro de implantação, prompts e pacote de arquivos, fica em `docs/alteracoes-<data>/`. Entregas, na ordem em que devem ser aplicadas:
 
 - `docs/alteracoes-2026-10-08/` — REAI e endereço da API configurável.
@@ -57,4 +59,4 @@ O histórico do que foi alterado aqui, com regras, roteiro de implantação, pro
 - `docs/alteracoes-2026-10-22/` — correção (só front): salvamento automático de RAI-P, RAI-F, notas e parecer; exclusão de documentos pela lista de itens.
 - `docs/alteracoes-2026-10-23/` — correção (só front): após criar, RAI-F/REAI-F ia para `/relatorio/{id}` (404) e as notas preliminar, final e técnica abriam a tela `Nota`. Na mesma pasta, `CAMPOS-NAO-SALVOS.md` (backend + front + tabela nova): textos iniciais das notas preliminar/final, perda de edições no Planejamento, gerências destinatárias do Planejamento gravadas e Parecer reestruturado (sem constatações; objetivo, escopo e análise editáveis e recarregados). E `PLANEJAMENTO-NAO-SALVA.md` (backend): 400 ao salvar Planejamento/Matriz/Reunião de Busca Conjunta depois de salvar um item de trabalho (`allowSetters` em `Documento.itemTrabalho`).
 - `docs/alteracoes-2026-10-26/` — dados (script SQL, sem mudança de código): relatórios de itens EXTRA passam a REAI, com a sequência REAI renumerada por ano na ordem de criação. Substitui a regra de 09/10 de manter os relatórios antigos como estão. Rodar depois da primeira subida da versão nova.
-- `docs/alteracoes-2026-10-27/CHECKLIST-PRODUCAO.html` — roteiro da implantação em produção (servidor 172.16.253.238, banco `sisaudin_novo_v10`): artefatos, configuração externa, backup, subida, scripts REAI, nginx, testes, conferências e plano de volta. Na mesma pasta, `TESTES-SISTEMA.html`: suítes de teste para o usuário validar as entregas de 08/10 a 26/10 no navegador (53 casos; os marcados "Homologação e produção" só consultam). Ao mudar uma regra coberta ali, atualize o caso correspondente.
+- `docs/alteracoes-2026-10-27/CHECKLIST-PRODUCAO.html` — roteiro da implantação em produção (servidor 172.16.253.238, banco `sisaudin_novo_v10`): artefatos, configuração externa, backup, subida, scripts REAI, nginx, testes, conferências e plano de volta. Na mesma pasta, `TESTES-SISTEMA.html`: suítes de teste para o usuário validar as entregas de 08/10 a 26/10 no navegador (53 casos; os marcados "Homologação e produção" só consultam). Ao mudar uma regra coberta ali, atualize o caso correspondente. Também na pasta: `CONTROLE-VERSAO.md` (notas da versão 2026.10), `ORIENTACOES-USUARIOS.md` (guia para a equipe) e `MENSAGEM-WHATSAPP.txt` (aviso curto).
