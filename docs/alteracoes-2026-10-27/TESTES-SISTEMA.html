@@ -312,7 +312,13 @@
         esperado: ['A matriz é criada, sem mensagem de erro.', 'O campo preenchido continua lá depois de recarregar.'] },
       { id: 'PLA-08', amb: 'H', titulo: 'Reunião de Busca Conjunta depois de salvar um item',
         passos: ['Salve de novo o item {PAINT}.', 'Escolha <b>Criar Documento → Resultado de Reunião de Busca Conjunta</b>. Se pedir justificativa, preencha e continue.'],
-        esperado: ['A reunião é criada, sem mensagem de erro.'] }
+        esperado: ['A reunião é criada, sem mensagem de erro.'] },
+      { id: 'PLA-09', amb: 'HP', titulo: 'Equipe de auditoria aparece no Planejamento (29/10)',
+        passos: ['Abra o Planejamento já existente de um item que tenha equipe cadastrada (veja a equipe na tela do item).', 'Confira a seção “I. Destinatário(s) - Responsáveis pelo Trabalho”, na tela e no PDF.'],
+        esperado: ['“Equipe de Auditoria” lista os mesmos nomes da equipe do item.', 'Não aparece “Não informado”.'] },
+      { id: 'PLA-10', amb: 'HP', titulo: 'Horas de trabalho = horas previstas do item (29/10)',
+        passos: ['No mesmo Planejamento, confira “Horas de Trabalho” em “II. Dados Gerais”, na tela e no PDF.', 'Compare com “Horas Previstas” na tela do item. Repita na Ordem de Serviço do item.'],
+        esperado: ['O valor é igual ao “Horas Previstas” do item (total da equipe), e não 420 fixo.', 'Em item sem horas previstas aparece “Não informado”.'] }
     ]},
     { id: 'PAR', titulo: '9. Parecer', intro: 'Decisão da área: o Parecer segue o modelo oficial (ex.: Parecer 01/2026), sem constatações nem recomendações.', casos: [
       { id: 'PAR-01', amb: 'HP', titulo: 'Seções do editor',

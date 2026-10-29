@@ -1,0 +1,18 @@
+Versão 2026.10.1.0.1: equipe e horas no Planejamento
+
+Correção pequena sobre a 2026.10.1, só no front.
+
+- Planejamento: a Equipe de Auditoria aparecia como "Não informado" ao
+  abrir um Planejamento já criado. O item que vem dentro do documento
+  chega sem a equipe; a tela agora busca o item completo pela rota
+  /api/item-trabalho/{id}.
+- Planejamento: as Horas de Trabalho mostravam sempre 420 (valor fixo,
+  lido de um campo inexistente). Agora mostram o horasPrevistas do item,
+  que já é o total da equipe (regra confirmada pela área em 29/10).
+- Ordem de Serviço: deixa de mostrar 420 quando o item não tem horas.
+
+Servidor: atualizar só a pasta html do nginx. Backend, banco e nginx.conf
+não mudam.
+
+Notas: docs/alteracoes-2026-10-29/ (relatório, controle de versão, patch).
+Testes: PLA-09 e PLA-10 em docs/alteracoes-2026-10-27/TESTES-SISTEMA.html.

@@ -246,6 +246,19 @@ export default function Planejamento() {
     }
   }, [formData.itemTrabalho?.id, formData.itemTrabalhoId, itemTrabalho?.id, itemTrabalhoIdParam, id]);
 
+  // O item que vem dentro do planejamento chega sem a equipe (o backend a omite nos documentos).
+  // Busca o item pela rota própria para ter equipe, responsável e horas completos.
+  const carregarItemCompleto = async (itemId) => {
+    if (!itemId) return;
+    try {
+      const resIt = await getItemTrabalhoById(itemId);
+      const it = resIt?.data?.data || resIt?.data || resIt;
+      if (it && it.id) setItemTrabalho(it);
+    } catch (e) {
+      console.warn('Não foi possível carregar o item de trabalho completo', e);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     setIsInitialLoad(true);
@@ -265,6 +278,7 @@ export default function Planejamento() {
 
           if (plan.itemTrabalho) {
             setItemTrabalho(plan.itemTrabalho);
+            await carregarItemCompleto(plan.itemTrabalho.id);
           }
         }
       } else if (itemTrabalhoIdParam) {
@@ -284,6 +298,7 @@ export default function Planejamento() {
 
             if (plan.itemTrabalho) {
               setItemTrabalho(plan.itemTrabalho);
+              await carregarItemCompleto(plan.itemTrabalho.id);
             }
             setLoading(false);
             setIsInitialLoad(false);
@@ -863,7 +878,7 @@ export default function Planejamento() {
           <span>{itemTrabalho?.riscoItem || 'Médio'}</span>
 
           <span className="font-bold text-gray-800">Horas de Trabalho</span>
-          <span>{itemTrabalho?.horasTrabalho || '420'}</span>
+          <span>{itemTrabalho?.horasPrevistas ?? 'Não informado'}</span>
 
           <span className="font-bold text-gray-800">Objeto Auditado</span>
           <span>{itemTrabalho?.objetoAuditado || '-'}</span>

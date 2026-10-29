@@ -1088,7 +1088,7 @@ export default function OrdemServico() {
                       <tr>
                         <td className="py-1.5 pr-4 font-bold text-[#14532d]">Horas de Trabalho</td>
                         <td className="py-1.5 text-gray-800">
-                          {selectedItemData?.horasPrevistas || '420'}
+                          {selectedItemData?.horasPrevistas ?? 'Não informado'}
                         </td>
                       </tr>
                     </tbody>
