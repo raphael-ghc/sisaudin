@@ -184,13 +184,15 @@ public class FluxoDocumentoService {
                 .rotaCriacao("/RelatorioPreliminar?tipo=preliminar&especial=true&itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 
-        // Regra C: Matriz Achados (habilitada mesmo sem Planejamento, solicitando justificativa)
+        // Regra C: Matriz de Achados só com Planejamento (as questões vêm dele; decisão da área, 06/11/2026)
         opcoes.put("MATRIZ_ACHADOS", DocumentoOpcaoDTO.builder()
                 .codigo("MATRIZ_ACHADOS")
                 .nome("Matriz de Achados")
-                .habilitado(!existeMatrizAchados && !existeDocSemPlanejamento)
-                .motivoInabilitado(existeMatrizAchados ? "Já existe uma Matriz de Achados criada" : (existeDocSemPlanejamento ? "Exigida apenas para Relatório de Auditoria Preliminar" : null))
-                .modalVerificacao(!existePlanejamento ? "B2_PLANEJAMENTO_OPCIONAL" : null)
+                .habilitado(!existeMatrizAchados && !existeDocSemPlanejamento && existePlanejamento)
+                .motivoInabilitado(existeMatrizAchados ? "Já existe uma Matriz de Achados criada"
+                        : (existeDocSemPlanejamento ? "Exigida apenas para Relatório de Auditoria Preliminar"
+                        : (!existePlanejamento ? "Crie o Planejamento antes: as questões da Matriz de Achados vêm dele" : null)))
+                .modalVerificacao(null)
                 .rotaCriacao("/matriz-achados?itemTrabalhoId=" + itemTrabalhoId)
                 .build());
 

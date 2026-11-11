@@ -33,8 +33,7 @@ export default function Planejamento() {
   const [showDuplicateModal, setShowDuplicateModal] = useState({ isOpen: false });
 
   const acceptSuggestion = (newNumero, newAno) => {
-    setNumero(newNumero);
-    setAno(newAno);
+    setFormData(prev => ({ ...prev, numero: newNumero, ano: newAno || prev.ano }));
     setShowDuplicateModal({ isOpen: false });
   };
 
@@ -100,6 +99,7 @@ export default function Planejamento() {
   const [gerenciasDb, setGerenciasDb] = useState([]);
   const [tecnicasDb, setTecnicasDb] = useState([]);
   const [riscosDb, setRiscosDb] = useState([]);
+  const [tiposAuditoriaDb, setTiposAuditoriaDb] = useState([]);
 
   useEffect(() => {
     const fetchCombos = async () => {
@@ -110,35 +110,73 @@ export default function Planejamento() {
         return Array.isArray(list) ? list : [];
       };
 
-      const mapToString = (item) => {
-        if (!item) return null;
-        if (typeof item === 'string') return item;
-        return item.nome || item.titulo || item.descricao || item.id || JSON.stringify(item);
-      };
+      // Gerências, técnicas e riscos são gravados pelo id do cadastro (objetos com id e nome).
+      const soComId = (lista) => lista.filter(x => x && typeof x === 'object' && x.id != null);
 
       try {
         const gerResponse = await getAllGerencias(0, 1000);
-        setGerenciasDb(extractList(gerResponse));
+        setGerenciasDb(soComId(extractList(gerResponse)));
       } catch (error) {
         console.error('Erro ao buscar gerencias:', error);
       }
 
       try {
         const tecResponse = await getAllGeneric('tecnica-de-auditoria', 0, 1000);
-        setTecnicasDb(extractList(tecResponse).map(mapToString).filter(Boolean));
+        setTecnicasDb(soComId(extractList(tecResponse)));
       } catch (error) {
         console.error('Erro ao buscar tecnicas:', error);
       }
 
       try {
         const risResponse = await getAllGeneric('tipo-de-risco', 0, 1000);
-        setRiscosDb(extractList(risResponse).map(mapToString).filter(Boolean));
+        setRiscosDb(soComId(extractList(risResponse)));
       } catch (error) {
         console.error('Erro ao buscar riscos:', error);
+      }
+
+      try {
+        const tiposResponse = await getAllGeneric('tipo-de-auditoria', 0, 1000);
+        setTiposAuditoriaDb(soComId(extractList(tiposResponse)));
+      } catch (error) {
+        console.error('Erro ao buscar tipos de auditoria:', error);
       }
     };
     fetchCombos();
   }, []);
+
+  // Só itens ativos aparecem para escolha; os já escolhidos continuam aparecendo mesmo se inativados.
+  const ativo = (x) => !['desabilitado', 'inativo', 'inativa', 'inactive'].includes(String(x?.status || '').trim().toLowerCase());
+  const porNome = (a, b) => String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR');
+  const gerenciasAtivas = gerenciasDb.filter(ativo).sort((a, b) => String(a.sigla || a.nome).localeCompare(String(b.sigla || b.nome), 'pt-BR'));
+  const tecnicasAtivas = tecnicasDb.filter(ativo).sort(porNome);
+  const riscosAtivos = riscosDb.filter(ativo).sort(porNome);
+  const tiposAuditoriaAtivos = tiposAuditoriaDb.filter(ativo).sort(porNome);
+
+  // Serviço de Auditoria = tipo de serviço do item de trabalho (só leitura aqui; alterar no item).
+  const servicoAuditoria = () => {
+    const s = itemTrabalho?.tipoServico;
+    return (typeof s === 'string' ? s : (s?.nome || s?.descricao)) || '';
+  };
+
+  const rotuloGerencia = (g) => {
+    if (!g) return '';
+    if (typeof g === 'string') return g;
+    return g.sigla ? `${g.sigla} - ${g.nome || ''}` : (g.nome || '');
+  };
+  const listaNomes = (lista, rotulo = (x) => x?.nome || '') =>
+    (Array.isArray(lista) ? lista : []).map(rotulo).filter(Boolean);
+
+  // Número no documento: "Planejamento nº 03/2026" ou "Planejamento s/n" (sem número definido).
+  const rotuloDocumento = () => (formData.numero
+    ? `Planejamento nº ${String(formData.numero).padStart(2, '0')}/${formData.ano || new Date().getFullYear()}`
+    : 'Planejamento s/n');
+
+  // Chave estável das questões na tela (as novas só ganham id depois do salvamento automático).
+  const novaChave = () => `q${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
+  const comChaves = (questoes) => (questoes || []).map(q => ({ ...q, _k: q._k || novaChave() }));
+
+  // Seção dos anexos de cada questão: pelo id da questão, para não trocar de questão ao reordenar.
+  const secaoAnexoQuestao = (q, parte) => (q?.id ? `Questão Planejamento ${q.id} - ${parte}` : null);
 
   const fetchAnexos = async (itemId) => {
     if (!itemId) return;
@@ -195,7 +233,17 @@ export default function Planejamento() {
     }
   };
 
-  const getAnexosBySecao = (secao) => anexos.filter(a => a.secao === secao);
+  const getAnexosBySecao = (secao) => (secao ? anexos.filter(a => a.secao === secao) : []);
+
+  // Anexos das questões ficam ligados ao id da questão; a questão nova ganha id no salvamento automático.
+  const uploadAnexoQuestao = (file, q, parte) => {
+    const secao = secaoAnexoQuestao(q, parte);
+    if (!secao) {
+      toast.info('Aguarde alguns segundos: a questão está sendo salva. Depois disso, anexe o arquivo.');
+      return;
+    }
+    return handleUploadAnexo(file, secao);
+  };
 
   const [formData, setFormData] = useState({
     id: null,
@@ -204,7 +252,7 @@ export default function Planejamento() {
     numero: null,
     status: 'Minuta',
     dataEmissao: new Date().toISOString().split('T')[0],
-    tipoAuditoria: 'Avaliação',
+    tiposAuditoria: [],
     escopo: '',
     descricaoObjetoAuditado: '',
     principaisRiscos: '',
@@ -266,7 +314,7 @@ export default function Planejamento() {
       if (id && id !== 'novo') {
         const plan = await getPlanejamentoById(id);
         if (plan) {
-          const questList = plan.questoes || [];
+          const questList = comChaves(plan.questoes);
           setFormData(prev => ({
             ...prev,
             ...plan,
@@ -286,7 +334,7 @@ export default function Planejamento() {
           const listPlan = await getPlanejamentoByItemTrabalho(itemTrabalhoIdParam);
           if (Array.isArray(listPlan) && listPlan.length > 0) {
             const plan = listPlan[0];
-            const questList = plan.questoes || [];
+            const questList = comChaves(plan.questoes);
             setFormData(prev => ({
               ...prev,
               ...plan,
@@ -315,7 +363,8 @@ export default function Planejamento() {
           setFormData(prev => ({
             ...prev,
             itemTrabalho: it,
-            tipoAuditoria: it.tipoItem?.nome || it.tipoItem?.descricao || 'Avaliação'
+            // Planejamento novo: começa com as gerências cadastradas no item de trabalho.
+            gerenciasDestinatarias: Array.isArray(it.gerencias) ? it.gerencias.filter(g => g && g.id != null) : []
           }));
         }
       }
@@ -351,13 +400,29 @@ export default function Planejamento() {
       dataFinal: parseDateOrNull(data.dataFinal),
       itemTrabalho: targetItemId ? { id: Number(targetItemId) } : null,
       itemTrabalhoId: targetItemId ? Number(targetItemId) : null,
+      ano: data.ano ? Number(data.ano) : null,
+      numero: data.numero ? Number(data.numero) : null,
+      // Cadastros vão só pelo id; a ordem da lista é a ordem gravada.
+      gerenciasDestinatarias: soIds(data.gerenciasDestinatarias),
+      tiposAuditoria: soIds(data.tiposAuditoria),
       questoes: (data.questoes || []).map(q => ({
-        ...q,
-        tecnicas: Array.isArray(q.tecnicas) ? q.tecnicas.join(', ') : (q.tecnicas || ''),
-        riscos: Array.isArray(q.riscos) ? q.riscos.join(', ') : (q.riscos || '')
+        id: q.id || null,
+        conteudo: q.conteudo || q.questao || '',
+        questao: q.conteudo || q.questao || '',
+        criterios: q.criterios || q.criterio || '',
+        criterio: q.criterios || q.criterio || '',
+        fato: q.fato ?? null,
+        anexo: q.anexo ?? null,
+        gerencias: soIds(q.gerencias),
+        tecnicas: soIds(q.tecnicas),
+        riscos: soIds(q.riscos)
       }))
     };
   };
+
+  const soIds = (lista) => (Array.isArray(lista) ? lista : [])
+    .filter(x => x && typeof x === 'object' && x.id != null)
+    .map(x => ({ id: x.id }));
 
   // Após salvar, completa só o que o formulário ainda não tem (id, dataCriacao, ids das questões novas).
   // Não sobrescreve o conteúdo com a resposta: o que foi digitado durante a requisição continua valendo,
@@ -401,6 +466,8 @@ export default function Planejamento() {
       } catch (error) {
         console.error('Erro ao salvar planejamento automaticamente:', error);
         setAutoSaveStatus('erro');
+        const msg = error?.response?.data?.error;
+        if (msg) toast.error(msg, { toastId: 'planejamento-erro-salvar' });
       }
     }, 3000),
     []
@@ -441,7 +508,7 @@ export default function Planejamento() {
     formData.questoes,
     formData.gerenciasDestinatarias,
     formData.status,
-    formData.tipoAuditoria,
+    formData.tiposAuditoria,
     formData.dataEmissao,
     formData.ano,
     formData.numero
@@ -452,15 +519,27 @@ export default function Planejamento() {
     setFormData(nextFormData);
   };
 
+  const handleCarregarGerenciasDoItem = () => {
+    const doItem = (itemTrabalho?.gerencias || []).filter(g => g && g.id != null);
+    const atuais = formData.gerenciasDestinatarias || [];
+    const novas = doItem.filter(g => !atuais.some(a => a.id === g.id));
+    if (novas.length === 0) {
+      toast.info('As gerências do item de trabalho já estão na lista.');
+      return;
+    }
+    handleChange('gerenciasDestinatarias', [...atuais, ...novas]);
+  };
+
   // Gerenciamento de Questões na mesma página
   const handleAddQuestao = () => {
+    // A questão nova começa com as gerências destinatárias do documento; dá para tirar ou incluir outras.
     const novaQuestao = {
-      gerenciaDestinataria: itemTrabalho?.gerencias?.[0] || 'Gerência de Auditoria Interna - GAI',
+      _k: novaChave(),
+      gerencias: [...(formData.gerenciasDestinatarias || [])],
       conteudo: '',
       criterios: '',
       tecnicas: [],
-      riscos: [],
-      fato: ''
+      riscos: []
     };
     const novasQuestoes = [...(formData.questoes || []), novaQuestao];
     const nextFormData = { ...formData, questoes: novasQuestoes };
@@ -472,7 +551,23 @@ export default function Planejamento() {
     }
   };
 
-  const handleRemoveQuestao = (index) => {
+  // Questão que já tem fatos na Matriz de Achados não pode ser excluída (o backend também recusa).
+  const handleRemoveQuestao = async (index) => {
+    const questao = (formData.questoes || [])[index];
+    if (questao?.id && formData.id) {
+      try {
+        const res = await api.get(`/matriz-achados/planejamento/${formData.id}/questoes-com-fatos`);
+        if (Array.isArray(res.data) && res.data.includes(questao.id)) {
+          toast.error(`A questão nº ${index + 1} já tem fatos na Matriz de Achados e não pode ser excluída.`);
+          return;
+        }
+      } catch (e) {
+        console.error('Erro ao verificar a Matriz de Achados', e);
+        toast.error('Não foi possível verificar a Matriz de Achados. Tente de novo.');
+        return;
+      }
+    }
+    if (!window.confirm(`Excluir a questão nº ${index + 1} do Planejamento?`)) return;
     const novasQuestoes = (formData.questoes || []).filter((_, i) => i !== index);
     const nextFormData = { ...formData, questoes: novasQuestoes };
     setFormData(nextFormData);
@@ -513,10 +608,7 @@ export default function Planejamento() {
     atual[field] = value;
     // Replica nomes para compatibilidade com o modelo
     if (field === 'conteudo') atual.questao = value;
-    if (field === 'gerenciaDestinataria') atual.gerencia = value;
     if (field === 'criterios') atual.criterio = value;
-    if (field === 'tecnicas') atual.tecnicas = Array.isArray(value) ? value.join(', ') : (value || '');
-    if (field === 'riscos') atual.riscos = Array.isArray(value) ? value.join(', ') : (value || '');
 
     novasQuestoes[index] = atual;
     const nextFormData = { ...formData, questoes: novasQuestoes };
@@ -527,58 +619,72 @@ export default function Planejamento() {
     }
   };
 
-  const handleCheckboxQuestaoChange = (index, field, item) => {
-    const atualObj = formData.questoes[index] || {};
-    let atualLista = [];
-    const rawVal = atualObj[field];
-    if (Array.isArray(rawVal)) {
-      atualLista = [...rawVal];
-    } else if (typeof rawVal === 'string' && rawVal.trim() !== '') {
-      atualLista = rawVal.split(',').map(s => s.trim());
-    }
-
-    const pos = atualLista.indexOf(item);
-    if (pos > -1) {
-      atualLista.splice(pos, 1);
-    } else {
-      atualLista.push(item);
-    }
-    handleQuestaoChange(index, field, atualLista.join(', '));
-  };
-
-  const isCheckboxChecked = (index, field, item) => {
-    const atualObj = formData.questoes[index] || {};
-    const rawVal = atualObj[field];
-    if (Array.isArray(rawVal)) return rawVal.includes(item);
-    if (typeof rawVal === 'string' && rawVal.trim() !== '') {
-      return rawVal.split(',').map(s => s.trim()).includes(item);
-    }
-    return false;
-  };
-
+  // Listas da questão ligadas aos cadastros (gerencias, tecnicas, riscos): objetos com id.
   const getQuestaoArrayField = (q, field) => {
-    if (!q) return [];
-    const val = q[field];
-    if (Array.isArray(val)) return val;
-    if (typeof val === 'string' && val.trim() !== '') {
-      return val.split(',').map(s => s.trim());
-    }
-    return [];
+    const val = q?.[field];
+    return Array.isArray(val) ? val.filter(x => x && typeof x === 'object' && x.id != null) : [];
   };
 
   const handleAddQuestaoItem = (qIndex, field, item) => {
-    if (!item) return;
+    if (!item || item.id == null) return;
     const list = getQuestaoArrayField(formData.questoes[qIndex] || {}, field);
-    if (!list.includes(item)) {
-      const newList = [...list, item];
-      handleQuestaoChange(qIndex, field, newList.join(', '));
+    if (!list.some(x => x.id === item.id)) {
+      handleQuestaoChange(qIndex, field, [...list, item]);
     }
   };
 
   const handleRemoveQuestaoItem = (qIndex, field, item) => {
     const list = getQuestaoArrayField(formData.questoes[qIndex] || {}, field);
-    const newList = list.filter(i => i !== item);
-    handleQuestaoChange(qIndex, field, newList.join(', '));
+    handleQuestaoChange(qIndex, field, list.filter(x => x.id !== item.id));
+  };
+
+  // Uma linha de "etiquetas + seletor" para gerências, técnicas e riscos da questão.
+  const renderListaCadastro = (q, qIndex, field, { titulo, vazio, placeholder, opcoes, rotulo, cor }) => {
+    const selecionados = getQuestaoArrayField(q, field);
+    return (
+      <div className="p-4 bg-gray-50/70 border border-gray-200/80 rounded-xl">
+        <label className="block text-xs font-bold text-gray-700 uppercase mb-3">{titulo}</label>
+        <div className="border border-gray-300 rounded-md p-3 bg-white shadow-sm">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {selecionados.map((item) => (
+              <span
+                key={item.id}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${cor}`}
+              >
+                {rotulo(item)}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveQuestaoItem(qIndex, field, item)}
+                  className="font-bold focus:outline-none ml-1 opacity-70 hover:opacity-100"
+                  title="Remover"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {selecionados.length === 0 && (
+              <span className="text-xs text-gray-400 italic py-1">{vazio}</span>
+            )}
+          </div>
+          <div className="border-t border-gray-100 pt-2">
+            <SearchableSelect
+              placeholder={placeholder}
+              value=""
+              options={opcoes
+                .filter(o => !selecionados.some(s => s.id === o.id))
+                .map(o => ({ value: o.id, label: rotulo(o) }))}
+              onChange={(val) => handleAddQuestaoItem(qIndex, field, opcoes.find(o => String(o.id) === String(val)))}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Gerências da questão: primeiro as destinatárias do documento, depois as demais do cadastro.
+  const opcoesGerenciaQuestao = () => {
+    const doDocumento = (formData.gerenciasDestinatarias || []).filter(g => g && g.id != null);
+    return [...doDocumento, ...gerenciasAtivas.filter(g => !doDocumento.some(d => d.id === g.id))];
   };
 
   const handleToggleSection = (key) => {
@@ -724,7 +830,7 @@ export default function Planejamento() {
         </html>
       `;
 
-      const docNameStr = `Planejamento nº ${formData.numero ? String(formData.numero).padStart(2, '0') : '02'}/${formData.ano || new Date().getFullYear()}`;
+      const docNameStr = rotuloDocumento();
       
       const response = await api.post('/pdf/gerar-sem-sumario', { 
         html: htmlContent, docName: docNameStr, docVersion: 'Versão preliminar' 
@@ -784,20 +890,6 @@ export default function Planejamento() {
     return `${sigla} ${ano}/${num}`.trim();
   };
 
-  const parseLista = (val) => {
-    if (!val) return '';
-    if (Array.isArray(val)) return val.join(', ');
-    if (typeof val === 'string') {
-      try {
-        const parsed = JSON.parse(val);
-        if (Array.isArray(parsed)) return parsed.join(', ');
-      } catch (e) {
-        return val;
-      }
-    }
-    return String(val);
-  };
-
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center min-h-[400px]">
@@ -822,7 +914,7 @@ export default function Planejamento() {
         {/* TÍTULO PRINCIPAL */}
         <div className="text-center my-6">
           <h1 className="text-2xl font-bold text-[#14532d] tracking-wide m-0">
-            Planejamento nº {formData.numero || '02'}/{formData.ano || new Date().getFullYear()}
+            {rotuloDocumento()}
           </h1>
         </div>
 
@@ -865,8 +957,11 @@ export default function Planejamento() {
           <span className="font-bold text-gray-800">Item de Trabalho</span>
           <span>{getPaintRef()}</span>
 
-          <span className="font-bold text-gray-800">Tipo de Serviço</span>
-          <span>{formData.tipoAuditoria || 'Avaliação'}</span>
+          <span className="font-bold text-gray-800">Serviço de Auditoria</span>
+          <span>{servicoAuditoria() || 'Não informado'}</span>
+
+          <span className="font-bold text-gray-800">Tipo de Auditoria</span>
+          <span>{listaNomes(formData.tiposAuditoria).join(', ') || 'Não informado'}</span>
 
           <span className="font-bold text-gray-800">Origem da Demanda</span>
           <span>{itemTrabalho?.origemDemanda || 'Obrigação Legal'}</span>
@@ -1053,24 +1148,24 @@ export default function Planejamento() {
               </thead>
               <tbody>
                 {formData.questoes.map((q, idx) => (
-                  <tr key={idx} className="border-b border-gray-400 align-top hover:bg-gray-50/50">
+                  <tr key={q.id || q._k || idx} className="border-b border-gray-400 align-top hover:bg-gray-50/50">
                     <td className="p-2.5 border border-gray-400 font-bold text-center text-gray-700">
                       {idx + 1}
                     </td>
                     <td className="p-2.5 border border-gray-400 font-semibold text-gray-900">
-                      {q.gerenciaDestinataria || q.gerencia || '-'}
+                      {listaNomes(q.gerencias, g => g?.sigla || g?.nome).join(', ') || '-'}
                     </td>
                     <td className="p-2.5 border border-gray-400 text-gray-800">
                       <div className="leading-relaxed" dangerouslySetInnerHTML={{ __html: q.conteudo || q.questao || '-' }} />
                     </td>
                     <td className="p-2.5 border border-gray-400 text-gray-700">
                       <div className="whitespace-pre-wrap">
-                        {parseLista(q.riscos) || '-'}
+                        {listaNomes(q.riscos).join(', ') || '-'}
                       </div>
                     </td>
                     <td className="p-2.5 border border-gray-400 text-gray-700">
                       <div className="whitespace-pre-wrap">
-                        {parseLista(q.tecnicas) || '-'}
+                        {listaNomes(q.tecnicas).join(', ') || '-'}
                       </div>
                     </td>
                     <td className="p-2.5 border border-gray-400 text-gray-800">
@@ -1198,15 +1293,16 @@ export default function Planejamento() {
               </div>
             </header>
             {/* SANFONA 1: DADOS INICIAIS */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div 
-                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
+            {/* Sem overflow-hidden: as listas dos seletores (gerências, tipo de auditoria) abrem por cima das seções seguintes. */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+              <div
+                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors rounded-t-xl"
                 onClick={() => handleToggleSection('dadosIniciais')}
               >
                 <div className="flex items-center gap-3">
                   {openSections.dadosIniciais ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
                   <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">Vínculo com Item de Trabalho</h3>
+                  <h3 className="font-bold text-gray-900">I–II. Vínculo com o Item de Trabalho e Dados Gerais</h3>
                 </div>
               </div>
               {openSections.dadosIniciais && (
@@ -1234,7 +1330,7 @@ export default function Planejamento() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Ano do Planejamento</label>
                       <input
@@ -1252,51 +1348,61 @@ export default function Planejamento() {
                         className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={formData.numero || ''}
                         onChange={(e) => handleChange('numero', e.target.value.replace(/\D/g, ''))}
-                        placeholder="Ex: 123"
+                        onBlur={(e) => { if (e.target.value) validateNumero(e.target.value, formData.ano, formData.id, itemTrabalho?.id); }}
+                        placeholder="s/n — preencha o número"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Data Inicial</label>
-                      <input type="date" className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none" value={formData.dataInicialPlanejamento || ''} onChange={(e) => handleChange('dataInicialPlanejamento', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Data Final</label>
-                      <input type="date" className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none" value={formData.dataFinalPlanejamento || ''} onChange={(e) => handleChange('dataFinalPlanejamento', e.target.value)} />
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        O número é atribuído automaticamente ao criar o Planejamento. Sem número, o documento mostra "s/n".
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-6">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Gerências Destinatárias</label>
+                    <div className="flex items-center justify-between mb-2 gap-3">
+                      <label className="block text-sm font-semibold text-gray-700">Gerências Destinatárias</label>
+                      {Array.isArray(itemTrabalho?.gerencias) && itemTrabalho.gerencias.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleCarregarGerenciasDoItem}
+                          className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
+                          title="Acrescenta as gerências cadastradas no item de trabalho"
+                        >
+                          Carregar gerências do item de trabalho
+                        </button>
+                      )}
+                    </div>
                     <div className="border border-gray-300 rounded-md p-3 bg-white shadow-sm">
                       <div className="flex flex-wrap gap-2 mb-3">
                         {(formData.gerenciasDestinatarias || []).map((g) => (
-                          <span key={g} className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 shadow-sm">
-                            {g}
-                            <button 
+                          <span key={g.id} className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 shadow-sm">
+                            {rotuloGerencia(g)}
+                            <button
+                              type="button"
                               onClick={() => {
-                                handleChange('gerenciasDestinatarias', (formData.gerenciasDestinatarias || []).filter(item => item !== g));
-                              }} 
+                                handleChange('gerenciasDestinatarias', (formData.gerenciasDestinatarias || []).filter(item => item.id !== g.id));
+                              }}
                               className="hover:bg-emerald-200 rounded-full p-0.5 transition-colors"
                             >
                               <X size={14} />
                             </button>
                           </span>
                         ))}
+                        {(formData.gerenciasDestinatarias || []).length === 0 && (
+                          <span className="text-xs text-gray-400 italic py-1">Nenhuma gerência destinatária selecionada.</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
-                          <SearchableSelect 
-                            options={(Array.isArray(gerenciasDb) ? gerenciasDb : []).filter(g => {
-                              const nomeGer = g.nome || g.sigla || g;
-                              return !(formData.gerenciasDestinatarias || []).includes(nomeGer);
-                            }).map(g => ({ value: g.nome || g.sigla || g, label: g.nome || g.sigla || g }))}
+                          <SearchableSelect
+                            options={gerenciasAtivas
+                              .filter(g => !(formData.gerenciasDestinatarias || []).some(s => s.id === g.id))
+                              .map(g => ({ value: g.id, label: rotuloGerencia(g) }))}
                             value=""
                             onChange={(val) => {
-                              if (val) {
-                                const current = formData.gerenciasDestinatarias || [];
-                                if (!current.includes(val)) {
-                                  handleChange('gerenciasDestinatarias', [...current, val]);
-                                }
+                              const g = gerenciasDb.find(x => String(x.id) === String(val));
+                              const current = formData.gerenciasDestinatarias || [];
+                              if (g && !current.some(s => s.id === g.id)) {
+                                handleChange('gerenciasDestinatarias', [...current, g]);
                               }
                             }}
                             placeholder="+ Selecionar e Adicionar Gerência Destinatária..."
@@ -1304,6 +1410,7 @@ export default function Planejamento() {
                         </div>
                         {(formData.gerenciasDestinatarias && formData.gerenciasDestinatarias.length > 0) && (
                           <button
+                            type="button"
                             onClick={() => handleChange('gerenciasDestinatarias', [])}
                             className="text-xs font-bold text-red-600 hover:text-red-800 px-3 py-2 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                           >
@@ -1314,23 +1421,24 @@ export default function Planejamento() {
                     </div>
                   </div>
 
-                  {/* CAMPOS ORIGINAIS DO PLANEJAMENTO (MANTIDOS POR PRECAUÇÃO) */}
+                  {/* SERVIÇO E TIPO DE AUDITORIA */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Tipo de Auditoria
+                        Serviço de Auditoria
                       </label>
-                      <select
-                        value={formData.tipoAuditoria || ''}
-                        onChange={(e) => handleChange('tipoAuditoria', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      >
-                        <option value="Avaliação">Avaliação</option>
-                        <option value="Consultoria">Consultoria</option>
-                        <option value="Auditoria Operacional">Auditoria Operacional</option>
-                        <option value="Auditoria Financeira">Auditoria Financeira</option>
-                        <option value="Auditoria de Conformidade">Auditoria de Conformidade</option>
-                      </select>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          disabled
+                          value={servicoAuditoria() || 'Não informado no item de trabalho'}
+                          className="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 pr-20"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-gray-200 text-gray-600 font-bold px-2 py-0.5 rounded uppercase border border-gray-300">
+                          Do item
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-1">Definido no cadastro do item de trabalho. Para trocar, edite o item.</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
@@ -1344,10 +1452,202 @@ export default function Planejamento() {
                       />
                     </div>
                   </div>
+
+                  {/* TIPO DE AUDITORIA (um ou mais, do cadastro de tipos de auditoria) */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Auditoria</label>
+                    <div className="border border-gray-300 rounded-md p-3 bg-white shadow-sm">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {(formData.tiposAuditoria || []).map((t) => (
+                          <span key={t.id} className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 shadow-sm">
+                            {t.nome}
+                            <button
+                              type="button"
+                              onClick={() => handleChange('tiposAuditoria', (formData.tiposAuditoria || []).filter(item => item.id !== t.id))}
+                              className="hover:bg-indigo-200 rounded-full p-0.5 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </span>
+                        ))}
+                        {(formData.tiposAuditoria || []).length === 0 && (
+                          <span className="text-xs text-gray-400 italic py-1">Nenhum tipo de auditoria selecionado.</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <SearchableSelect
+                            options={tiposAuditoriaAtivos
+                              .filter(t => !(formData.tiposAuditoria || []).some(s => s.id === t.id))
+                              .map(t => ({ value: t.id, label: t.nome }))}
+                            value=""
+                            onChange={(val) => {
+                              const t = tiposAuditoriaDb.find(x => String(x.id) === String(val));
+                              const current = formData.tiposAuditoria || [];
+                              if (t && !current.some(s => s.id === t.id)) {
+                                handleChange('tiposAuditoria', [...current, t]);
+                              }
+                            }}
+                            placeholder="+ Selecionar e Adicionar Tipo de Auditoria..."
+                          />
+                        </div>
+                        {(formData.tiposAuditoria || []).length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleChange('tiposAuditoria', [])}
+                            className="text-xs font-bold text-red-600 hover:text-red-800 px-3 py-2 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                          >
+                            Limpar Todos
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-blue-50/60 border border-blue-200/80 rounded-lg p-2.5 flex items-center gap-2 text-xs text-blue-800 mb-2">
                     <Clock size={14} className="text-blue-600 shrink-0" />
                     <span>Os campos de edição deste planejamento possuem <b>salvamento automático</b> — o progresso é salvo no servidor após 3 segundos de inatividade na digitação.</span>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* SANFONA 7: CRONOGRAMA */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div 
+                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
+                onClick={() => handleToggleSection('cronograma')}
+              >
+                <div className="flex items-center gap-3">
+                  {openSections.cronograma ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
+                  <Info className="text-blue-700" size={20} />
+                  <h3 className="font-bold text-gray-900">III. Cronograma Proposto</h3>
+                </div>
+              </div>
+              {openSections.cronograma && (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Inicial do Planejamento
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataInicialPlanejamento || ''}
+                        onChange={(e) => handleChange('dataInicialPlanejamento', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Final do Planejamento
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataFinalPlanejamento || ''}
+                        onChange={(e) => handleChange('dataFinalPlanejamento', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Inicial de Execução
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataInicialExecucao || ''}
+                        onChange={(e) => handleChange('dataInicialExecucao', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Final de Execução
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataFinalExecucao || ''}
+                        onChange={(e) => handleChange('dataFinalExecucao', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Inicial do Relatório
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataInicialRelatorio || ''}
+                        onChange={(e) => handleChange('dataInicialRelatorio', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Data Final do Relatório
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataFinalRelatorio || ''}
+                        onChange={(e) => handleChange('dataFinalRelatorio', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SANFONA 3: ASPECTOS GERAIS DAS GERÊNCIAS AUDITADAS */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div 
+                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
+                onClick={() => handleToggleSection('gerenciasAuditadas')}
+              >
+                <div className="flex items-center gap-3">
+                  {openSections.gerenciasAuditadas ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
+                  <Info className="text-blue-700" size={20} />
+                  <h3 className="font-bold text-gray-900">IV. Aspectos Gerais das Gerências Auditadas</h3>
+                </div>
+              </div>
+              {openSections.gerenciasAuditadas && (
+                <div className="p-6">
+                  <RichTextEditor
+                    title="Descrição das Gerências Auditadas"
+                    initialContent={formData.descricaoGerenciasAuditadas || ''}
+                    onChange={(val) => handleChange('descricaoGerenciasAuditadas', val)}
+                    onSave={() => {}}
+                    globalCollapseAction={globalCollapseAction}
+                    renderAttachments={() => (
+                      <FileAttachmentManager
+                        files={getAnexosBySecao('3. Aspectos Gerais das Gerências Auditadas')}
+                        onUpload={(file) => handleUploadAnexo(file, '3. Aspectos Gerais das Gerências Auditadas')}
+                        onDelete={handleDeleteAnexo}
+                        globalCollapseAction={globalCollapseAction}
+                      />
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* SANFONA 2: ASPECTOS GERAIS DO OBJETO AUDITADO */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div 
+                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
+                onClick={() => handleToggleSection('objetoAuditado')}
+              >
+                <div className="flex items-center gap-3">
+                  {openSections.objetoAuditado ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
+                  <Info className="text-blue-700" size={20} />
+                  <h3 className="font-bold text-gray-900">V. Aspectos Gerais do Objeto Auditado</h3>
+                </div>
+              </div>
+              {openSections.objetoAuditado && (
+                <div className="p-6 space-y-4">
+                  {/* Nomes de seção dos anexos ('1. Escopo...', '2. ...') ligam os arquivos já enviados: não renomear. */}
                   <div>
                     <RichTextEditor
                       title="Escopo do Planejamento"
@@ -1365,24 +1665,6 @@ export default function Planejamento() {
                       )}
                     />
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* SANFONA 2: ASPECTOS GERAIS DO OBJETO AUDITADO */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div 
-                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
-                onClick={() => handleToggleSection('objetoAuditado')}
-              >
-                <div className="flex items-center gap-3">
-                  {openSections.objetoAuditado ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
-                  <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">2. Aspectos Gerais do Objeto Auditado</h3>
-                </div>
-              </div>
-              {openSections.objetoAuditado && (
-                <div className="p-6 space-y-4">
                   <div>
                     <RichTextEditor
                       title="Descrição do Objeto Auditado"
@@ -1523,39 +1805,6 @@ export default function Planejamento() {
               )}
             </div>
 
-            {/* SANFONA 3: ASPECTOS GERAIS DAS GERÊNCIAS AUDITADAS */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div 
-                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
-                onClick={() => handleToggleSection('gerenciasAuditadas')}
-              >
-                <div className="flex items-center gap-3">
-                  {openSections.gerenciasAuditadas ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
-                  <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">3. Aspectos Gerais das Gerências Auditadas</h3>
-                </div>
-              </div>
-              {openSections.gerenciasAuditadas && (
-                <div className="p-6">
-                  <RichTextEditor
-                    title="Descrição das Gerências Auditadas"
-                    initialContent={formData.descricaoGerenciasAuditadas || ''}
-                    onChange={(val) => handleChange('descricaoGerenciasAuditadas', val)}
-                    onSave={() => {}}
-                    globalCollapseAction={globalCollapseAction}
-                    renderAttachments={() => (
-                      <FileAttachmentManager
-                        files={getAnexosBySecao('3. Aspectos Gerais das Gerências Auditadas')}
-                        onUpload={(file) => handleUploadAnexo(file, '3. Aspectos Gerais das Gerências Auditadas')}
-                        onDelete={handleDeleteAnexo}
-                        globalCollapseAction={globalCollapseAction}
-                      />
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-
             {/* SANFONA 4: TRABALHOS ANTERIORES */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
               <div 
@@ -1565,7 +1814,7 @@ export default function Planejamento() {
                 <div className="flex items-center gap-3">
                   {openSections.trabalhosAnteriores ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
                   <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">4. Trabalhos Anteriores</h3>
+                  <h3 className="font-bold text-gray-900">VI. Trabalhos Anteriores</h3>
                 </div>
               </div>
               {openSections.trabalhosAnteriores && (
@@ -1634,7 +1883,7 @@ export default function Planejamento() {
                 <div className="flex items-center gap-3">
                   {openSections.amostra ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
                   <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">5. Amostra Selecionada</h3>
+                  <h3 className="font-bold text-gray-900">VII. Amostra Selecionada</h3>
                 </div>
               </div>
               {openSections.amostra && (
@@ -1744,7 +1993,7 @@ export default function Planejamento() {
                 <div className="flex items-center gap-3">
                   {openSections.orcamento ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
                   <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">6. Orçamento Estimado</h3>
+                  <h3 className="font-bold text-gray-900">VIII. Orçamento Estimado</h3>
                 </div>
               </div>
               {openSections.orcamento && (
@@ -1768,94 +2017,6 @@ export default function Planejamento() {
               )}
             </div>
 
-            {/* SANFONA 7: CRONOGRAMA */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div 
-                className="bg-blue-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-blue-100/70 transition-colors"
-                onClick={() => handleToggleSection('cronograma')}
-              >
-                <div className="flex items-center gap-3">
-                  {openSections.cronograma ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
-                  <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">7. Cronograma Proposto</h3>
-                </div>
-              </div>
-              {openSections.cronograma && (
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Inicial do Planejamento
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataInicialPlanejamento || ''}
-                        onChange={(e) => handleChange('dataInicialPlanejamento', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Final do Planejamento
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataFinalPlanejamento || ''}
-                        onChange={(e) => handleChange('dataFinalPlanejamento', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Inicial de Execução
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataInicialExecucao || ''}
-                        onChange={(e) => handleChange('dataInicialExecucao', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Final de Execução
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataFinalExecucao || ''}
-                        onChange={(e) => handleChange('dataFinalExecucao', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Inicial do Relatório
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataInicialRelatorio || ''}
-                        onChange={(e) => handleChange('dataInicialRelatorio', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Data Final do Relatório
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dataFinalRelatorio || ''}
-                        onChange={(e) => handleChange('dataFinalRelatorio', e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* SANFONA 8: QUESTÕES DE AUDITORIA (CADASTRO NA MESMA PÁGINA!) */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
               <div 
@@ -1865,7 +2026,7 @@ export default function Planejamento() {
                 <div className="flex items-center gap-3">
                   {openSections.questoes ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
                   <Info className="text-blue-700" size={20} />
-                  <h3 className="font-bold text-gray-900">8. Questões de Auditoria (Cadastro Integrado na Página)</h3>
+                  <h3 className="font-bold text-gray-900">Matriz de Planejamento — Questões de Auditoria</h3>
                 </div>
                 <button
                   type="button"
@@ -1886,8 +2047,8 @@ export default function Planejamento() {
                     formData.questoes.map((q, qIndex) => {
                       const isOpen = openQuestions[qIndex] ?? true;
                       return (
-                        <div 
-                          key={qIndex}
+                        <div
+                          key={q.id || q._k || qIndex}
                           draggable
                           onDragStart={(e) => handleDragStartQuestao(e, qIndex)}
                           onDragOver={(e) => handleDragOverQuestao(e, qIndex)}
@@ -1910,7 +2071,7 @@ export default function Planejamento() {
                               >
                                 {isOpen ? <ChevronUp size={18} className="text-blue-700" /> : <ChevronDown size={18} className="text-blue-700" />}
                                 <span className="font-bold text-sm text-blue-900">
-                                  Questão #{qIndex + 1} — {q.gerenciaDestinataria || q.gerencia || 'Gerência Não Definida'}
+                                  Questão #{qIndex + 1} — {listaNomes(q.gerencias, g => g?.sigla || g?.nome).join(', ') || 'Gerência Não Definida'}
                                 </span>
                                 <span className="text-xs text-gray-500 truncate max-w-sm hidden md:inline">
                                   {(q.conteudo || q.questao) ? `(${String(q.conteudo || q.questao).substring(0, 45)}...)` : '(Sem conteúdo)'}
@@ -1932,26 +2093,15 @@ export default function Planejamento() {
                           {isOpen && (
                             <div className="p-5 space-y-5 bg-white">
 
-                              {/* 1. Gerência Destinatária */}
-                              <div>
-                                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                                  Gerência Destinatária
-                                </label>
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                  <select
-                                    value={q.gerenciaDestinataria || q.gerencia || ''}
-                                    onChange={(e) => handleQuestaoChange(qIndex, 'gerenciaDestinataria', e.target.value)}
-                                    className="flex-1 px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                  >
-                                    <option value="">Selecione</option>
-                                    {(Array.isArray(gerenciasDb) ? gerenciasDb : []).map((ger, idxGer) => (
-                                      <option key={idxGer} value={ger.sigla || ger.nome || ger}>
-                                        {ger.sigla ? `${ger.sigla} - ${ger.nome || ''}` : ger.nome || ger}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
+                              {/* 1. Gerências Destinatárias da questão (uma ou mais) */}
+                              {renderListaCadastro(q, qIndex, 'gerencias', {
+                                titulo: 'Gerências Destinatárias da Questão',
+                                vazio: 'Nenhuma gerência selecionada para esta questão.',
+                                placeholder: '+ Selecionar e Adicionar Gerência...',
+                                opcoes: opcoesGerenciaQuestao(),
+                                rotulo: rotuloGerencia,
+                                cor: 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              })}
 
                               {/* 2. Conteúdo */}
                               <div>
@@ -1963,8 +2113,8 @@ export default function Planejamento() {
                                   globalCollapseAction={globalCollapseAction}
                                   renderAttachments={() => (
                                     <FileAttachmentManager
-                                      files={getAnexosBySecao(`Questão #${qIndex + 1} - Conteúdo`)}
-                                      onUpload={(file) => handleUploadAnexo(file, `Questão #${qIndex + 1} - Conteúdo`)}
+                                      files={getAnexosBySecao(secaoAnexoQuestao(q, 'Conteúdo'))}
+                                      onUpload={(file) => uploadAnexoQuestao(file, q, 'Conteúdo')}
                                       onDelete={handleDeleteAnexo}
                                       globalCollapseAction={globalCollapseAction}
                                     />
@@ -1982,8 +2132,8 @@ export default function Planejamento() {
                                   globalCollapseAction={globalCollapseAction}
                                   renderAttachments={() => (
                                     <FileAttachmentManager
-                                      files={getAnexosBySecao(`Questão #${qIndex + 1} - Critérios`)}
-                                      onUpload={(file) => handleUploadAnexo(file, `Questão #${qIndex + 1} - Critérios`)}
+                                      files={getAnexosBySecao(secaoAnexoQuestao(q, 'Critérios'))}
+                                      onUpload={(file) => uploadAnexoQuestao(file, q, 'Critérios')}
                                       onDelete={handleDeleteAnexo}
                                       globalCollapseAction={globalCollapseAction}
                                     />
@@ -1991,93 +2141,25 @@ export default function Planejamento() {
                                 />
                               </div>
 
-                              {/* 4. Técnicas (Pills + SearchableSelect) */}
-                              <div className="p-4 bg-gray-50/70 border border-gray-200/80 rounded-xl">
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-3">
-                                  Técnicas de Auditoria
-                                </label>
-                                <div className="border border-gray-300 rounded-md p-3 bg-white shadow-sm">
-                                  <div className="flex flex-wrap gap-2 mb-3">
-                                    {getQuestaoArrayField(q, 'tecnicas').map((tecnica, idxT) => (
-                                      <span
-                                        key={idxT}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-sm"
-                                      >
-                                        {tecnica}
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveQuestaoItem(qIndex, 'tecnicas', tecnica)}
-                                          className="text-blue-600 hover:text-blue-900 font-bold focus:outline-none ml-1"
-                                          title="Remover"
-                                        >
-                                          ×
-                                        </button>
-                                      </span>
-                                    ))}
-                                    {getQuestaoArrayField(q, 'tecnicas').length === 0 && (
-                                      <span className="text-xs text-gray-400 italic py-1">
-                                        Nenhuma técnica de auditoria selecionada para esta questão.
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 border-t border-gray-100 pt-2">
-                                    <div className="flex-1">
-                                      <SearchableSelect
-                                        placeholder="+ Selecionar e Adicionar Técnica de Auditoria..."
-                                        value=""
-                                        options={tecnicasDb
-                                          .filter(t => !getQuestaoArrayField(q, 'tecnicas').includes(t))
-                                          .map(t => ({ value: t, label: t }))}
-                                        onChange={(val) => handleAddQuestaoItem(qIndex, 'tecnicas', val)}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                              {/* 4. Técnicas (do cadastro de técnicas de auditoria) */}
+                              {renderListaCadastro(q, qIndex, 'tecnicas', {
+                                titulo: 'Técnicas de Auditoria',
+                                vazio: 'Nenhuma técnica de auditoria selecionada para esta questão.',
+                                placeholder: '+ Selecionar e Adicionar Técnica de Auditoria...',
+                                opcoes: tecnicasAtivas,
+                                rotulo: (t) => t?.nome || '',
+                                cor: 'bg-blue-50 text-blue-800 border-blue-200'
+                              })}
 
-                              {/* 5. Riscos (Pills + SearchableSelect) */}
-                              <div className="p-4 bg-gray-50/70 border border-gray-200/80 rounded-xl">
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-3">
-                                  Riscos Relacionados
-                                </label>
-                                <div className="border border-gray-300 rounded-md p-3 bg-white shadow-sm">
-                                  <div className="flex flex-wrap gap-2 mb-3">
-                                    {getQuestaoArrayField(q, 'riscos').map((risco, idxR) => (
-                                      <span
-                                        key={idxR}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 shadow-sm"
-                                      >
-                                        {risco}
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveQuestaoItem(qIndex, 'riscos', risco)}
-                                          className="text-amber-600 hover:text-amber-900 font-bold focus:outline-none ml-1"
-                                          title="Remover"
-                                        >
-                                          ×
-                                        </button>
-                                      </span>
-                                    ))}
-                                    {getQuestaoArrayField(q, 'riscos').length === 0 && (
-                                      <span className="text-xs text-gray-400 italic py-1">
-                                        Nenhum risco relacionado selecionado para esta questão.
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 border-t border-gray-100 pt-2">
-                                    <div className="flex-1">
-                                      <SearchableSelect
-                                        placeholder="+ Selecionar e Adicionar Risco Relacionado..."
-                                        value=""
-                                        options={riscosDb
-                                          .filter(r => !getQuestaoArrayField(q, 'riscos').includes(r))
-                                          .map(r => ({ value: r, label: r }))}
-                                        onChange={(val) => handleAddQuestaoItem(qIndex, 'riscos', val)}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                              {/* 5. Riscos (do cadastro de tipos de risco) */}
+                              {renderListaCadastro(q, qIndex, 'riscos', {
+                                titulo: 'Riscos Relacionados',
+                                vazio: 'Nenhum risco relacionado selecionado para esta questão.',
+                                placeholder: '+ Selecionar e Adicionar Risco Relacionado...',
+                                opcoes: riscosAtivos,
+                                rotulo: (r) => r?.nome || '',
+                                cor: 'bg-amber-50 text-amber-800 border-amber-200'
+                              })}
 
                             </div>
                           )}
@@ -2165,7 +2247,7 @@ export default function Planejamento() {
       <DocumentPdfViewerModal
         isOpen={showPdfModal}
         onClose={() => setShowPdfModal(false)}
-        docTitle={`Planejamento nº ${formData.numero || '02'}/${formData.ano || new Date().getFullYear()}`}
+        docTitle={rotuloDocumento()}
       >
         {renderA4Preview()}
       </DocumentPdfViewerModal>

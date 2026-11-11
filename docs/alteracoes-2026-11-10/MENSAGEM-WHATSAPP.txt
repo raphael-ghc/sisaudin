@@ -1,0 +1,26 @@
+*Sisaudin atualizado — versão 2026.11.1* ✅
+
+Pessoal, o Sisaudin foi atualizado. No primeiro acesso, apertem *Ctrl+F5* (sem isso o Planejamento pode não salvar).
+
+*O que mudou:*
+
+📋 *Planejamento*
+• O formulário agora segue a mesma ordem do documento (Cronograma logo no início, Escopo dentro de "Objeto Auditado").
+• O número do Planejamento é gerado ao criar e aparece no formulário. Os antigos sem número aparecem como "s/n" e podem ser numerados à mão.
+• As gerências destinatárias já vêm do item de trabalho.
+• Cada questão pode ter mais de uma gerência. Técnicas e riscos são escolhidos na lista do cadastro.
+• *Serviço de Auditoria* (Avaliação, Consultoria…) vem do item de trabalho. Para trocar, editem o item.
+• Novo campo *Tipo de Auditoria*: Desempenho, Financeira e/ou Conformidade. Dá para marcar mais de um.
+
+🔎 *Matriz de Achados*
+• Só pode ser criada depois do Planejamento. Ela já vem com as questões dele, sem precisar digitar de novo.
+• Na Matriz vocês preenchem só os *fatos encontrados e as evidências*, e cada questão pode ter vários fatos, cada um com seus anexos.
+• Questões novas ou alteradas no Planejamento aparecem na Matriz automaticamente (ou pelo botão "Atualizar do Planejamento").
+• Uma questão que já tem fatos na Matriz não pode ser excluída do Planejamento.
+• No documento, cada fato fica numa linha.
+
+🏷️ Nos demais documentos, "Tipo de Serviço" passou a se chamar *Serviço de Auditoria*.
+
+⚠️ Se algum Planejamento antigo aparecer sem gerência, técnica ou risco, é porque o nome antigo não existia no cadastro. É só escolher de novo.
+
+Problemas? Mandem a hora, o documento e um print da mensagem. 🙏

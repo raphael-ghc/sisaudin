@@ -446,7 +446,7 @@ export default function ItemTrabalho({ propId, onClose, onSuccess }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Tipo de Serviço</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Serviço de Auditoria</label>
             <SearchableSelect 
               id="list-tipo-servico"
               disabled={isReadOnly}

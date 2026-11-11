@@ -1,0 +1,56 @@
+Versão 2026.11.1: Planejamento, Matriz de Achados, Serviço e Tipo de Auditoria
+
+Primeira versão de novembro, sobre a 2026.10.1 / 2026.10.1.0.1. Melhorias
+nas funcionalidades existentes. Entregas de 06/11, 10/11 e 11/11.
+
+Planejamento
+- Formulário na ordem do documento: I-II Vínculo e dados gerais, III
+  Cronograma, IV Gerências auditadas, V Objeto (com o Escopo), VI, VII,
+  VIII e Matriz de Planejamento.
+- Número atribuído na criação (sequência do ano) e mostrado no formulário.
+  Sem número, o documento mostra "Planejamento s/n" (antes, "02" fixo).
+- Gerências destinatárias ligadas ao cadastro de gerências (antes, nomes);
+  ao criar, vêm do item de trabalho. Botão "Carregar gerências do item".
+- Questões com uma ou mais gerências; técnicas e riscos ligados aos
+  cadastros (só itens ativos para escolha); ordem das questões gravada;
+  anexos das questões presos ao id da questão.
+- Serviço de Auditoria: é o tipo de serviço do item, mostrado travado.
+- Tipo de Auditoria: vários por Planejamento (Desempenho, Financeira,
+  Conformidade), abaixo do Serviço. O campo de texto antigo misturava
+  serviço e tipo, e o Planejamento novo gravava PAINT/EXTRA nele.
+- Lista de Planejamentos: coluna "Serviço / Tipo de Auditoria".
+- Seletores do cartão de dados gerais não são mais cortados pela borda.
+
+Matriz de Achados
+- Só com Planejamento; criada pela importação das questões dele
+  (POST /api/matriz-achados/item/{id}/importar-planejamento).
+- Questões ligadas às do Planejamento, só para leitura; a Matriz grava
+  apenas fatos e evidências, vários por questão, cada um com anexos.
+- Salvar o Planejamento leva as questões novas e a ordem para a Matriz;
+  botão "Atualizar do Planejamento".
+- Questão com fatos não pode ser excluída do Planejamento (409);
+  Planejamento com Matriz não pode ser excluído (409).
+- Documento com uma linha por fato; formulário e documento rolam
+  separados. Busca da Matriz por item corrigida (findByItemTrabalhoId).
+
+Demais telas
+- Rótulo "Tipo de Serviço" passa a "Serviço de Auditoria" em OS, CA, SAI,
+  notas, Parecer, RAI-P, RAI-F, item de trabalho, menu e Base de
+  Conhecimento. Exclusões recusadas mostram o motivo do servidor.
+
+Banco (ddl-auto=update + PlanejamentoMatrizMigration na subida)
+- Tabelas novas: planejamento_gerencia, planejamento_questao_gerencia,
+  planejamento_questao_tecnica, planejamento_questao_tipo_risco,
+  planejamento_tipo_auditoria, matriz_achados_fato e sisaudin_migracao.
+- Colunas novas: planejamento_questao.ordem e
+  matriz_achados_questao.questao_planejamento_id.
+- Conversão automática dos dados antigos (uma vez por etapa, registrada
+  em sisaudin_migracao). Colunas e tabela antigas ficam sem uso.
+
+Servidor: backend (JAR), front (pasta html do nginx) e banco. nginx.conf
+e application.properties não mudam. Rodar as prévias antes.
+
+Notas: docs/alteracoes-2026-11-06/ e docs/alteracoes-2026-11-10/
+(relatórios, prévias SQL, patches, CHECKLIST-PRODUCAO.html,
+CONTROLE-VERSAO.md). Testes: PLA-07, PLA-11 a PLA-22 e MAT-01 a MAT-09
+em docs/alteracoes-2026-10-27/TESTES-SISTEMA.html.

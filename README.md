@@ -26,8 +26,31 @@ Formato `ANO.MÊS.N` para cada implantação; as correções pequenas sobre ela 
 
 | Versão | Data | O que muda no servidor | Notas |
 |---|---|---|---|
-| **2026.10.1.0.1** | 29/10/2026 | Só o front (pasta `html` do nginx) | [Controle de versão](docs/alteracoes-2026-10-29/CONTROLE-VERSAO.md) |
+| **2026.11.1** | [data da implantação] | Backend, front e banco (estrutura nova + conversão automática) | [Controle de versão](docs/alteracoes-2026-11-10/CONTROLE-VERSAO.md) |
+| 2026.10.1.0.1 | 29/10/2026 | Só o front (pasta `html` do nginx) | [Controle de versão](docs/alteracoes-2026-10-29/CONTROLE-VERSAO.md) |
 | 2026.10.1 | 28/10/2026 | Backend, front, nginx e scripts de dados | [Controle de versão](docs/alteracoes-2026-10-27/CONTROLE-VERSAO.md) |
+
+### 2026.11.1 — Planejamento, Matriz de Achados, Serviço e Tipo de Auditoria
+
+Primeira versão de novembro: melhorias no Planejamento e na Matriz de Achados.
+
+- **Planejamento:**
+  - formulário na ordem do documento;
+  - número automático (sem número, "s/n");
+  - gerências destinatárias ligadas ao cadastro e vindas do item;
+  - várias gerências por questão; técnicas e riscos escolhidos nos cadastros; ordem das questões gravada;
+  - **Serviço de Auditoria** vindo do item, só para leitura;
+  - novo **Tipo de Auditoria** (Desempenho, Financeira, Conformidade), com mais de uma opção.
+- **Matriz de Achados:**
+  - só com Planejamento, e importa as questões dele;
+  - recebe apenas fatos e evidências, vários por questão;
+  - acompanha as questões novas do Planejamento;
+  - questão com fatos não pode ser excluída do Planejamento;
+  - uma linha por fato no documento.
+- **Demais telas:** "Tipo de Serviço" passa a "Serviço de Auditoria".
+- **Banco:** 7 tabelas e 2 colunas novas. Os dados antigos são convertidos na primeira subida (registro em `sisaudin_migracao`).
+
+Detalhes e implantação: [docs/alteracoes-2026-11-06/](docs/alteracoes-2026-11-06/) e [docs/alteracoes-2026-11-10/](docs/alteracoes-2026-11-10/) (inclui o `CHECKLIST-PRODUCAO.html`).
 
 ### 2026.10.1.0.1 — correção do Planejamento
 

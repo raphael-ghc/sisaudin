@@ -673,7 +673,7 @@ export default function BaseConhecimento() {
                                             <div className="bc-card-icon"><i className="fa-solid fa-briefcase"></i></div>
                                             <div className="bc-card-title-group">
                                                 <span className="bc-card-subtitle">Configuração 2.1</span>
-                                                <h4 className="bc-card-title">Tipo de Serviços</h4>
+                                                <h4 className="bc-card-title">Serviços de Auditoria</h4>
                                             </div>
                                         </div>
                                         <div className="bc-card-desc">

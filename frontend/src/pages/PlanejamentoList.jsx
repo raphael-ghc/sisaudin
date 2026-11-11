@@ -48,7 +48,11 @@ export default function PlanejamentoList() {
     const ano = (item.anoReferencia || plan.ano || '').toString();
     const numRef = (item.numeroReferencia || plan.numero || '').toString().toLowerCase();
     const anoRefCombo = ano ? `${ano}/${numRef || '-'}` : '-';
-    const tipo = (item.tipoItem?.nome || item.tipoItem?.descricao || plan.tipoAuditoria || '').toLowerCase();
+    const tipo = [
+      item.tipoItem?.nome || item.tipoItem?.descricao,
+      item.tipoServico?.nome,
+      ...(plan.tiposAuditoria || []).map(t => t?.nome)
+    ].filter(Boolean).join(' ').toLowerCase();
     const status = (plan.status || '').toLowerCase();
 
     const term = busca.toLowerCase();
@@ -98,7 +102,7 @@ export default function PlanejamentoList() {
         toast.success("Planejamento excluído com sucesso!");
         fetchPlanejamentos();
       } catch (error) {
-        toast.error("Erro ao excluir Planejamento.");
+        toast.error(error?.response?.data?.error || "Erro ao excluir Planejamento.");
         console.error(error);
       } finally {
         setIsDeleteModalOpen(false);
@@ -186,7 +190,7 @@ export default function PlanejamentoList() {
             <tr className="border-b border-gray-100 bg-gray-50/50 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               <th className="py-3 px-4">ANO/Nº</th>
               <th className="py-3 px-4">Item de Trabalho</th>
-              <th className="py-3 px-4">Tipo de Auditoria</th>
+              <th className="py-3 px-4">Serviço / Tipo de Auditoria</th>
               <th className="py-3 px-4 text-center">Status</th>
               <th className="py-3 px-4 text-right">Ações</th>
             </tr>
@@ -207,7 +211,10 @@ export default function PlanejamentoList() {
                 const idRef = item.id ? `#${item.id}` : '';
                 const tituloItem = `${sigla} ${anoRef}/${numRef}`.trim() || idRef || 'Sem vínculo';
                 
-                const tipoNome = plan.tipoAuditoria || item.tipoItem?.nome || item.tipoItem?.descricao || 'Não informado';
+                // Serviço de Auditoria vem do item; Tipos de Auditoria são do Planejamento.
+                const servico = item.tipoServico?.nome || 'Serviço não informado';
+                const tiposAud = (plan.tiposAuditoria || []).map(t => t?.nome).filter(Boolean).join(', ');
+                const tipoNome = tiposAud ? `${servico} — ${tiposAud}` : servico;
                 const statusName = plan.status || 'Minuta';
 
                 return (

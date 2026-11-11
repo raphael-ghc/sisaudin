@@ -31,6 +31,8 @@ public class MatrizAchados extends Documento {
 
     private LocalDate dataEmissao;
 
+    // Planejamento de onde vêm as questões. Número/ano e nome são atualizados pelo serviço
+    // a cada sincronização com o Planejamento (MatrizAchadosService.sincronizar).
     private Long planejamentoId;
 
     private String planejamentoNumeroAno;
@@ -38,6 +40,7 @@ public class MatrizAchados extends Documento {
     private String planejamentoNome;
 
     @OneToMany(mappedBy = "matrizAchados", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordem ASC, id ASC")
     @Builder.Default
     private List<QuestaoMatrizAchados> questoes = new ArrayList<>();
 

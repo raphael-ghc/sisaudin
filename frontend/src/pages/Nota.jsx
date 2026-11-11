@@ -1100,7 +1100,7 @@ export default function Nota() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600">
                           <div>
-                            <span className="font-medium text-gray-800">Tipo de Serviço: </span>
+                            <span className="font-medium text-gray-800">Serviço de Auditoria: </span>
                             {selectedItemData.tipoServico?.nome || selectedItemData.tipoServico || '-'}
                           </div>
                           <div>
@@ -1630,7 +1630,7 @@ export default function Nota() {
                             <table className="tabela-capa" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <tbody>
                                     <tr><td style={{ fontWeight: 'bold', width: '45%', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Item de Trabalho Vinculado/Ano:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData ? `${selectedItemData.tipoItem?.nome || 'PAINT'} - ${String(selectedItemData.numeroReferencia || '').padStart(2, '0')}/${selectedItemData.anoReferencia || ''}` : '-'}</td></tr>
-                                    <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Tipo de Serviço:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.tipoServico?.nome || selectedItemData?.tipoServico || '-'}</td></tr>
+                                    <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Serviço de Auditoria:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.tipoServico?.nome || selectedItemData?.tipoServico || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Macroprocesso:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.macroprocesso?.nome || selectedItemData?.macroprocesso || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Origem da Demanda:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.origem?.nome || selectedItemData?.origem || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Data Inicial:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{dataInicial ? formatDataBr(dataInicial) : '-'}</td></tr>

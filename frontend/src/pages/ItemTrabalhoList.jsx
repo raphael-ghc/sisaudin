@@ -455,7 +455,7 @@ export default function ItemTrabalhoList() {
         }
       } catch (error) {
         console.error('Erro ao excluir documento:', error);
-        toast.error('Erro ao excluir documento. Tente novamente.');
+        toast.error(error?.response?.data?.error || 'Erro ao excluir documento. Tente novamente.');
       } finally {
         setIsDeleteDocModalOpen(false);
         setDocToDelete(null);

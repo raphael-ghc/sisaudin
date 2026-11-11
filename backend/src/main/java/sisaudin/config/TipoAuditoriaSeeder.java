@@ -26,14 +26,12 @@ public class TipoAuditoriaSeeder implements CommandLineRunner {
             return;
         }
 
+        // Tipos de auditoria do Planejamento (decisão da área, 10/11/2026). A PlanejamentoMatrizMigration
+        // também cria estes três onde faltarem, sem mexer nos que já existem.
         List<String> items = Arrays.asList(
-            "Operacional",
-            "Conformidade",
-            "Contábil",
-            "Fiscal e Tributária",
-            "De Sistemas",
-            "Ambiental",
-            "De Qualidade"
+            "Desempenho",
+            "Financeira",
+            "Conformidade"
         );
 
         for (String item : items) {

@@ -110,7 +110,7 @@
 
 <header>
   <h1>Testes de sistema — alterações de outubro/2026</h1>
-  <p>Roteiro para o usuário conferir no navegador as alterações de 08/10 a 26/10: RAI e REAI, salvamento dos documentos, abertura após criar, exclusão pela lista de itens, textos iniciais das notas, Planejamento, Parecer e relatórios antigos reclassificados.</p>
+  <p>Roteiro para o usuário conferir no navegador as alterações de 08/10 a 26/10: RAI e REAI, salvamento dos documentos, abertura após criar, exclusão pela lista de itens, textos iniciais das notas, Planejamento, Parecer e relatórios antigos reclassificados. Inclui também as entregas de 29/10 (PLA-09 e PLA-10) de 06/11 (PLA-11 a PLA-16 e grupo MAT: Planejamento e Matriz de Achados) e de 10/11 (PLA-17 a PLA-22: Serviço e Tipo de Auditoria).</p>
 </header>
 
 <div class="bar">
@@ -308,8 +308,8 @@
         passos: ['Adicione uma questão de auditoria e preencha o “Conteúdo da Questão de Auditoria”.', 'Edite outro campo do planejamento, espere e recarregue.'],
         esperado: ['A questão aparece uma vez só, com o conteúdo digitado.'] },
       { id: 'PLA-07', amb: 'H', titulo: 'Matriz de Achados depois de salvar um item',
-        passos: ['Salve de novo o item {PAINT}.', 'Escolha <b>Criar Documento → Matriz de Achados</b>, preencha um campo e recarregue.'],
-        esperado: ['A matriz é criada, sem mensagem de erro.', 'O campo preenchido continua lá depois de recarregar.'] },
+        passos: ['Salve de novo o item {PAINT} (ele precisa ter Planejamento com questões).', 'Escolha <b>Criar Documento → Matriz de Achados</b>.', 'Na questão 1, clique em “Adicionar fato e evidência”, escreva o fato, espere e recarregue.'],
+        esperado: ['A matriz é criada já com as questões do Planejamento, sem mensagem de erro.', 'O fato continua lá depois de recarregar.'] },
       { id: 'PLA-08', amb: 'H', titulo: 'Reunião de Busca Conjunta depois de salvar um item',
         passos: ['Salve de novo o item {PAINT}.', 'Escolha <b>Criar Documento → Resultado de Reunião de Busca Conjunta</b>. Se pedir justificativa, preencha e continue.'],
         esperado: ['A reunião é criada, sem mensagem de erro.'] },
@@ -318,9 +318,74 @@
         esperado: ['“Equipe de Auditoria” lista os mesmos nomes da equipe do item.', 'Não aparece “Não informado”.'] },
       { id: 'PLA-10', amb: 'HP', titulo: 'Horas de trabalho = horas previstas do item (29/10)',
         passos: ['No mesmo Planejamento, confira “Horas de Trabalho” em “II. Dados Gerais”, na tela e no PDF.', 'Compare com “Horas Previstas” na tela do item. Repita na Ordem de Serviço do item.'],
-        esperado: ['O valor é igual ao “Horas Previstas” do item (total da equipe), e não 420 fixo.', 'Em item sem horas previstas aparece “Não informado”.'] }
+        esperado: ['O valor é igual ao “Horas Previstas” do item (total da equipe), e não 420 fixo.', 'Em item sem horas previstas aparece “Não informado”.'] },
+      { id: 'PLA-11', amb: 'H', titulo: 'Número do Planejamento (11/2026)',
+        passos: ['Em um item sem Planejamento, escolha <b>Criar Documento → Planejamento</b> e preencha o escopo.', 'Espere o salvamento automático e confira o campo “Número do Planejamento” e o título do documento.', 'Apague o número, espere e recarregue.'],
+        esperado: ['Depois do primeiro salvamento, o campo mostra um número e o documento mostra “Planejamento nº NN/AAAA” com o mesmo número.', 'Sem número, o documento mostra “Planejamento s/n” (não aparece mais “02” fixo).'] },
+      { id: 'PLA-12', amb: 'H', titulo: 'Gerências destinatárias vindas do item (11/2026)',
+        passos: ['Crie o Planejamento de um item que tenha gerências cadastradas (veja na tela do item).', 'Remova uma gerência e clique em “Carregar gerências do item de trabalho”.'],
+        esperado: ['Ao criar, “Gerências Destinatárias” já vem com as gerências do item.', 'O botão traz de volta a gerência removida, sem repetir as que já estão.'] },
+      { id: 'PLA-13', amb: 'HP', titulo: 'Formulário na ordem do documento (11/2026)',
+        passos: ['Abra um Planejamento e compare as seções do formulário com as do documento.'],
+        esperado: ['Ordem no formulário: I–II Vínculo e dados gerais, III Cronograma Proposto, IV Aspectos Gerais das Gerências Auditadas, V Aspectos Gerais do Objeto Auditado (começa pelo Escopo), VI Trabalhos Anteriores, VII Amostra, VIII Orçamento, Matriz de Planejamento.', 'É a mesma ordem do documento.', 'Anexos já enviados (ex.: no Escopo) continuam aparecendo.'] },
+      { id: 'PLA-14', amb: 'H', titulo: 'Questão com várias gerências, técnicas e riscos (11/2026)',
+        passos: ['Adicione uma questão. Confira as gerências que ela já traz.', 'Inclua mais uma gerência, duas técnicas e um risco.', 'Espere, recarregue e veja a “Matriz de Planejamento” no documento.'],
+        esperado: ['A questão nova começa com as gerências destinatárias do documento.', 'Depois de recarregar, as gerências, técnicas e riscos continuam lá.', 'No documento, a coluna “Gerência Destino” lista todas as gerências da questão.', 'Técnicas e riscos inativados no cadastro não aparecem para escolha.'] },
+      { id: 'PLA-15', amb: 'H', titulo: 'Reordenar questões (11/2026)',
+        passos: ['Com duas ou mais questões, arraste a última para o começo.', 'Espere e recarregue.'],
+        esperado: ['A nova ordem continua depois de recarregar, no formulário e no documento.'] },
+      { id: 'PLA-16', amb: 'HP', titulo: 'Planejamento antigo convertido (11/2026)',
+        passos: ['Abra um Planejamento criado antes desta versão que tinha gerências destinatárias, técnicas e riscos.'],
+        esperado: ['Gerências destinatárias, gerências das questões, técnicas e riscos aparecem como antes.', 'Se faltar algum, o nome antigo não existe no cadastro: veja o resumo da conversão (tabela sisaudin_migracao).'] },
+      { id: 'PLA-17', amb: 'HP', titulo: 'Serviço de Auditoria vem do item (10/11)',
+        passos: ['Abra o Planejamento do item {PAINT} e veja o campo “Serviço de Auditoria”.', 'Confira o “Serviço de Auditoria” na tela do item e em “II. Dados Gerais” do documento.'],
+        esperado: ['O campo mostra o mesmo serviço do item (ex.: Avaliação), travado, com o aviso de que se altera no item.', 'No documento aparece “Serviço de Auditoria” (não mais “Tipo de Serviço”).'] },
+      { id: 'PLA-18', amb: 'H', titulo: 'Trocar o serviço no item (10/11)',
+        passos: ['Na tela do item {PAINT}, troque o “Serviço de Auditoria” (ex.: para Consultoria) e salve.', 'Abra o Planejamento do item. Depois volte o serviço como estava.'],
+        esperado: ['O Planejamento mostra o serviço novo.'] },
+      { id: 'PLA-19', amb: 'H', titulo: 'Tipo de Auditoria com mais de uma opção (10/11)',
+        passos: ['Logo abaixo do Serviço de Auditoria, em “Tipo de Auditoria”, escolha Desempenho e Conformidade.', 'Espere, recarregue e veja o documento e a lista de Planejamentos.'],
+        esperado: ['As duas opções continuam selecionadas, na mesma ordem.', 'Em “II. Dados Gerais” aparece “Tipo de Auditoria: Desempenho, Conformidade”.', 'Na lista, a coluna “Serviço / Tipo de Auditoria” mostra, por exemplo, “Avaliação — Desempenho, Conformidade”.'] },
+      { id: 'PLA-20', amb: 'H', titulo: 'Planejamento novo sem PAINT/EXTRA no tipo (10/11)',
+        passos: ['Crie o Planejamento de um item sem Planejamento.'],
+        esperado: ['“Tipo de Auditoria” começa vazio (antes vinha PAINT ou EXTRA, por engano).'] },
+      { id: 'PLA-21', amb: 'HP', titulo: 'Planejamento antigo convertido (10/11)',
+        passos: ['Abra um Planejamento antigo que tinha “Auditoria Operacional”, “Financeira” ou “de Conformidade” no campo antigo.'],
+        esperado: ['Aparece o tipo correspondente: Desempenho, Financeira ou Conformidade.'] },
+      { id: 'PLA-22', amb: 'HP', titulo: 'Rótulo “Serviço de Auditoria” nos demais documentos (10/11)',
+        passos: ['Abra uma OS, uma CA, uma SAI, uma nota, um parecer e um relatório do item {PAINT}, no formulário e no documento.', 'Abra também a tela do item e o menu de cadastros.'],
+        esperado: ['Onde antes aparecia “Tipo de Serviço”, aparece “Serviço de Auditoria”, com o mesmo valor do item.', 'No menu, “Gerir Serviços de Auditoria”.', 'Esses documentos não mostram Tipo de Auditoria (só o Planejamento).'] }
     ]},
-    { id: 'PAR', titulo: '9. Parecer', intro: 'Decisão da área: o Parecer segue o modelo oficial (ex.: Parecer 01/2026), sem constatações nem recomendações.', casos: [
+    { id: 'MAT', titulo: '9. Matriz de Achados (11/2026)', intro: 'As questões da Matriz vêm do Planejamento e não são editadas nela. A Matriz recebe só fatos encontrados e evidências, um ou mais por questão.', casos: [
+      { id: 'MAT-01', amb: 'H', titulo: 'Sem Planejamento não há Matriz',
+        passos: ['Em um item sem Planejamento, abra <b>Criar Documento</b>.'],
+        esperado: ['“Matriz de Achados” aparece desabilitada, com o motivo “Crie o Planejamento antes…”.'] },
+      { id: 'MAT-02', amb: 'H', titulo: 'Criar a Matriz importa as questões',
+        passos: ['No item {PAINT} (com Planejamento e questões), escolha <b>Criar Documento → Matriz de Achados</b>.'],
+        esperado: ['A Matriz abre com as questões do Planejamento, na mesma ordem.', 'Cada questão mostra gerências, conteúdo, critérios, técnicas e riscos, sem campos para editar.', 'A referência mostra “Planejamento nº NN/AAAA” (o número do Planejamento, não o id).'] },
+      { id: 'MAT-03', amb: 'H', titulo: 'Vários fatos na mesma questão',
+        passos: ['Na questão 1, adicione dois fatos, cada um com evidência.', 'Espere e recarregue. Veja o documento ao lado.'],
+        esperado: ['Os dois fatos continuam lá (Fato 1.1 e 1.2).', 'No documento, a questão 1 ocupa duas linhas: a primeira com Nº, gerência, questão, riscos, técnicas e critérios; a segunda só com o fato 1.2 e a evidência.'] },
+      { id: 'MAT-04', amb: 'H', titulo: 'Anexos acompanham o fato',
+        passos: ['Anexe um arquivo na evidência do fato 1.2.', 'Exclua o fato 1.1 e recarregue.'],
+        esperado: ['O arquivo aparece no fato que agora é o 1.1 (o antigo 1.2) e na coluna “Evidências” do documento.', 'Ao excluir um fato com anexos, o sistema avisa quantos anexos serão excluídos.'] },
+      { id: 'MAT-05', amb: 'H', titulo: 'Questão nova do Planejamento entra na Matriz',
+        passos: ['No Planejamento do mesmo item, inclua uma questão e espere salvar.', 'Abra a Matriz (ou clique em “Atualizar do Planejamento”).', 'Mude o texto de uma questão no Planejamento e volte à Matriz.'],
+        esperado: ['A questão nova aparece na Matriz, na posição que tem no Planejamento.', 'O texto alterado aparece na Matriz. Os fatos já preenchidos continuam.'] },
+      { id: 'MAT-06', amb: 'H', titulo: 'Questão com fatos não sai do Planejamento',
+        passos: ['No Planejamento, tente excluir a questão 1 (que tem fatos na Matriz).', 'Depois exclua uma questão sem fatos.'],
+        esperado: ['A primeira exclusão é recusada com a mensagem de que a questão já tem fatos na Matriz.', 'A questão sem fatos é excluída e some também da Matriz.', 'Na Matriz não existe botão para excluir questão.'] },
+      { id: 'MAT-07', amb: 'H', titulo: 'Excluir Planejamento que tem Matriz',
+        passos: ['Na lista de itens de trabalho, tente excluir o Planejamento do item que tem Matriz.'],
+        esperado: ['Aparece a mensagem “Este Planejamento tem Matriz de Achados. Exclua a Matriz de Achados antes…”, e o Planejamento continua.'] },
+      { id: 'MAT-08', amb: 'HP', titulo: 'Rolagem do documento independente',
+        passos: ['Abra uma Matriz no modo “Lado a Lado”.', 'Role o documento até o fim e depois role o formulário.'],
+        esperado: ['Cada lado rola sozinho: rolar o documento não move o formulário, e vice-versa.'] },
+      { id: 'MAT-09', amb: 'HP', titulo: 'Matriz antiga convertida',
+        passos: ['Abra uma Matriz criada antes desta versão que tinha fato encontrado e evidência.'],
+        esperado: ['O fato e a evidência antigos aparecem como “Fato 1.1” da questão, com os anexos que já tinham.', 'Questão antiga que não foi ligada ao Planejamento aparece no fim, com o aviso “Questão da versão anterior…”.'] }
+    ]},
+    { id: 'PAR', titulo: '10. Parecer', intro: 'Decisão da área: o Parecer segue o modelo oficial (ex.: Parecer 01/2026), sem constatações nem recomendações.', casos: [
       { id: 'PAR-01', amb: 'HP', titulo: 'Seções do editor',
         passos: ['Abra um parecer existente.'],
         esperado: ['Seções: “1. INTRODUÇÃO”, “2. OBJETIVO”, “3. ESCOPO DE AVALIAÇÃO DO PARECER”, “ANÁLISE DOS FATOS (opcional)”, “4. CONCLUSÃO” e “5. ANEXOS”.',
@@ -346,7 +411,7 @@
         passos: ['No parecer de teste, adicione um anexo, dê um título e envie um arquivo.', 'Recarregue e abra a visualização.'],
         esperado: ['O arquivo continua no anexo.', 'Na visualização, aparece como “5. ANEXO A - TÍTULO”.'] }
     ]},
-    { id: 'EXC', titulo: '10. Excluir documentos pela lista de itens', intro: 'Antes, alguns documentos não eram excluídos e aparecia “Não foi possível identificar o tipo do documento para exclusão”. Estes testes também limpam os documentos criados acima.', casos: [
+    { id: 'EXC', titulo: '11. Excluir documentos pela lista de itens', intro: 'Antes, alguns documentos não eram excluídos e aparecia “Não foi possível identificar o tipo do documento para exclusão”. Estes testes também limpam os documentos criados acima.', casos: [
       { id: 'EXC-01', amb: 'H', titulo: 'Excluir REAI-P sem afetar o REAI-F',
         passos: ['Na lista de documentos do item {EXTRA}, clique em <b>Excluir Documento</b> no REAI-P e confirme em “Sim, Excluir”.', 'Abra o REAI-F do mesmo item.'],
         esperado: ['Aparece “Documento excluído com sucesso!” e o REAI-P sai da lista.', 'O REAI-F continua abrindo, com o conteúdo.'] },

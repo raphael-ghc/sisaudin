@@ -506,7 +506,7 @@ export default function OrdemServico() {
                           <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">{selectedItemData.equipe?.map(e => e.nome).join(', ') || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 font-semibold mb-1">Tipo de Serviço</p>
+                          <p className="text-xs text-gray-500 font-semibold mb-1">Serviço de Auditoria</p>
                           <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">{selectedItemData.tipoServico?.nome || '-'}</p>
                         </div>
                         <div>
@@ -848,7 +848,7 @@ export default function OrdemServico() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600">
                           <div>
-                            <span className="font-medium text-gray-800">Tipo de Serviço: </span>
+                            <span className="font-medium text-gray-800">Serviço de Auditoria: </span>
                             {selectedItemData.tipoServico?.nome || selectedItemData.tipoServico || '-'}
                           </div>
                           <div>
@@ -1050,7 +1050,7 @@ export default function OrdemServico() {
                         </td>
                       </tr>
                       <tr className="border-b border-gray-100">
-                        <td className="py-1.5 pr-4 font-bold text-[#14532d]">Tipo de Serviço</td>
+                        <td className="py-1.5 pr-4 font-bold text-[#14532d]">Serviço de Auditoria</td>
                         <td className="py-1.5 text-gray-800">
                           {selectedItemData?.tipoServico?.nome || (typeof selectedItemData?.tipoServico === 'string' ? selectedItemData?.tipoServico : null) || 'Avaliação'}
                         </td>

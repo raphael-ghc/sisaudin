@@ -190,7 +190,7 @@ export default function Sidebar({ isMobileMenuOpen, toggleMenu, isDesktopCollaps
           {/* Rota genérica para produto descomentada e atualizada: */}
           {/*<NavSubItem to="/produto" label="Gerir Produtos" /> */}
           <NavSubItem to="/macroprocesso" label="Gerir Macroprocessos" /> 
-          <NavSubItem to="/tipo-de-servico" label="Gerir Tipos de Serviços" /> 
+          <NavSubItem to="/tipo-de-servico" label="Gerir Serviços de Auditoria" /> 
           <NavSubItem to="/origem-da-demanda" label="Gerir Origens de Demanda" /> 
           <NavSubItem to="/tipo-de-risco" label="Gerir Tipos de Risco" /> 
           <NavSubItem to="/nivel-de-risco" label="Gerir Níveis de Risco" /> 

@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import sisaudin.model.cadastroBasico.generico.TipoAuditoria;
 
 //@Audited
 @Entity
@@ -24,7 +25,17 @@ public class Planejamento extends Documento {
 
     private LocalDate dataEmissao;
 
-    private String tipoAuditoria;
+    // Tipos de auditoria do Planejamento (um ou mais, do cadastro tipo_auditoria: Desempenho, Financeira, Conformidade...).
+    // O Serviço de Auditoria (Avaliação, Consultoria...) não fica aqui: é o tipo de serviço do item de trabalho.
+    // A coluna antiga de texto planejamento.tipo_auditoria fica no banco sem uso; a PlanejamentoMatrizMigration
+    // converteu o conteúdo dela (etapa 2026-11-planejamento-tipo-auditoria).
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "planejamento_tipo_auditoria",
+               joinColumns = @JoinColumn(name = "planejamento_id"),
+               inverseJoinColumns = @JoinColumn(name = "tipo_auditoria_id"))
+    @OrderColumn(name = "ordem")
+    @Builder.Default
+    private List<TipoAuditoria> tiposAuditoria = new ArrayList<>();
 
     @Column(columnDefinition = "LONGTEXT")
     private String escopo;
@@ -104,15 +115,18 @@ public class Planejamento extends Documento {
     private String conteudo;
 
     @OneToMany(mappedBy = "planejamento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordem ASC, id ASC")
     @Builder.Default
     private List<QuestaoPlanejamento> questoes = new ArrayList<>();
 
-    // Gerências destinatárias escolhidas na tela (nomes, como o seletor as mostra)
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "planejamento_gerencia_destinataria",
-                     joinColumns = @JoinColumn(name = "planejamento_id"))
+    // Gerências destinatárias do documento, ligadas ao cadastro de gerências.
+    // Até 2026.10 eram gravadas como nomes na tabela planejamento_gerencia_destinataria, que fica no banco
+    // sem uso; a PlanejamentoMatrizMigration converteu os nomes para esta tabela.
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "planejamento_gerencia",
+               joinColumns = @JoinColumn(name = "planejamento_id"),
+               inverseJoinColumns = @JoinColumn(name = "gerencia_id"))
     @OrderColumn(name = "ordem")
-    @Column(name = "gerencia")
     @Builder.Default
-    private List<String> gerenciasDestinatarias = new ArrayList<>();
+    private List<Gerencia> gerenciasDestinatarias = new ArrayList<>();
 }

@@ -763,7 +763,7 @@ export default function Comunicacao() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600">
                           <div>
-                            <span className="font-medium text-gray-800">Tipo de Serviço: </span>
+                            <span className="font-medium text-gray-800">Serviço de Auditoria: </span>
                             {selectedItemData.tipoServico?.nome || selectedItemData.tipoServico || '-'}
                           </div>
                           <div>
@@ -952,7 +952,7 @@ export default function Comunicacao() {
                         </td>
                       </tr>
                       <tr className="border-b border-gray-100">
-                        <td className="py-1.5 pr-4 font-bold text-[#14532d]">Tipo de Serviço</td>
+                        <td className="py-1.5 pr-4 font-bold text-[#14532d]">Serviço de Auditoria</td>
                         <td className="py-1.5 text-gray-800">
                           {selectedItemData?.tipoServico?.nome || selectedItemData?.tipoServico || 'Avaliação'}
                         </td>

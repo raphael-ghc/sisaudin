@@ -1719,7 +1719,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
                           <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">{selectedItemData.equipe?.map(e => e.nome).join(', ') || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 font-semibold mb-1">Tipo de Serviço</p>
+                          <p className="text-xs text-gray-500 font-semibold mb-1">Serviço de Auditoria</p>
                           <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border border-gray-200">{selectedItemData.tipoServico?.nome || '-'}</p>
                         </div>
                         <div>
@@ -2097,7 +2097,7 @@ const [analiseFatos, setAnaliseFatos] = useState('');
                             <table className="tabela-capa" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <tbody>
                                     <tr><td style={{ fontWeight: 'bold', width: '45%', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Item de Trabalho Vinculado/Ano:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData ? `${selectedItemData.tipoItem?.nome || 'S/ TIPO'} - ${String(selectedItemData.numeroReferencia || '').padStart(2, '0')}/${selectedItemData.anoReferencia || ''}` : '-'}</td></tr>
-                                    <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Tipo de Serviço:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.tipoServico?.nome || (typeof selectedItemData?.tipoServico === 'string' ? selectedItemData?.tipoServico : null) || '-'}</td></tr>
+                                    <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Serviço de Auditoria:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.tipoServico?.nome || (typeof selectedItemData?.tipoServico === 'string' ? selectedItemData?.tipoServico : null) || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Macroprocesso:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.macroprocesso?.nome || (typeof selectedItemData?.macroprocesso === 'string' ? selectedItemData?.macroprocesso : null) || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Origem da Demanda:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.origem?.nome || (typeof selectedItemData?.origem === 'string' ? selectedItemData?.origem : null) || '-'}</td></tr>
                                     <tr><td style={{ fontWeight: 'bold', padding: '5px 0', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>Nível de Risco:</td><td style={{ padding: '5px 0', color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{selectedItemData?.nivelRisco?.nome || (typeof selectedItemData?.nivelRisco === 'string' ? selectedItemData?.nivelRisco : null) || '-'}</td></tr>

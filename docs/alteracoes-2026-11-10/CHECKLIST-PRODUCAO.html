@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist Produção Novembro</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1d2330; --muted: #5d6677;
+    --border: #dde1e8; --accent: #1f5fae; --accent-soft: #e6eefa;
+    --ok: #217a45; --ok-soft: #e4f3ea; --warn: #8a5a00; --warn-soft: #fdf3dc;
+    --danger: #a52a2a; --danger-soft: #fbe7e7; --code-bg: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+      --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+      --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+      --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --surface: #1c2027; --text: #e4e7ec; --muted: #9aa3b2;
+    --border: #2e343e; --accent: #7fb0f0; --accent-soft: #1e2c40;
+    --ok: #6fcf97; --ok-soft: #1a2e23; --warn: #f0c060; --warn-soft: #33290f;
+    --danger: #f08080; --danger-soft: #3a1c1c; --code-bg: #12151a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 0; color: var(--muted); }
+  .bar {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 12px 0; margin: 16px 0 8px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .progress { flex: 1 1 220px; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+  #progressText { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 120px; }
+  button {
+    font: inherit; font-size: .85rem; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); border-radius: 6px; padding: 5px 10px;
+  }
+  button:hover { border-color: var(--accent); }
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  }
+  .meta label { display: block; font-size: .8rem; color: var(--muted); }
+  .meta input {
+    width: 100%; font: inherit; padding: 6px 8px; margin-top: 2px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  section {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 4px 18px 14px; margin-top: 18px;
+  }
+  section h2 { font-size: 1.15rem; margin: 14px 0 4px; display: flex; justify-content: space-between; gap: 8px; }
+  section h2 .count { font-size: .8rem; font-weight: normal; color: var(--muted); white-space: nowrap; }
+  section > p.intro { margin: 0 0 8px; color: var(--muted); }
+  .item ul, .item ol { margin: 4px 0 0; padding-left: 20px; }
+  section.done h2 .count { color: var(--ok); }
+  .item { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
+  .item:first-of-type { border-top: 0; }
+  .item input[type=checkbox] { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--ok); }
+  .item .body { flex: 1; min-width: 0; }
+  .item.checked .title { text-decoration: line-through; color: var(--muted); }
+  .title { font-weight: 600; }
+  .item .body p { margin: 4px 0 0; }
+  .tag { font-size: .72rem; font-weight: 600; padding: 1px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
+  .tag.opt { background: var(--accent-soft); color: var(--accent); }
+  .tag.crit { background: var(--danger-soft); color: var(--danger); }
+  .note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; margin: 6px 0 0; border-radius: 0 6px 6px 0; font-size: .9rem; }
+  .note.danger { border-color: var(--danger); background: var(--danger-soft); }
+  .codebox { position: relative; margin: 6px 0 0; }
+  pre {
+    margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; padding-right: 64px; overflow-x: auto; font: 13px/1.45 Consolas, "Cascadia Mono", monospace;
+  }
+  .codebox button { position: absolute; top: 5px; right: 5px; font-size: .75rem; padding: 2px 8px; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .9em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin-top: 6px; }
+  th, td { text-align: left; border: 1px solid var(--border); padding: 4px 8px; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .tablewrap { overflow-x: auto; }
+  footer { margin-top: 24px; color: var(--muted); font-size: .85rem; }
+  @media print {
+    .bar button, .codebox button { display: none; }
+    .bar { position: static; }
+    body { background: #fff; color: #000; }
+    section { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Checklist — Produção: Planejamento, Matriz de Achados, Serviço e Tipo de Auditoria</h1>
+  <p>Leva para produção as entregas de <b>06/11</b> (Planejamento e Matriz de Achados) e <b>10/11</b> (Serviço e Tipo de Auditoria), sobre a versão de outubro (2026.10.1 / 2026.10.1.0.1). Servidor <code>172.16.253.238</code>, banco <code>sisaudin_novo_v10</code>. Regras e detalhes em <code>docs/alteracoes-2026-11-06/</code> e <code>docs/alteracoes-2026-11-10/</code>.</p>
+</header>
+
+<div class="bar">
+  <div class="progress" aria-hidden="true"><div id="progressFill"></div></div>
+  <span id="progressText">0 de 0</span>
+  <button type="button" onclick="window.print()">Imprimir</button>
+  <button type="button" id="resetBtn">Limpar marcações</button>
+</div>
+
+<div class="meta">
+  <div><label for="m-resp">Responsável</label><input id="m-resp" data-field="resp"></div>
+  <div><label for="m-data">Data da janela</label><input id="m-data" data-field="data" type="date"></div>
+  <div><label for="m-banco">Banco de produção</label><input id="m-banco" data-field="banco" placeholder="sisaudin_novo_v10" spellcheck="false"></div>
+  <div><label for="m-backend">Pasta do backend (JAR) no servidor</label><input id="m-backend" data-field="backend" placeholder="ex.: C:\sisaudin" spellcheck="false"></div>
+  <div><label for="m-nginx">Pasta do nginx no servidor</label><input id="m-nginx" data-field="nginx" placeholder="ex.: C:\nginx-1.xx" spellcheck="false"></div>
+  <div><label for="m-pacote">Pasta do pacote no servidor (JAR, dist, scripts)</label><input id="m-pacote" data-field="pacote" placeholder="ex.: C:\temp\pacote-sisaudin" spellcheck="false"></div>
+  <div><label for="m-bk">Pasta do backup (seção 4)</label><input id="m-bk" data-field="pastabackup" placeholder="ex.: C:\backup-sisaudin-20261112-1900" spellcheck="false"></div>
+  <div><label for="m-commit">Commit / tag do JAR</label><input id="m-commit" data-field="commit" placeholder="ex.: v2026.11.1"></div>
+  <div><label for="m-backup">Arquivo de backup do banco</label><input id="m-backup" data-field="backup"></div>
+</div>
+<p style="color:var(--muted);font-size:.85rem;margin:6px 2px 0">Os campos de banco e de pastas são aplicados em todos os comandos abaixo (botão "Copiar" incluído).</p>
+
+<!-- 0 -->
+<section>
+  <h2>0. Antes da janela <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p0-codigo"><div class="body">
+    <div class="title">Confirmar de que código sai o JAR <span class="tag crit">crítico</span></div>
+    <p>Este repositório é uma cópia de teste. Confirmar uma das duas:</p>
+    <ul>
+      <li>a produção roda o código deste repositório até o commit <code>b4a962d</code> (versão 2026.10.1.0.1) e o JAR sai daqui; ou</li>
+      <li>os patches <code>docs/alteracoes-2026-11-06/planejamento-matriz.patch</code> e <code>docs/alteracoes-2026-11-10/servico-tipo-auditoria.patch</code> (nesta ordem) foram aplicados no repositório de produção, e o JAR e o front saem de lá.</li>
+    </ul>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-homolog"><div class="body">
+    <div class="title">Homologação validada com as duas entregas <span class="tag crit">crítico</span></div>
+    <p>Na homologação, com o <b>mesmo commit</b> que vai para produção (backend e front juntos), testes do <code>TESTES-SISTEMA.html</code> aprovados: <b>PLA-07, PLA-11 a PLA-22</b> e <b>MAT-01 a MAT-09</b>. Até 10/11 a homologação estava só com a entrega de 06/11.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-area"><div class="body">
+    <div class="title">Área de auditoria ciente das mudanças de uso</div>
+    <ul>
+      <li>Matriz de Achados só pode ser criada com Planejamento; as questões vêm dele e, na Matriz, só se preenchem fatos e evidências (vários por questão).</li>
+      <li>Questão com fatos na Matriz não pode ser excluída do Planejamento; Planejamento com Matriz não pode ser excluído.</li>
+      <li>Serviço de Auditoria é o do item de trabalho (trocar no item); Tipo de Auditoria (Desempenho, Financeira, Conformidade) é escolhido no Planejamento.</li>
+      <li>Planejamentos antigos sem número aparecem como "s/n" (preencher à mão).</li>
+    </ul>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-janela"><div class="body">
+    <div class="title">Janela combinada e usuários avisados</div>
+    <p>Sistema fora do ar durante a troca (estimar 30 a 45 minutos). Ninguém editando documentos. Avisar que será preciso <b>Ctrl+F5</b> no primeiro acesso: com a tela antiga em cache, o Planejamento não salva.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p0-acesso"><div class="body">
+    <div class="title">Acessos e forma de iniciar o backend anotados</div>
+    <p>Administrador no servidor, MySQL (Workbench), pastas do nginx e do JAR. Como o backend é iniciado (serviço, <code>.bat</code>…) e de qual pasta — o <code>application.properties</code> externo (desde 27/10) e <code>uploads\</code> ficam nela.</p>
+  </div></div>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2>1. Prévia no banco de produção (dias antes; só consulta) <span class="count"></span></h2>
+  <p class="intro">Os dois scripts só consultam. Em cada um, trocar a linha <code>USE sisaudin_homolog_v6;</code> por <code>USE sisaudin_novo_v10;</code>. No Workbench, rodar com o raio (Execute all), sem selecionar trecho. Guardar a saída.</p>
+
+  <div class="item"><input type="checkbox" id="p1-previa1"><div class="body">
+    <div class="title"><code>docs/alteracoes-2026-11-06/previa-conversao.sql</code></div>
+    <ul>
+      <li>Consultas 1 a 4: gerências, técnicas e riscos gravados como texto <b>sem correspondência no cadastro</b>. Não serão ligados na conversão.</li>
+      <li>Consulta 5: Matrizes existentes; questões que não forem ligadas ao Planejamento aparecem no fim da Matriz, com aviso.</li>
+      <li>Consulta 7: Planejamentos sem número.</li>
+    </ul>
+    <p class="note">Na homologação apareceram, por exemplo, "Gerência de Auditoria Interna - GAI" (no cadastro a sigla é AUDIN) e "Gerência de Administração e Finanças do HFB" (não existe com esse nome).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-previa2"><div class="body">
+    <div class="title"><code>docs/alteracoes-2026-11-10/previa-tipo-auditoria.sql</code></div>
+    <p>Mostra o cadastro <code>tipo_auditoria</code> (a conversão cria Desempenho, Financeira e Conformidade se faltarem e mantém os demais) e o destino de cada valor do campo antigo. Valores "SEM CORRESPONDÊNCIA" ficam para ajuste à mão.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p1-acertos"><div class="body">
+    <div class="title">Decidir os casos sem correspondência</div>
+    <p>Para cada nome apontado: cadastrar o que falta (técnica, risco, gerência) <b>antes</b> da janela — assim a conversão liga — ou anotar para acertar à mão no Planejamento depois. A conversão compara o nome exato (sem diferenciar maiúsculas); para gerência, também a sigla e "SIGLA - Nome".</p>
+  </div></div>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2>2. Gerar os artefatos (máquina de desenvolvimento) <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p2-commit"><div class="body">
+    <div class="title">Commit e tag do código (versão 2026.11.1) <span class="tag crit">crítico</span></div>
+    <p>Em 11/11 as duas entregas ainda não estavam commitadas. Commitar o que foi validado na homologação, com a mensagem de <code>docs/alteracoes-2026-11-10/COMMIT.txt</code>, e criar a tag <code>v2026.11.1</code>. Anotar no topo.</p>
+    <div class="codebox"><pre><code>$g = (Get-ChildItem "$env:LOCALAPPDATA\GitHubDesktop\app-*\resources\app\git\cmd\git.exe" | Select-Object -Last 1).FullName
+&amp; $g add -A
+&amp; $g commit -F docs\alteracoes-2026-11-10\COMMIT.txt
+&amp; $g tag -a v2026.11.1 -m "Versão 2026.11.1"
+&amp; $g status --short
+&amp; $g log -1 --oneline</code></pre></div>
+    <p><code>status</code> deve vir vazio depois do commit (o build tem de sair de código commitado).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-parar"><div class="body">
+    <div class="title">Backend local parado</div>
+    <p>O build escreve em <code>backend\target</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-front"><div class="body">
+    <div class="title">Front no modo <code>nginx</code></div>
+    <div class="codebox"><pre><code>cd frontend
+npx.cmd vite build --mode nginx
+(Select-String -Path dist\assets\*.js -Pattern 'sisaudin.ghc.com.br','localhost:8080' -SimpleMatch).Count
+(Select-String -Path dist\assets\*.js -Pattern 'importar-planejamento','tipo-de-auditoria' -SimpleMatch | Select-Object -Unique Pattern).Count</code></pre></div>
+    <p>Rodar na máquina de desenvolvimento, na pasta <code>frontend</code>. O artefato conferido é o front gerado: os arquivos <code>frontend\dist\assets\*.js</code> (é essa pasta <code>dist</code> que vai para o nginx). As contagens leem esses arquivos:</p>
+    <ul>
+      <li>primeira: quantos arquivos contêm um endereço fixo (<code>sisaudin.ghc.com.br</code> ou <code>localhost:8080</code>). Tem de ser <b>0</b>: o front de produção chama a API pelo endereço relativo <code>/api</code>, que o nginx repassa ao backend;</li>
+      <li>segunda: quantos dos dois textos das entregas novas aparecem. Tem de ser <b>2</b>.</li>
+    </ul>
+    <p>Não usar <code>npm run build</code> (gera o front com o endereço fixo).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-jar"><div class="body">
+    <div class="title">JAR só com a API</div>
+    <div class="codebox"><pre><code>cd ..\backend
+.\mvnw.cmd clean package -DskipTests</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-confere-jar"><div class="body">
+    <div class="title">Conferir que o JAR tem as entregas</div>
+    <div class="codebox"><pre><code>Add-Type -A System.IO.Compression.FileSystem
+$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path target\sisaudin-0.0.1-SNAPSHOT.jar))
+"conversao: " + [bool]$z.GetEntry('BOOT-INF/classes/sisaudin/config/PlanejamentoMatrizMigration.class')
+"fatos da Matriz: " + [bool]$z.GetEntry('BOOT-INF/classes/sisaudin/model/cadastroBasico/FatoMatrizAchados.class')
+$e = $z.GetEntry('BOOT-INF/classes/sisaudin/model/cadastroBasico/Planejamento.class')
+$s = New-Object IO.StreamReader($e.Open(), [Text.Encoding]::GetEncoding(28591)); $t = $s.ReadToEnd(); $s.Close()
+"tipo de auditoria no Planejamento: " + $t.Contains('planejamento_tipo_auditoria')
+"front dentro do JAR (deve ser False): " + [bool]$z.GetEntry('BOOT-INF/classes/static/index.html')
+$z.Dispose()</code></pre></div>
+    <p>As três primeiras: <b>True</b>; a última: <b>False</b>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p2-pacote"><div class="body">
+    <div class="title">Pacote para o servidor</div>
+    <ul>
+      <li>o JAR;</li>
+      <li>a pasta <code>frontend\dist</code>;</li>
+      <li>os dois scripts de prévia (seção 1), para a conferência final.</li>
+    </ul>
+    <p>O <code>application.properties</code> externo de produção já existe desde 27/10 e não muda.</p>
+  </div></div>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2>3. Configuração do backend (conferir) <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p3-arquivo"><div class="body">
+    <div class="title">Localizar o arquivo de configuração no servidor <span class="tag crit">crítico</span></div>
+    <p>É o arquivo <code>PASTA_DO_BACKEND\application.properties</code>, no servidor de produção, <b>na mesma pasta do JAR</b> (criado na implantação de 27/10). O Spring lê o arquivo da pasta de onde o <code>java -jar</code> é executado; ele tem prioridade sobre a configuração de dentro do JAR.</p>
+    <div class="codebox"><pre><code>Test-Path "PASTA_DO_BACKEND\application.properties"
+Select-String -Path "PASTA_DO_BACKEND\application.properties" -Pattern 'ddl-auto','seeder','show-sql','datasource.url','server.port' | ForEach-Object { $_.Line }</code></pre></div>
+    <p class="note danger">Se der <code>False</code>, o backend está usando a configuração de dentro do JAR. A do JAR novo tem <code>app.seeder.enabled=true</code>, e a carga inicial rodaria em produção. Criar o arquivo antes de seguir (seção 2 do checklist de 27/10).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p3-chaves"><div class="body">
+    <div class="title">Chaves do <code>application.properties</code> externo</div>
+    <div class="tablewrap"><table>
+      <tr><th>Chave</th><th>Valor esperado</th><th>Por quê</th></tr>
+      <tr><td><code>spring.jpa.hibernate.ddl-auto</code></td><td><code>update</code></td><td>Cria as 6 tabelas e as 2 colunas novas.</td></tr>
+      <tr><td><code>app.seeder.enabled</code></td><td><code>false</code></td><td>A carga inicial não roda em produção. Os 3 tipos de auditoria são criados pela conversão.</td></tr>
+      <tr><td><code>spring.jpa.show-sql</code></td><td><code>true</code> na primeira subida</td><td>Mostra os comandos de estrutura para a conferência da seção 5; <code>false</code> depois.</td></tr>
+      <tr><td><code>spring.datasource.url</code></td><td><code>…/sisaudin_novo_v10…</code></td><td>—</td></tr>
+      <tr><td><code>server.port</code></td><td><code>8080</code></td><td>= <code>proxy_pass</code> do nginx.</td></tr>
+    </table></div>
+    <p>O usuário do banco precisa de permissão de <code>CREATE</code>, <code>ALTER</code> e <code>REFERENCES</code> (hoje é <code>root</code>).</p>
+  </div></div>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2>4. Parar e fazer backup <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p4-parar"><div class="body">
+    <div class="title">Parar o backend atual</div>
+    <div class="codebox"><pre><code>netstat -ano | findstr ":8080"</code></pre></div>
+    <p>Sem linha <code>LISTENING</code>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-db"><div class="body">
+    <div class="title">Backup do banco <span class="tag crit">obrigatório</span></div>
+    <div class="codebox"><pre><code>mysqldump -u root -p --single-transaction --routines --triggers --events sisaudin_novo_v10 &gt; sisaudin_novo_v10_ANTES_2026-11.sql</code></pre></div>
+    <p>Última linha do arquivo: <code>-- Dump completed on …</code>. Anotar o nome no topo. É o único jeito de desfazer a conversão por completo.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-arquivos"><div class="body">
+    <div class="title">Guardar o que será trocado</div>
+    <div class="codebox"><pre><code>$bk = "C:\backup-sisaudin-$(Get-Date -Format yyyyMMdd-HHmm)"; New-Item -ItemType Directory $bk | Out-Null
+Copy-Item "PASTA_DO_BACKEND\*.jar" $bk
+Copy-Item "PASTA_DO_BACKEND\application.properties" $bk
+robocopy "PASTA_DO_NGINX\html" "$bk\html" /E /NFL /NDL
+$bk</code></pre></div>
+    <p>JAR atual, configuração externa e o front atual. <code>uploads\</code> e <code>nginx.conf</code> não mudam nesta entrega (só os nomes de seção de alguns anexos mudam, no banco).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p4-contagem"><div class="body">
+    <div class="title">Contagem de linhas antes (guardar a saída)</div>
+    <div class="codebox"><pre><code>SELECT 'item_trabalho' t, COUNT(*) n FROM sisaudin_novo_v10.item_trabalho
+UNION ALL SELECT 'planejamento', COUNT(*) FROM sisaudin_novo_v10.planejamento
+UNION ALL SELECT 'planejamento_questao', COUNT(*) FROM sisaudin_novo_v10.planejamento_questao
+UNION ALL SELECT 'matriz_achados', COUNT(*) FROM sisaudin_novo_v10.matriz_achados
+UNION ALL SELECT 'matriz_achados_questao', COUNT(*) FROM sisaudin_novo_v10.matriz_achados_questao
+UNION ALL SELECT 'anexo_documento', COUNT(*) FROM sisaudin_novo_v10.anexo_documento
+UNION ALL SELECT 'tipo_auditoria', COUNT(*) FROM sisaudin_novo_v10.tipo_auditoria;</code></pre></div>
+  </div></div>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2>5. Subir o backend novo <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p5-copiar"><div class="body">
+    <div class="title">Trocar o JAR</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_BACKEND"
+Copy-Item CAMINHO_DO_PACOTE\sisaudin-0.0.1-SNAPSHOT.jar . -Force</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p5-subir"><div class="body">
+    <div class="title">Primeira subida gravando o console</div>
+    <div class="codebox"><pre><code>cd "PASTA_DO_BACKEND"
+cmd /c "java -jar sisaudin-0.0.1-SNAPSHOT.jar &gt; subida-2026-11.txt 2&gt;&amp;1"</code></pre></div>
+    <p>"Console" é a saída da janela em que o <code>java -jar</code> roda. As linhas da conversão saem <b>só ali</b>, não no arquivo de log do Spring. Por isso, nesta primeira subida, o backend é iniciado <b>à mão</b>, num PowerShell aberto em <code>PASTA_DO_BACKEND</code>, com a saída gravada no arquivo <code>subida-2026-11.txt</code>. A janela fica parada enquanto o backend estiver no ar; não fechar.</p>
+    <p class="note">Se o backend roda como serviço do Windows (WinSW, NSSM), deixar o serviço parado nesta primeira subida e usar o comando acima. Depois da seção 8, parar o processo manual (Ctrl+C na janela) e iniciar o serviço normalmente. A conversão não roda de novo.</p>
+    <p>Para acompanhar enquanto sobe, abrir <b>outra</b> janela do PowerShell:</p>
+    <div class="codebox"><pre><code>Get-Content "PASTA_DO_BACKEND\subida-2026-11.txt" -Wait -Tail 40</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p5-log"><div class="body">
+    <div class="title">Conferir a subida <span class="tag crit">crítico</span></div>
+    <p>Depois que aparecer <code>Started SisaudinApplication</code> no arquivo, rodar numa janela do PowerShell (sem fechar a do backend). O comando lê o <code>subida-2026-11.txt</code> e conta as linhas:</p>
+    <div class="codebox"><pre><code>$f = "PASTA_DO_BACKEND\subida-2026-11.txt"
+"subiu: " + (Select-String $f -Pattern 'Started SisaudinApplication' -CaseSensitive -Quiet)
+"erros de DDL: " + (Select-String $f -Pattern 'Error executing DDL' -SimpleMatch | Measure-Object).Count
+"create table: " + (Select-String $f -Pattern '^Hibernate: create table ' | Measure-Object).Count
+"add column: " + (Select-String $f -Pattern '^Hibernate: alter table .* add column ' | Measure-Object).Count
+"chaves: " + (Select-String $f -Pattern '^Hibernate: alter table .* add constraint ' | Measure-Object).Count
+"drop: " + (Select-String $f -Pattern '^Hibernate: (drop|alter table .* drop) ' | Measure-Object).Count
+"--- conversao:"; Select-String $f -Pattern 'PlanejamentoMatrizMigration' -SimpleMatch | ForEach-Object { $_.Line }</code></pre></div>
+    <p>Esperado (testado sobre um banco no estado de outubro):</p>
+    <ul>
+      <li><code>subiu: True</code>, <code>erros de DDL: 0</code>, <code>drop: 0</code>;</li>
+      <li><code>create table: 6</code> — <code>matriz_achados_fato</code>, <code>planejamento_gerencia</code>, <code>planejamento_questao_gerencia</code>, <code>planejamento_questao_tecnica</code>, <code>planejamento_questao_tipo_risco</code>, <code>planejamento_tipo_auditoria</code>;</li>
+      <li><code>add column: 2</code> — <code>matriz_achados_questao.questao_planejamento_id</code> e <code>planejamento_questao.ordem</code>;</li>
+      <li><code>chaves: 12</code>;</li>
+      <li>5 linhas <code>[PlanejamentoMatrizMigration] 2026-11-…</code> (gerências, questões, matriz, anexos, tipo de auditoria), cada uma com um resumo. Nenhuma linha "falhou".</li>
+    </ul>
+    <p class="note danger">Erro de DDL, <code>APPLICATION FAILED</code> ou etapa "falhou": parar e ir para a seção 10. (Etapa que falha é desfeita e tentada de novo na próxima subida.)</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p5-api"><div class="body">
+    <div class="title">API responde na própria máquina</div>
+    <div class="codebox"><pre><code>(Invoke-WebRequest http://127.0.0.1:8080/api/planejamentos -UseBasicParsing).StatusCode</code></pre></div>
+    <p>Esperado <b>200</b>.</p>
+  </div></div>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2>6. Conferir a conversão no banco <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p6-registro"><div class="body">
+    <div class="title">Registro das etapas</div>
+    <div class="codebox"><pre><code>SELECT nome, executada_em, resumo FROM sisaudin_novo_v10.sisaudin_migracao ORDER BY executada_em, nome;</code></pre></div>
+    <p><b>5 linhas</b>. Comparar os "SEM CORRESPONDÊNCIA" com a prévia da seção 1 e guardar a saída: é a lista do que acertar à mão nos Planejamentos.</p>
+    <p>A tabela <code>sisaudin_migracao</code> é criada pelo próprio backend, na primeira subida (<code>CREATE TABLE IF NOT EXISTS</code> feito pela conversão), e guarda uma linha por etapa já executada; é ela que impede a conversão de rodar de novo. Ela não aparece entre os 6 <code>create table</code> da seção 5, que são só os do Hibernate.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-tabelas"><div class="body">
+    <div class="title">Tabelas novas preenchidas</div>
+    <div class="codebox"><pre><code>SELECT 'planejamento_gerencia' t, COUNT(*) n FROM sisaudin_novo_v10.planejamento_gerencia
+UNION ALL SELECT 'planejamento_questao_gerencia', COUNT(*) FROM sisaudin_novo_v10.planejamento_questao_gerencia
+UNION ALL SELECT 'planejamento_questao_tecnica', COUNT(*) FROM sisaudin_novo_v10.planejamento_questao_tecnica
+UNION ALL SELECT 'planejamento_questao_tipo_risco', COUNT(*) FROM sisaudin_novo_v10.planejamento_questao_tipo_risco
+UNION ALL SELECT 'planejamento_tipo_auditoria', COUNT(*) FROM sisaudin_novo_v10.planejamento_tipo_auditoria
+UNION ALL SELECT 'matriz_achados_fato', COUNT(*) FROM sisaudin_novo_v10.matriz_achados_fato
+UNION ALL SELECT 'questoes sem ordem', COUNT(*) FROM sisaudin_novo_v10.planejamento_questao WHERE ordem IS NULL
+UNION ALL SELECT 'matriz: questoes sem ligacao', COUNT(*) FROM sisaudin_novo_v10.matriz_achados_questao WHERE questao_planejamento_id IS NULL;</code></pre></div>
+    <p>Os números devem bater com os resumos da seção anterior. <code>questoes sem ordem</code>: <b>0</b>.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-tipos"><div class="body">
+    <div class="title">Tipos de auditoria no cadastro</div>
+    <div class="codebox"><pre><code>SELECT id, nome, status FROM sisaudin_novo_v10.tipo_auditoria ORDER BY id;</code></pre></div>
+    <p>Desempenho, Financeira e Conformidade presentes e ativos (os que já existiam continuam).</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p6-contagem"><div class="body">
+    <div class="title">Mesma contagem de linhas de antes</div>
+    <p>Repetir a consulta da seção 4: tudo igual, exceto <code>tipo_auditoria</code>, que pode ter até 3 linhas a mais. A conversão não apaga nem cria documentos.</p>
+  </div></div>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2>7. Publicar o front <span class="count"></span></h2>
+  <p class="intro">O <code>nginx.conf</code> não muda nesta entrega. O <code>root</code> da produção é a pasta <code>html</code> do nginx (na homologação é outra pasta).</p>
+
+  <div class="item"><input type="checkbox" id="p7-root"><div class="body">
+    <div class="title">Confirmar a pasta do <code>root</code></div>
+    <div class="codebox"><pre><code>Select-String -Path "PASTA_DO_NGINX\conf\nginx.conf" -Pattern '^\s*root\s' | ForEach-Object { $_.Line.Trim() }</code></pre></div>
+    <p>Esperado <code>root   html;</code>. Se apontar para outra pasta, publicar nela.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p7-copiar"><div class="body">
+    <div class="title">Copiar o <code>dist</code></div>
+    <div class="codebox"><pre><code>robocopy CAMINHO_DO_PACOTE\dist "PASTA_DO_NGINX\html" /MIR
+(Get-Item "PASTA_DO_NGINX\html\index.html").LastWriteTime</code></pre></div>
+    <p>A data do <code>index.html</code> tem de ser a do build. Não precisa recarregar o nginx (o <code>index.html</code> vai sem cache desde 27/10).</p>
+  </div></div>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2>8. Testes no navegador <span class="count"></span></h2>
+  <p class="intro">Em <code>http://172.16.253.238</code>, com <b>Ctrl+F5</b> e a aba Rede aberta (F12). Em produção, preferir abrir documentos existentes. Não criar Planejamento nem Matriz de teste (o Planejamento consome um número da sequência).</p>
+
+  <div class="item"><input type="checkbox" id="p8-abrir"><div class="body">
+    <div class="title">Abrir um Planejamento existente (PLA-13, PLA-16, PLA-21)</div>
+    <p>Seções na ordem do documento (I–II, III Cronograma, IV Gerências, V Objeto com Escopo…). Gerências destinatárias, gerências das questões, técnicas e riscos aparecem; número no formulário e no título (ou "s/n"); Tipo de Auditoria convertido, se havia.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-servico"><div class="body">
+    <div class="title">Serviço de Auditoria (PLA-17, PLA-22)</div>
+    <p>No Planejamento, "Serviço de Auditoria" travado com o serviço do item. Numa OS, num relatório e na tela do item, o rótulo é "Serviço de Auditoria". Menu: "Gerir Serviços de Auditoria".</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-salvar"><div class="body">
+    <div class="title">Salvar um Planejamento em edição <span class="tag crit">crítico</span></div>
+    <p>Num Planejamento em Minuta, com a área de acordo: incluir e retirar um Tipo de Auditoria (ou acrescentar uma palavra num texto e apagá-la), esperar "salvo" e recarregar. Nenhum erro; nada some. Na aba Rede, o <code>PUT /api/planejamentos/…</code> responde 200.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-matriz"><div class="body">
+    <div class="title">Abrir uma Matriz de Achados existente (MAT-08, MAT-09)</div>
+    <p>Questões do Planejamento só para leitura; fato e evidência antigos como "Fato 1.1", com os anexos; questões antigas sem ligação no fim, com aviso. No modo Lado a Lado, documento e formulário rolam separados.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-menu"><div class="body">
+    <div class="title">Menu "Criar Documento" (MAT-01)</div>
+    <p>Num item sem Planejamento, "Matriz de Achados" desabilitada com o motivo. (Só abrir o menu.)</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-pdf"><div class="body">
+    <div class="title">PDF de um Planejamento existente</div>
+    <p>"Gerar PDF no Servidor": título com o número (ou "s/n"), Serviço e Tipo de Auditoria em "II. Dados Gerais", matriz de planejamento com as gerências de cada questão.</p>
+  </div></div>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2>9. Encerramento <span class="count"></span></h2>
+
+  <div class="item"><input type="checkbox" id="p9-showsql"><div class="body">
+    <div class="title">Desligar o registro de SQL <span class="tag opt">recomendado</span></div>
+    <p>No servidor, abrir <code>PASTA_DO_BACKEND\application.properties</code> no Bloco de Notas, trocar a linha <code>spring.jpa.show-sql=true</code> por <code>spring.jpa.show-sql=false</code>, salvar e reiniciar o backend fora do horário de uso. A conversão não roda de novo (está registrada em <code>sisaudin_migracao</code>).</p>
+    <div class="codebox"><pre><code>Select-String -Path "PASTA_DO_BACKEND\application.properties" -Pattern 'show-sql'</code></pre></div>
+    <p>Deve mostrar <code>spring.jpa.show-sql=false</code>. Com <code>true</code>, cada consulta ao banco é escrita no console, o que enche o log e pesa um pouco.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-acertos"><div class="body">
+    <div class="title">Acertar à mão o que ficou sem correspondência</div>
+    <p>Com a lista da seção 6: abrir cada Planejamento e escolher a gerência, técnica ou risco certo; numerar os Planejamentos "s/n" que precisarem de número.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-avisar"><div class="body">
+    <div class="title">Avisar os usuários</div>
+    <p>Sistema de volta; <b>Ctrl+F5</b> no primeiro acesso. Novidades: formulário do Planejamento na ordem do documento; número automático; várias gerências por questão; Tipo de Auditoria no Planejamento; Serviço de Auditoria vem do item; Matriz de Achados importada do Planejamento, com vários fatos e evidências por questão.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-monitorar"><div class="body">
+    <div class="title">Acompanhar o log nos primeiros dias</div>
+    <p>Procurar <code>HttpMessageNotReadable</code> com <code>Gerencia</code> ou <code>TecnicaAuditoria</code>: é alguém com a tela antiga em cache (pedir Ctrl+F5). E também <code>ERROR</code>, <code>Exception</code> e respostas <code>409</code> repetidas.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p9-versao"><div class="body">
+    <div class="title">Registrar a versão</div>
+    <p>Tag enviada ao repositório; versão, data e responsável anotados (ex.: <code>CONTROLE-VERSAO.md</code>).</p>
+  </div></div>
+
+  <div class="meta" style="margin-top:8px">
+    <div style="grid-column:1/-1"><label for="m-obs">Observações</label>
+      <textarea id="m-obs" data-field="obs" rows="5" style="width:100%;font:inherit;padding:6px 8px;margin-top:2px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px"></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section>
+  <h2>10. Plano de volta (se algo crítico falhar) <span class="count"></span></h2>
+  <p class="intro">Voltar se: o backend não sobe, há erro de DDL, o Planejamento ou a Matriz não abrem ou não salvam. A versão anterior lê as colunas e tabelas antigas, que não foram apagadas; mas o que for gravado depois da subida (gerências, tipos, fatos da Matriz) só existe nas tabelas novas.</p>
+
+  <div class="item"><input type="checkbox" id="p10-backend"><div class="body">
+    <div class="title">Backend anterior</div>
+    <div class="codebox"><pre><code>netstat -ano | findstr ":8080"
+Copy-Item "PASTA_DO_BACKUP\sisaudin-0.0.1-SNAPSHOT.jar" "PASTA_DO_BACKEND\" -Force</code></pre></div>
+    <p>Parar o backend novo antes; subir o anterior como de costume.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p10-front"><div class="body">
+    <div class="title">Front anterior</div>
+    <div class="codebox"><pre><code>robocopy "PASTA_DO_BACKUP\html" "PASTA_DO_NGINX\html" /MIR</code></pre></div>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p10-banco"><div class="body">
+    <div class="title">Banco</div>
+    <ul>
+      <li><b>Volta logo após a subida</b> (ninguém usou): não precisa restaurar; as tabelas novas ficam sem uso.</li>
+      <li><b>Volta depois de uso</b>: restaurar o backup da seção 4 se for preciso recuperar o estado anterior; perde-se tudo o que foi gravado depois.</li>
+      <li>Se voltar sem restaurar e os usuários usarem a versão anterior, antes de subir a versão nova outra vez apagar o registro para a conversão refazer o que mudou: <code>DELETE FROM sisaudin_novo_v10.sisaudin_migracao;</code> (as etapas não duplicam o que já foi convertido).</li>
+    </ul>
+  </div></div>
+</section>
+
+<footer>
+  As marcações e os campos ficam salvos apenas neste navegador. Para registrar oficialmente, use <b>Imprimir</b> (pode salvar como PDF).
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'sisaudin-checklist-producao-2026-11';
+  var state = { checks: {}, fields: {} };
+  try { var raw = localStorage.getItem(KEY); if (raw) state = JSON.parse(raw) || state; } catch (e) {}
+  state.checks = state.checks || {}; state.fields = state.fields || {};
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.item input[type=checkbox]'));
+  function refresh() {
+    var done = 0;
+    boxes.forEach(function (b) { b.closest('.item').classList.toggle('checked', b.checked); if (b.checked) done++; });
+    document.getElementById('progressFill').style.width = (boxes.length ? done / boxes.length * 100 : 0) + '%';
+    document.getElementById('progressText').textContent = done + ' de ' + boxes.length + ' concluídos';
+    document.querySelectorAll('section').forEach(function (s) {
+      var bs = s.querySelectorAll('.item input[type=checkbox]'); var n = 0;
+      bs.forEach(function (b) { if (b.checked) n++; });
+      var c = s.querySelector('h2 .count'); if (c) c.textContent = n + '/' + bs.length;
+      s.classList.toggle('done', bs.length > 0 && n === bs.length);
+    });
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!state.checks[b.id];
+    b.addEventListener('change', function () { state.checks[b.id] = b.checked; save(); refresh(); });
+  });
+
+  // Campos aplicados nos comandos: troca o marcador pelo valor informado
+  var TOKENS = { banco: 'sisaudin_novo_v10', backend: 'PASTA_DO_BACKEND', nginx: 'PASTA_DO_NGINX', pacote: 'CAMINHO_DO_PACOTE', pastabackup: 'PASTA_DO_BACKUP' };
+  var codes = Array.prototype.slice.call(document.querySelectorAll('code'));
+  codes.forEach(function (c) { c.setAttribute('data-original', c.textContent); });
+  function aplicar() {
+    codes.forEach(function (c) {
+      var t = c.getAttribute('data-original');
+      Object.keys(TOKENS).forEach(function (k) {
+        var v = (state.fields[k] || '').trim().replace(/[\\\/]+$/, '');
+        if (k === 'banco') v = v.replace(/[^A-Za-z0-9_$]/g, '');
+        if (v) t = t.split(TOKENS[k]).join(v);
+      });
+      c.textContent = t;
+    });
+  }
+  document.querySelectorAll('[data-field]').forEach(function (el) {
+    var k = el.getAttribute('data-field');
+    if (state.fields[k] != null) el.value = state.fields[k];
+    el.addEventListener('input', function () { state.fields[k] = el.value; save(); if (TOKENS[k]) aplicar(); });
+  });
+  aplicar();
+
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('Desmarcar todos os itens? Os campos de texto são mantidos.')) return;
+    state.checks = {}; save(); boxes.forEach(function (b) { b.checked = false; }); refresh();
+  });
+
+  document.querySelectorAll('.codebox').forEach(function (box) {
+    var btn = document.createElement('button'); btn.type = 'button'; btn.textContent = 'Copiar';
+    btn.addEventListener('click', function () {
+      var text = box.querySelector('pre').innerText;
+      var ok = function () { btn.textContent = 'Copiado'; setTimeout(function () { btn.textContent = 'Copiar'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, function () { fallback(text); ok(); }); }
+      else { fallback(text); ok(); }
+    });
+    box.appendChild(btn);
+  });
+  function fallback(text) {
+    var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
+    t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t);
+  }
+  refresh();
+})();
+</script></body>
+</html>
