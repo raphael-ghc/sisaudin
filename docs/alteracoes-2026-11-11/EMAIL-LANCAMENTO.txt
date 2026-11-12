@@ -1,0 +1,56 @@
+Assunto: Sisaudin atualizado: versões 2026.11.1 e 2026.11.1.0.1 (Planejamento, Matriz de Achados e novo menu Sisaudin)
+
+Prezados(as),
+
+O Sisaudin recebeu duas atualizações:
+
+- 2026.11.1, implantada em [data], com mudanças no Planejamento e na Matriz de Achados;
+- 2026.11.1.0.1, implantada em [data], que acrescenta ao menu lateral um espaço para acompanhar as atualizações e pedir mudanças.
+
+ANTES DE COMEÇAR
+
+No primeiro acesso depois da atualização, apertem Ctrl+F5. Isso carrega a versão nova das telas. Sem isso, o menu novo pode não aparecer e o Planejamento pode não salvar.
+
+
+1. VERSÃO 2026.11.1: PLANEJAMENTO E MATRIZ DE ACHADOS
+
+Planejamento
+- O formulário segue a mesma ordem do documento: Cronograma logo no início e Escopo dentro de "Objeto Auditado".
+- O número do Planejamento é gerado na criação e aparece no formulário. Os antigos sem número aparecem como "s/n" e podem ser numerados à mão.
+- As gerências destinatárias vêm do item de trabalho (botão "Carregar gerências do item") e são escolhidas no cadastro de gerências.
+- Cada questão pode ter mais de uma gerência. Técnicas e riscos são escolhidos nas listas do cadastro. A ordem das questões é gravada.
+- Serviço de Auditoria (Avaliação, Consultoria, Auditoria Contínua) vem do item de trabalho e aparece só para consulta. Para trocá-lo, editem o item.
+- Novo campo Tipo de Auditoria: Desempenho, Financeira e/ou Conformidade. É possível marcar mais de uma opção.
+
+Matriz de Achados
+- Só pode ser criada depois do Planejamento e já vem com as questões dele, sem precisar digitar de novo.
+- Na Matriz são preenchidos apenas os fatos encontrados e as evidências. Cada questão pode ter vários fatos, cada um com seus anexos.
+- Questões novas ou alteradas no Planejamento aparecem na Matriz ao salvar o Planejamento, ou pelo botão "Atualizar do Planejamento".
+- No documento, cada fato fica numa linha.
+- Uma questão que já tem fatos na Matriz não pode ser excluída do Planejamento. Um Planejamento com Matriz também não pode ser excluído.
+
+Demais documentos
+- O campo "Tipo de Serviço" passou a se chamar "Serviço de Auditoria" em todos os documentos e no item de trabalho.
+
+Atenção: se algum Planejamento antigo aparecer sem gerência, técnica ou risco, é porque o nome gravado antes não existia no cadastro. Basta escolher de novo.
+
+
+2. VERSÃO 2026.11.1.0.1: NOVO MENU "SISAUDIN"
+
+No fim do menu lateral há um novo item, "Sisaudin", disponível para todos:
+
+- Versões do Sisaudin: o que mudou em cada atualização, da mais recente para a mais antiga. O índice da página leva direto a cada versão. As mudanças deste e-mail e das atualizações de outubro estão registradas lá.
+- Solicitar Mudanças: abre, em outra aba, o sistema de solicitação de mudanças do Sisaudin, na tela "Nova solicitação".
+
+
+PEDIDOS DE MELHORIA E RELATOS DE ERRO
+
+Pedidos de melhoria e relatos de erro devem ser registrados pelo menu Sisaudin > Solicitar Mudanças. Para facilitar a análise, informem:
+- a hora em que aconteceu;
+- o documento (tipo, número e item de trabalho);
+- a mensagem que apareceu, de preferência com um print da tela.
+
+Atenciosamente,
+
+[Nome]
+[Setor / contato]

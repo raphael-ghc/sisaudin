@@ -1,0 +1,26 @@
+Versão 2026.11.1.0.1: Versões do Sisaudin e Solicitar Mudanças
+
+Complemento da 2026.11.1, só no front. Não muda backend nem banco.
+
+Menu "Sisaudin" (todos os usuários)
+- Versões do Sisaudin (/sisaudin/versoes): versões da mais recente para
+  a mais antiga, com índice por versão (2026.11.1.0.1, 2026.11.1,
+  2026.10.1.0.1 e 2026.10.1). Texto em src/data/versoes.js; cada versão
+  nova entra no início da lista.
+- Solicitar Mudanças: abre em outra aba o sistema de solicitação de
+  mudanças na aba "Nova solicitação" (#nova). Abrir direto na aba depende
+  do ajuste no Apps Script (AJUSTE-SISTEMA-SOLICITACOES.md).
+
+Configuração
+- Endereço do sistema de solicitações em public/config-sisaudin.js,
+  carregado pelo index.html: editável na pasta publicada sem novo build.
+  Alternativa: VITE_URL_SOLICITACOES.
+
+Documentação
+- Checklists de homologação (2026-10-15) e produção (2026-11-10): passo
+  para atualizar a página de versões antes do build, teste da página no
+  navegador e aviso de que o robocopy /MIR substitui o config-sisaudin.js.
+- docs/alteracoes-2026-11-11: notas da versão, e-mail de lançamento,
+  mensagem para a equipe e prompt/ajuste do sistema de solicitações.
+
+Notas: docs/alteracoes-2026-11-11/CONTROLE-VERSAO.md

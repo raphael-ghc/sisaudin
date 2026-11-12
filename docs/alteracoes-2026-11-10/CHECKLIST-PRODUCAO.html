@@ -194,6 +194,20 @@
 <section>
   <h2>2. Gerar os artefatos (máquina de desenvolvimento) <span class="count"></span></h2>
 
+  <div class="item"><input type="checkbox" id="p2-versoes"><div class="body">
+    <div class="title">Página "Versões do Sisaudin" atualizada <span class="tag crit">crítico</span></div>
+    <p>Antes do commit e do build, acrescentar a versão que vai subir no <b>início</b> da lista <code>VERSOES</code> em <code>frontend/src/data/versoes.js</code>. É o que os usuários veem em <b>Sisaudin &gt; Versões do Sisaudin</b>. Preencher:</p>
+    <ul>
+      <li>número, data da implantação, título, resumo e o que mudou, por tela;</li>
+      <li>texto escrito para quem usa o sistema (o mesmo conteúdo do aviso à equipe), com avisos como o Ctrl+F5;</li>
+      <li><code>tipo</code>: <code>'versao'</code> para implantação completa, <code>'correcao'</code> ou <code>'ajuste'</code> para as <code>.0.N</code>.</li>
+    </ul>
+    <p>Conferir também que <code>frontend/public/config-sisaudin.js</code> tem o endereço atual do sistema de solicitação de mudanças. Ele vai junto no build e substitui o do servidor.</p>
+    <div class="codebox"><pre><code>Select-String -Path frontend\src\data\versoes.js -Pattern "versao: '" | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }
+Select-String -Path frontend\public\config-sisaudin.js -Pattern 'urlSolicitacoes' | ForEach-Object { $_.Line.Trim() }</code></pre></div>
+    <p>A primeira versão listada tem de ser a que vai subir; é ela que a página mostra como "Atual".</p>
+  </div></div>
+
   <div class="item"><input type="checkbox" id="p2-commit"><div class="body">
     <div class="title">Commit e tag do código (versão 2026.11.1) <span class="tag crit">crítico</span></div>
     <p>Em 11/11 as duas entregas ainda não estavam commitadas. Commitar o que foi validado na homologação, com a mensagem de <code>docs/alteracoes-2026-11-10/COMMIT.txt</code>, e criar a tag <code>v2026.11.1</code>. Anotar no topo.</p>
@@ -421,6 +435,7 @@ UNION ALL SELECT 'matriz: questoes sem ligacao', COUNT(*) FROM sisaudin_novo_v10
     <div class="codebox"><pre><code>robocopy CAMINHO_DO_PACOTE\dist "PASTA_DO_NGINX\html" /MIR
 (Get-Item "PASTA_DO_NGINX\html\index.html").LastWriteTime</code></pre></div>
     <p>A data do <code>index.html</code> tem de ser a do build. Não precisa recarregar o nginx (o <code>index.html</code> vai sem cache desde 27/10).</p>
+    <p class="note">O <code>/MIR</code> substitui o <code>config-sisaudin.js</code> do servidor (endereço do sistema de solicitação de mudanças, desde a 2026.11.1.0.1) pelo do build. Se o endereço foi trocado direto no servidor, levar a troca antes para <code>frontend/public/config-sisaudin.js</code> (item "Página Versões do Sisaudin atualizada", seção 2).</p>
   </div></div>
 </section>
 
@@ -452,6 +467,17 @@ UNION ALL SELECT 'matriz: questoes sem ligacao', COUNT(*) FROM sisaudin_novo_v10
   <div class="item"><input type="checkbox" id="p8-menu"><div class="body">
     <div class="title">Menu "Criar Documento" (MAT-01)</div>
     <p>Num item sem Planejamento, "Matriz de Achados" desabilitada com o motivo. (Só abrir o menu.)</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="p8-versoes"><div class="body">
+    <div class="title">Página "Versões do Sisaudin" mostra a versão nova</div>
+    <p>Menu <b>Sisaudin &gt; Versões do Sisaudin</b>:</p>
+    <ul>
+      <li>a versão que subiu aparece no topo, marcada como "Atual", com a data da implantação;</li>
+      <li>o índice leva a cada versão;</li>
+      <li><b>Solicitar Mudanças</b> abre o sistema de solicitações em outra aba.</li>
+    </ul>
+    <p>Se a página mostrar a versão anterior, faltou o item da seção 2 ou o navegador está com a tela antiga (Ctrl+F5).</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="p8-pdf"><div class="body">
@@ -488,7 +514,7 @@ UNION ALL SELECT 'matriz: questoes sem ligacao', COUNT(*) FROM sisaudin_novo_v10
 
   <div class="item"><input type="checkbox" id="p9-versao"><div class="body">
     <div class="title">Registrar a versão</div>
-    <p>Tag enviada ao repositório; versão, data e responsável anotados (ex.: <code>CONTROLE-VERSAO.md</code>).</p>
+    <p>Tag enviada ao repositório; versão, data e responsável anotados (ex.: <code>CONTROLE-VERSAO.md</code> e tabela de versões do <code>README.md</code>). Se a data da implantação mudou em relação à que foi para a página Versões do Sisaudin, corrigir em <code>frontend/src/data/versoes.js</code> e levar na próxima publicação do front.</p>
   </div></div>
 
   <div class="meta" style="margin-top:8px">

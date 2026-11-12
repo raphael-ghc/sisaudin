@@ -20,7 +20,6 @@ Pessoal, o Sisaudin foi atualizado. No primeiro acesso, apertem *Ctrl+F5* (sem i
 • No documento, cada fato fica numa linha.
 
 🏷️ Nos demais documentos, "Tipo de Serviço" passou a se chamar *Serviço de Auditoria*.
-
 ⚠️ Se algum Planejamento antigo aparecer sem gerência, técnica ou risco, é porque o nome antigo não existia no cadastro. É só escolher de novo.
 
 Problemas? Mandem a hora, o documento e um print da mensagem. 🙏

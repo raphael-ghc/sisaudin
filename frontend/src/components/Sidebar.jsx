@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   X, LogOut, LayoutDashboard, AlertTriangle, CheckSquare, 
-  FileText, ChevronDown, Settings, Menu
+  FileText, ChevronDown, Settings, Menu, Info, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
+import { URL_NOVA_SOLICITACAO } from '../data/versoes';
 
 // 1. Item de Navegação Padrão
 function NavItem({ icon, label, to, isCollapsed }) {
@@ -38,6 +39,25 @@ function NavSubItem({ label, to, isCollapsed }) {
     `}>
       {isCollapsed ? label.charAt(0) : label}
     </NavLink>
+  );
+}
+
+// 2b. Sub-item que abre um endereço externo em outra aba
+function NavSubLinkExterno({ label, href, isCollapsed }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={isCollapsed ? label : "Abre em outra aba"}
+      className={`
+        flex items-center gap-1.5 w-full px-3 py-2 rounded-md transition-colors text-sm
+        border-l-2 border-transparent text-white/70 hover:text-white hover:border-white/50 hover:bg-white/5
+        ${isCollapsed ? 'justify-center pl-0' : 'text-left'}
+      `}
+    >
+      {isCollapsed ? label.charAt(0) : (<><span>{label}</span><ExternalLink size={12} className="opacity-70 shrink-0" /></>)}
+    </a>
   );
 }
 
@@ -218,7 +238,13 @@ export default function Sidebar({ isMobileMenuOpen, toggleMenu, isDesktopCollaps
           <NavSubItem to="/ordens-servico" label="Gerir Ordens de Serviço" />      
           <NavSubItem to="/comunicacoes" label="Gerir Comunicações de Auditoria" />      
           <NavSubItem to="/solicitacoes" label="Gerir Solicitações de Auditoria" />      
-          <NavSubItem to="/planejamentos" label="Gerir Planejamentos" />      
+          <NavSubItem to="/planejamentos" label="Gerir Planejamentos" />
+        </NavGroup>
+
+        {/* Sobre o sistema: visível para todos os usuários */}
+        <NavGroup icon={<Info size={20} />} label="Sisaudin" isCollapsed={isDesktopCollapsed} toggleDesktopMenu={toggleDesktopMenu}>
+          <NavSubItem to="/sisaudin/versoes" label="Versões do Sisaudin" />
+          <NavSubLinkExterno href={URL_NOVA_SOLICITACAO} label="Solicitar Mudanças" />
         </NavGroup>
       </nav>
       

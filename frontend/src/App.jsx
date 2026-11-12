@@ -45,6 +45,7 @@ import ParecerList from "./pages/ParecerList";
 import Planejamento from "./pages/Planejamento";
 import PlanejamentoList from "./pages/PlanejamentoList";
 import MatrizAchados from "./pages/MatrizAchados";
+import Versoes from "./pages/Versoes";
 
 const App = () => {
 
@@ -550,6 +551,7 @@ const App = () => {
       <Route path="/reunioes-busca-conjunta/novo" element={<PrivateRoute><Layout><ReuniaoBuscaConjunta /></Layout></PrivateRoute>} />
       <Route path="/reunioes-busca-conjunta/:id" element={<PrivateRoute><Layout><ReuniaoBuscaConjunta /></Layout></PrivateRoute>} />
       <Route path="/planos-acao-final/novo" element={<PrivateRoute><Layout><PaginaGenericaCrud /></Layout></PrivateRoute>} />
+      <Route path="/sisaudin/versoes" element={<PrivateRoute><Layout><Versoes /></Layout></PrivateRoute>} />
 
       <Route
         path="/:entidade"

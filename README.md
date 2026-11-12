@@ -4,7 +4,7 @@ Sistema de auditoria interna do GHC.
 
 ## Solicitações de melhoria e correções
 
-Pedidos de melhoria e relatos de erro no Sisaudin são registrados nesta planilha:
+Pedidos de melhoria e relatos de erro no Sisaudin são feitos pelo [sistema de solicitação de mudanças](https://script.google.com/macros/s/AKfycbxraP11XPuZ_t6EzXwRayNTxb0RRJxxs4PLgLwkZ7KRF4w8UxDE7Mmgf9BgetJVK4Vs/exec) (menu Sisaudin > Solicitar Mudanças) e ficam registrados nesta planilha:
 
 [Planilha de solicitações do Sisaudin](https://docs.google.com/spreadsheets/d/1_Bd-axVMfz5TVve6c5kte2JmbTAWHwXt1BjSx6FA_wU/edit?gid=0#gid=0)
 
@@ -26,9 +26,20 @@ Formato `ANO.MÊS.N` para cada implantação; as correções pequenas sobre ela 
 
 | Versão | Data | O que muda no servidor | Notas |
 |---|---|---|---|
-| **2026.11.1** | [data da implantação] | Backend, front e banco (estrutura nova + conversão automática) | [Controle de versão](docs/alteracoes-2026-11-10/CONTROLE-VERSAO.md) |
+| **2026.11.1.0.1** | [data da implantação] | Só o front (pasta `html` do nginx) | [Controle de versão](docs/alteracoes-2026-11-11/CONTROLE-VERSAO.md) |
+| 2026.11.1 | [data da implantação] | Backend, front e banco (estrutura nova + conversão automática) | [Controle de versão](docs/alteracoes-2026-11-10/CONTROLE-VERSAO.md) |
 | 2026.10.1.0.1 | 29/10/2026 | Só o front (pasta `html` do nginx) | [Controle de versão](docs/alteracoes-2026-10-29/CONTROLE-VERSAO.md) |
 | 2026.10.1 | 28/10/2026 | Backend, front, nginx e scripts de dados | [Controle de versão](docs/alteracoes-2026-10-27/CONTROLE-VERSAO.md) |
+
+### 2026.11.1.0.1 — Versões do Sisaudin e Solicitar Mudanças
+
+Complemento da 2026.11.1, só no front:
+
+- novo menu lateral **Sisaudin**, para todos os usuários;
+- **Versões do Sisaudin** (`/sisaudin/versoes`): o que mudou em cada versão, da mais recente para a mais antiga, com índice por versão;
+- **Solicitar Mudanças**: abre o sistema de solicitação de mudanças na aba "Nova solicitação".
+
+O texto das versões fica em `frontend/src/data/versoes.js`. Detalhes: [docs/alteracoes-2026-11-11/](docs/alteracoes-2026-11-11/).
 
 ### 2026.11.1 — Planejamento, Matriz de Achados, Serviço e Tipo de Auditoria
 
@@ -47,8 +58,7 @@ Primeira versão de novembro: melhorias no Planejamento e na Matriz de Achados.
   - acompanha as questões novas do Planejamento;
   - questão com fatos não pode ser excluída do Planejamento;
   - uma linha por fato no documento.
-- **Demais telas:** "Tipo de Serviço" passa a "Serviço de Auditoria".
-- **Banco:** 7 tabelas e 2 colunas novas. Os dados antigos são convertidos na primeira subida (registro em `sisaudin_migracao`).
+- **Demais telas:** "Tipo de Serviço" passa a "Serviço de Auditoria".- **Banco:** 7 tabelas e 2 colunas novas. Os dados antigos são convertidos na primeira subida (registro em `sisaudin_migracao`).
 
 Detalhes e implantação: [docs/alteracoes-2026-11-06/](docs/alteracoes-2026-11-06/) e [docs/alteracoes-2026-11-10/](docs/alteracoes-2026-11-10/) (inclui o `CHECKLIST-PRODUCAO.html`).
 

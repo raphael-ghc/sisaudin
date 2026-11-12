@@ -1,0 +1,10 @@
+*Sisaudin atualizado — versão 2026.11.1.0.1* ✅
+
+Pessoal, entrou uma novidade no menu. No primeiro acesso, apertem *Ctrl+F5* para ela aparecer.
+
+No fim do menu lateral agora tem o item *Sisaudin*:
+
+📌 *Versões do Sisaudin* — tudo o que mudou em cada atualização, da mais recente para a mais antiga. As novidades do Planejamento e da Matriz de Achados (versão 2026.11.1) estão lá também.
+📝 *Solicitar Mudanças* — abre o sistema de solicitações direto em *Nova solicitação*. É por ali que vocês registram pedidos de melhoria e erros.
+
+Ao registrar um erro, informem a hora, o documento e, se puderem, um print da mensagem. 🙏

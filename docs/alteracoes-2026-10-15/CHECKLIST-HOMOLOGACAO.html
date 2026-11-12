@@ -314,6 +314,20 @@ WHERE UPPER(t.nome) LIKE '%EXTRA%' AND UPPER(i.sigla) NOT LIKE '%EXTRA%';</code>
     <p>O build escreve em <code>backend/target</code>.</p>
   </div></div>
 
+  <div class="item"><input type="checkbox" id="s4-versoes"><div class="body">
+    <div class="title">Página "Versões do Sisaudin" atualizada <span class="tag crit">crítico</span></div>
+    <p>Antes do build, acrescentar a versão que está sendo homologada no <b>início</b> da lista <code>VERSOES</code> em <code>frontend/src/data/versoes.js</code>. É o que os usuários veem em <b>Sisaudin &gt; Versões do Sisaudin</b>. Preencher:</p>
+    <ul>
+      <li>número, título, resumo e o que mudou, escrito para quem usa o sistema;</li>
+      <li>na data, a prevista para a produção (corrigir no dia, se mudar);</li>
+      <li><code>tipo</code>: <code>'versao'</code>, <code>'correcao'</code> ou <code>'ajuste'</code>.</li>
+    </ul>
+    <p>Conferir também o endereço do sistema de solicitação de mudanças em <code>frontend/public/config-sisaudin.js</code>.</p>
+    <div class="codebox"><pre><code>Select-String -Path frontend\src\data\versoes.js -Pattern "versao: '" | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }
+Select-String -Path frontend\public\config-sisaudin.js -Pattern 'urlSolicitacoes' | ForEach-Object { $_.Line.Trim() }</code></pre></div>
+    <p>A primeira versão listada tem de ser a que está sendo homologada.</p>
+  </div></div>
+
   <div class="item"><input type="checkbox" id="s4-front"><div class="body">
     <div class="title">Gerar o front no modo <code>nginx</code></div>
     <div class="codebox"><pre><code>cd frontend
@@ -356,6 +370,7 @@ npx.cmd vite build --mode nginx</code></pre></div>
     <p>Substitui o conteúdo anterior por inteiro (os nomes dos arquivos mudam a cada build). Rodar a partir da pasta do repositório:</p>
     <div class="codebox"><pre><code>robocopy frontend\dist C:\sisaudin-homolog\frontend /MIR</code></pre></div>
     <p>Deve existir <code>C:\sisaudin-homolog\frontend\index.html</code> e a pasta <code>assets\</code>. O nginx lê os arquivos a cada acesso: publicar um front novo não exige reiniciar nada.</p>
+    <p class="note">O <code>/MIR</code> também substitui o <code>config-sisaudin.js</code> (endereço do sistema de solicitação de mudanças) pelo do build. Se o endereço foi trocado direto no servidor, levar a troca antes para <code>frontend/public/config-sisaudin.js</code>.</p>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s5-props"><div class="body">
@@ -576,6 +591,16 @@ try { (Invoke-WebRequest http://localhost/api/teste-limite-upload -Method Post -
   <div class="item"><input type="checkbox" id="s8-email"><div class="body">
     <div class="title">Ação que envia e-mail chega no SMTP falso, com link da homologação</div>
     <p>Conferir na interface do MailHog/smtp4dev. O link não pode apontar para a produção.</p>
+  </div></div>
+
+  <div class="item"><input type="checkbox" id="s8-versoes"><div class="body">
+    <div class="title">Página "Versões do Sisaudin" mostra a versão homologada</div>
+    <p>Menu <b>Sisaudin &gt; Versões do Sisaudin</b>:</p>
+    <ul>
+      <li>a versão nova aparece no topo, marcada como "Atual";</li>
+      <li>o índice leva a cada versão e o texto está revisado;</li>
+      <li><b>Solicitar Mudanças</b> abre o sistema de solicitações em outra aba, na aba "Nova solicitação" (depois do ajuste no Apps Script).</li>
+    </ul>
   </div></div>
 
   <div class="item"><input type="checkbox" id="s8-foto"><div class="body">
