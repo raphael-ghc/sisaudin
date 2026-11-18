@@ -22,6 +22,29 @@ export const URL_NOVA_SOLICITACAO = `${URL_SOLICITACOES.split('#')[0]}#nova`;
 
 export const VERSOES = [
   {
+    versao: '2026.11.1.0.2',
+    data: '18/11/2026',
+    tipo: 'correcao',
+    titulo: 'Ordem das questões do Planejamento',
+    resumo: 'Correção da versão 2026.11.1: as questões do Planejamento mudam de ordem por botões, e a página não trava mais ao rolar com uma lista aberta.',
+    grupos: [
+      {
+        titulo: 'Planejamento — Questões de Auditoria',
+        itens: [
+          'Para mudar a ordem de uma questão, use as setas ↑ e ↓ ao lado do título dela. As questões não são mais arrastadas com o mouse.',
+          'Corrigido: com uma lista de seleção aberta (gerências, técnicas ou riscos), clicar na barra de rolagem prendia a questão com borda tracejada e travava a rolagem da página.',
+          'Corrigido: ao mover uma questão recém-criada logo depois de digitar, o texto podia passar para outra questão.',
+          'O número "Questão nº" acompanha a posição. Anexos e fatos da Matriz de Achados continuam com a mesma questão.',
+          'O resumo ao lado do título da questão mostra só o texto, sem códigos de formatação.',
+        ],
+      },
+    ],
+    avisos: [
+      'No primeiro acesso depois da atualização, aperte Ctrl+F5 para carregar a tela nova.',
+      'Com uma lista de seleção aberta, a página ainda não rola. Feche a lista (clique fora dela) antes de rolar.',
+    ],
+  },
+  {
     versao: '2026.11.1.0.1',
     data: '11/11/2026',
     tipo: 'ajuste',
