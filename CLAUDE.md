@@ -65,6 +65,8 @@ O menu lateral "Sisaudin" (todos os usuários) tem a página Versões do Sisaudi
 
 Proposta de processo (ramos, versões, build, CI/CD), ainda não adotada: `docs/PROCESSO-GCS-DEVOPS.md`.
 
+Plano de correções de segurança (13/11), ainda não aplicado: `docs/seguranca/PASSO-A-PASSO-SEGURANCA.md`. Hoje a API inteira está sem login (`/api/**` em `permitAll`) e as chaves JWT são de um tutorial público. As fases 2 (backend) e 3 (front) precisam ir juntas: os anexos das telas de documento usam `fetch` sem token.
+
 O histórico do que foi alterado aqui, com regras, roteiro de implantação, prompts e pacote de arquivos, fica em `docs/alteracoes-<data>/`. Entregas, na ordem em que devem ser aplicadas:
 
 - `docs/alteracoes-2026-10-08/` — REAI e endereço da API configurável.
