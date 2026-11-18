@@ -1,16 +1,107 @@
-# Compiled class file
-*.class
+# =====================================================================
+# Sisaudin - .gitignore
+# Objetivo: impedir que segredos, dados reais e artefatos de build
+# entrem no repositório. Arquivos JÁ versionados continuam versionados
+# (o .gitignore não age sobre eles); para tirá-los do controle use
+# "git rm --cached <arquivo>".
+# =====================================================================
 
-# Log file
+# ---------------------------------------------------------------------
+# 1. Segredos e credenciais
+# ---------------------------------------------------------------------
+
+# Configuração do Spring com senhas/chaves (externas ao JAR).
+# O application.properties versionado deve ter só valores de desenvolvimento.
+application-*.properties
+application-*.yml
+application-*.yaml
+!application-exemplo*.properties
+*.properties.local
+**/config/application.properties
+# Cópias soltas ("application copy.properties", "_backup" etc.)
+*copy*.properties
+*_backup*.properties
+*.properties.bak
+
+# Variáveis de ambiente locais (os .env.<modo> do front só têm endereços
+# e seguem versionados; segredos vão em .env.*.local, nunca no .env)
+.env.local
+.env.*.local
+*.env.local
+*.secret
+*.secrets
+secrets/
+credentials*.json
+*credenciais*
+
+# Chaves, certificados e keystores (HTTPS do nginx, JWT, Java)
+*.pem
+*.key
+*.crt
+*.cer
+*.csr
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+id_rsa*
+id_ed25519*
+
+# Configuração real do nginx de cada ambiente (o modelo fica em docs/)
+nginx.conf
+!docs/**/nginx*.conf
+
+# ---------------------------------------------------------------------
+# 2. Dados reais (banco, anexos, exportações)
+# ---------------------------------------------------------------------
+
+# Arquivos enviados pelos usuários (fotos de perfil, anexos de documentos)
+uploads/
+**/uploads/
+
+# Dumps e backups do banco (os scripts de docs/ continuam permitidos)
+*.dump
+*.bak
+*.backup
+*_ANTES_*.sql
+dump*.sql
+backup*.sql
+sisaudin_*.sql
+backup-sisaudin*/
+*.sql.gz
+*.sql.zip
+
+# Planilhas e exportações com dados de usuários
+*.csv
+*.xlsx
+*.xls
+!docs/**/*.csv
+!docs/**/*.xlsx
+
+# Respostas de API e payloads salvos para depuração
+out.json
+response.json
+backend/*.json
+payload_debug*.html
+relatorio*.json
+
+# ---------------------------------------------------------------------
+# 3. Logs e saídas de compilação (podem conter dados e stack traces)
+# ---------------------------------------------------------------------
 *.log
+logs/
+*_log*.txt
+*log.txt
+compile_errors*.txt
+build_log*.txt
+hs_err_pid*
+replay_pid*
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# ---------------------------------------------------------------------
+# 4. Build e dependências
+# ---------------------------------------------------------------------
+*.class
 *.jar
 *.war
 *.nar
@@ -18,7 +109,29 @@
 *.zip
 *.tar.gz
 *.rar
+target/
+node_modules/
+dist/
+dist-ssr/
+.mtj.tmp/
+*.ctxt
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# ---------------------------------------------------------------------
+# 5. IDE, sistema operacional e ferramentas locais
+# ---------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+.factorypath
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.claude/settings.local.json
